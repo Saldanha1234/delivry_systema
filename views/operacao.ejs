@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Operações | Comandas</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root {
+            --bg-body: #121212;
+            --col-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --accent: #f1c40f;
+            --pendente: #e74c3c;
+            --preparando: #3498db;
+            --entrega: #2ecc71;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header-painel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #333;
+        }
+
+        .header-painel h1 { margin: 0; font-size: 1.5rem; }
+
+        .btn-voltar {
+            background: #333;
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-voltar:hover { background: #444; }
+
+        /* Estrutura de Colunas */
+        .kanban {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            align-items: flex-start;
+            padding-bottom: 20px;
+        }
+
+        .col {
+            background-color: var(--col-bg);
+            border-radius: 8px;
+            min-width: 320px;
+            max-width: 350px;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .col-header {
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 8px 8px 0 0;
+            letter-spacing: 1px;
+        }
+
+        .col-pendente { border-top: 5px solid var(--pendente); background: rgba(231, 76, 60, 0.1); }
+        .col-preparando { border-top: 5px solid var(--preparando); background: rgba(52, 152, 219, 0.1); }
+        .col-entrega { border-top: 5px solid var(--entrega); background: rgba(46, 204, 113, 0.1); }
+
+        .lista-pedidos {
+            padding: 10px;
+            flex-grow: 1;
+        }
+
+        /* Ajustes para Mobile */
+        @media (max-width: 768px) {
+            .kanban {
+                flex-direction: column;
+                align-items: center;
+            }
+            .col {
+                width: 100%;
+                max-width: 100%;
+                min-height: auto;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-painel">
+        <div>
+            <h1>📋 Painel de Produção</h1>
+            <span id="socket-status" style="color: var(--entrega); font-size: 0.8rem;">● Conectado em Tempo Real</span>
+        </div>
+        <a href="/admin" class="btn-voltar">⬅ Voltar ao Admin</a>
+    </header>
+
+    <div class="kanban">
+        <div class="col">
+            <div class="col-header col-pendente">Novos Pedidos</div>
+            <div class="lista-pedidos" id="pendentes">
+                <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
+                    <%- include('partials/card-comanda', {p: p}) %>
+                <% }) %>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="col-header col-preparando">Em Preparação</div>
+            <div class="lista-pedidos" id="preparando">
+                <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
+                    <%- include('partials/card-comanda', {p: p}) %>
+                <% }) %>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="col-header col-entrega">Entrega / Retirada</div>
+            <div class="lista-pedidos" id="entrega">
+                <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
+                    <%- include('partials/card-comanda', {p: p}) %>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioNotificacao" src="/notificacao.mp3" preload="auto"></audio>
+
+    <script>
+        const socket = io();
+        const audio = document.getElementById('audioNotificacao');
+
+        // Função para mudar status via AJAX
+        async function atualizarStatus(id, novoStatus) {
+            try {
+                const response = await fetch('/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, novoStatus })
+                });
+                
+                if (response.ok) {
+                    // Recarregamos a página para mover o card de coluna
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error("Erro ao atualizar:", err);
+            }
+        }
+
+        // Ouvir novos pedidos via Socket
+        socket.on('novoPedido', (pedido) => {
+            console.log("Novo pedido recebido:", pedido.id);
+            audio.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
+            
+            // Recarrega a página após 1 segundo para mostrar o novo card
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        });
+
+        // Ouvir atualizações de status (caso tenha outra aba aberta)
+        socket.on('statusAtualizado', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>

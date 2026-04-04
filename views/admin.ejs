@@ -22,6 +22,29 @@
         .tab-content { display: none; padding: 20px; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
 
+        /* Banner de Operação */
+        .banner-operacao {
+            background: var(--dark);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 8px solid var(--primary);
+        }
+        .btn-abrir-kds {
+            background: var(--primary);
+            color: var(--dark);
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 800;
+            transition: 0.3s;
+        }
+        .btn-abrir-kds:hover { transform: scale(1.05); background: #f0b91d; }
+
         /* Cards Financeiros */
         .finance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 6px solid var(--primary); }
@@ -83,6 +106,7 @@
             .admin-chat-sidebar { width: 100%; height: 500px; }
             .admin-grid { grid-template-columns: 1fr; }
             .config-form { grid-template-columns: 1fr; }
+            .banner-operacao { flex-direction: column; text-align: center; gap: 15px; }
         }
     </style>
 </head>
@@ -120,6 +144,15 @@
             </div>
 
             <div id="aba-pedidos" class="tab-content active">
+                
+                <div class="banner-operacao">
+                    <div>
+                        <h2 style="margin:0; color:var(--primary);">📋 Sistema de Comandas</h2>
+                        <p style="margin:5px 0 0 0; opacity:0.8;">Abra o painel de produção para cozinha e entregas.</p>
+                    </div>
+                    <a href="/operacao" target="_blank" class="btn-abrir-kds">ABRIR PAINEL DE OPERAÇÃO ➔</a>
+                </div>
+
                 <div class="admin-grid">
                     <section class="column">
                         <div class="column-header">🟡 NOVOS PEDIDOS</div>
@@ -280,7 +313,6 @@
         let imagemBase64 = "";
         let pedidoAtivoId = null;
 
-        // --- LÓGICA DE SALVAR PIX ---
         async function salvarConfigPix() {
             const btn = document.querySelector('.btn-save-pix');
             const originalText = btn.innerHTML;
@@ -300,22 +332,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dados)
                 });
-
-                if (res.ok) {
-                    alert("✅ Configurações salvas com sucesso!");
-                } else {
-                    alert("❌ Erro ao salvar configurações.");
-                }
-            } catch (err) {
-                console.error(err);
-                alert("❌ Erro de conexão com o servidor.");
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+                if (res.ok) alert("✅ Configurações salvas!");
+                else alert("❌ Erro ao salvar.");
+            } catch (err) { alert("❌ Erro de conexão."); }
+            finally { btn.innerHTML = originalText; btn.disabled = false; }
         }
 
-        // --- LÓGICA DO MODAL DE DETALHES ---
         function abrirDetalhes(pedido) {
             document.getElementById('det-nome-cliente').innerText = pedido.cliente;
             document.getElementById('det-id-pedido').innerText = "PEDIDO #" + pedido.id;
@@ -326,20 +348,16 @@
             const lista = document.getElementById('det-lista-itens');
             lista.innerHTML = "";
             let itens = typeof pedido.itens === 'string' ? JSON.parse(pedido.itens) : pedido.itens;
-            
             itens.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'item-linha';
                 div.innerHTML = `<span>${item.nome}</span> <b>R$ ${item.preco.toFixed(2)}</b>`;
                 lista.appendChild(div);
             });
-
             document.getElementById('modal-detalhes').style.display = 'flex';
         }
 
-        function fecharModalDetalhes() {
-            document.getElementById('modal-detalhes').style.display = 'none';
-        }
+        function fecharModalDetalhes() { document.getElementById('modal-detalhes').style.display = 'none'; }
 
         function openTab(evt, tabName) {
             const contents = document.getElementsByClassName("tab-content");
@@ -354,7 +372,7 @@
             pedidoAtivoId = id;
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
             document.getElementById(`chat-item-${id}`).classList.add('active');
-            document.getElementById('chat-box').innerHTML = `<p style="color:var(--primary); text-align:center;">Carregando chat de ${cliente}...</p>`;
+            document.getElementById('chat-box').innerHTML = `<p style="color:var(--primary); text-align:center;">Carregando...</p>`;
             socket.emit('join', id);
             socket.emit('lerMensagens', id);
         }
@@ -365,9 +383,8 @@
         });
 
         socket.on('novaMensagem', (msg) => {
-            if (msg.pedidoId === pedidoAtivoId) {
-                renderizarMensagem(msg);
-            } else {
+            if (msg.pedidoId === pedidoAtivoId) renderizarMensagem(msg);
+            else {
                 const item = document.getElementById(`chat-item-${msg.pedidoId}`);
                 if(item) item.classList.add('has-new');
             }
@@ -384,7 +401,7 @@
 
         function enviarParaCliente() {
             const input = document.getElementById('admin-msg');
-            if(!input.value || !pedidoAtivoId) return alert("Selecione um chat primeiro!");
+            if(!input.value || !pedidoAtivoId) return;
             socket.emit('enviarMensagem', { usuario: 'Admin', texto: input.value, pedidoId: pedidoAtivoId });
             input.value = '';
         }
@@ -428,11 +445,13 @@
         }
 
         async function excluirProduto(id) {
-            if(confirm("Excluir item definitivamente?")) {
+            if(confirm("Excluir item?")) {
                 await fetch(`/delete-produto/${id}`, { method: 'DELETE' });
                 location.reload();
             }
         }
+
+        function limparForm() { location.reload(); }
 
         async function mudarStatus(id, novoStatus) {
             await fetch('/update-status', {

@@ -1,0 +1,137 @@
+<style>
+    .comanda-card {
+        background-color: #ffffff;
+        color: #000;
+        padding: 15px;
+        margin-bottom: 20px;
+        font-family: 'Courier New', Courier, monospace;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        border-radius: 2px;
+        line-height: 1.2;
+    }
+
+    .comanda-header {
+        text-align: center;
+        border-bottom: 1px dashed #000;
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+    }
+
+    .comanda-header strong { font-size: 1.3rem; display: block; margin-top: 5px; }
+
+    .tipo-entrega { font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
+
+    .secao { margin-bottom: 10px; font-size: 0.85rem; }
+    .secao-titulo { font-weight: bold; border-bottom: 1px solid #eee; display: block; margin-bottom: 3px; }
+
+    .tracejado-duplo { border-bottom: 1px dashed #000; margin: 10px 0; }
+
+    .item-linha {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+    }
+
+    .comanda-footer {
+        border-top: 1px dashed #000;
+        padding-top: 8px;
+        margin-top: 10px;
+    }
+
+    .total-final {
+        display: flex;
+        justify-content: space-between;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    /* Botões de Controle (Não aparecem na impressão se um dia você imprimir) */
+    .acoes-comanda {
+        margin-top: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .btn-acao {
+        border: none;
+        padding: 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: sans-serif;
+        text-transform: uppercase;
+    }
+
+    .btn-preparar { background-color: #2980b9; color: white; }
+    .btn-entregar { background-color: #27ae60; color: white; }
+    .btn-concluir { background-color: #333; color: white; }
+
+    @media print {
+        .acoes-comanda { display: none; }
+    }
+</style>
+
+<div class="comanda-card">
+    <div class="comanda-header">
+        <span class="tipo-entrega">
+            <%= p.pagamento.toLowerCase().includes('retirada') ? 'PARA RETIRADA' : 'PARA ENTREGA' %>
+        </span>
+        <span><%= p.hora %></span>
+        <strong>Pedido #<%= p.id %></strong>
+    </div>
+
+    <div class="secao">
+        <span class="secao-titulo">Cliente</span>
+        <strong>Nome:</strong> <%= p.cliente %><br>
+        <strong>Telefone:</strong> <%= p.telefone || 'Não informado' %><br>
+        <strong>Endereço:</strong> <%= p.endereco %>
+    </div>
+
+    <div class="tracejado-duplo"></div>
+
+    <div class="secao">
+        <span class="secao-titulo">Itens</span>
+        <% 
+           // Garante que os itens sejam tratados como array, mesmo se vierem como string JSON
+           let itensLista = Array.isArray(p.itens) ? p.itens : JSON.parse(p.itens || '[]');
+           itensLista.forEach(item => { 
+        %>
+            <div class="item-linha">
+                <span>(1) <%= item.nome %></span>
+                <span>R$ <%= parseFloat(item.preco).toFixed(2) %></span>
+            </div>
+        <% }) %>
+    </div>
+
+    <div class="tracejado-duplo"></div>
+
+    <div class="secao">
+        <span class="secao-titulo">Pagamento</span>
+        <strong>Forma:</strong> <%= p.pagamento %><br>
+        <span style="font-size: 0.8rem; color: #27ae60;">* Pagamento via Sistema *</span>
+    </div>
+
+    <div class="comanda-footer">
+        <div class="total-final">
+            <span>TOTAL:</span>
+            <span>R$ <%= parseFloat(p.total).toFixed(2) %></span>
+        </div>
+    </div>
+
+    <div class="acoes-comanda">
+        <% if (p.status === 'Pendente') { %>
+            <button class="btn-acao btn-preparar" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">
+                👨‍🍳 Iniciar Preparo
+            </button>
+        <% } else if (p.status === 'Preparando') { %>
+            <button class="btn-acao btn-entregar" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">
+                🛵 Saiu para Entrega
+            </button>
+        <% } else if (p.status === 'Saiu para Entrega') { %>
+            <button class="btn-acao btn-concluir" onclick="atualizarStatus('<%= p.id %>', 'Concluído')">
+                ✅ Finalizar Pedido
+            </button>
+        <% } %>
+    </div>
+</div>

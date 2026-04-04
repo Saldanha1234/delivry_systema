@@ -102,6 +102,17 @@ app.get('/admin', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
+// --- NOVA ROTA: DASHBOARD DE OPERAÇÃO (COMANDAS) ---
+app.get('/operacao', async (req, res) => {
+    try {
+        // Busca pedidos que não foram concluídos ou cancelados (opcional filtrar apenas ativos)
+        const pedidos = await Pedido.find({ status: { $ne: 'Concluído' } }).sort({ createdAt: 1 });
+        res.render('operacao', { pedidos });
+    } catch (err) {
+        res.status(500).send("Erro ao carregar painel de operação.");
+    }
+});
+
 // --- CONFIGURAÇÃO DO PIX (BACKEND) ---
 
 app.post('/update-config-pix', async (req, res) => {
@@ -179,6 +190,10 @@ app.post('/enviar-pedido', async (req, res) => {
         });
 
         await novoPedido.save(); 
+        
+        // Notifica a Dashboard de Operação em tempo real
+        io.emit('novoPedido', novoPedido);
+        
         res.json({ success: true, id: novoPedido.id });
     } catch (error) {
         res.status(500).json({ success: false });
@@ -189,6 +204,10 @@ app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus });
+        
+        // Notifica todos que o status mudou (atualiza as colunas no KDS)
+        io.emit('statusAtualizado', { id, novoStatus });
+        
         res.json({ success: true });
     } catch (err) { res.status(404).json({ success: false }); }
 });
@@ -232,4 +251,5 @@ server.listen(PORT, () => {
     console.log(`\n🚀 SISTEMA ONLINE NA PORTA ${PORT}`);
     console.log(`🏠 Loja: http://localhost:${PORT}`);
     console.log(`⚙️ Admin: http://localhost:${PORT}/admin`);
+    console.log(`📋 Operação/Comandas: http://localhost:${PORT}/operacao`);
 });
