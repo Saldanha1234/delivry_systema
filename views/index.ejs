@@ -61,7 +61,6 @@
         .promo { background: linear-gradient(135deg, #ff4757, #ff6b81); }
         .top-seller { background: linear-gradient(135deg, #2f3542, #57606f); }
 
-        /* Esconder produtos que não pertencem à categoria */
         .card.hidden { display: none; }
 
         .social-footer { margin-top: 50px; padding: 40px 20px; background: #fdfdfd; border-top: 1px solid #eee; text-align: center; }
@@ -89,25 +88,6 @@
             opacity: 0.6;
         }
 
-        /* --- ESTILOS DO CHAT FLUTUANTE --- */
-        #chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 1000; font-family: sans-serif; }
-        #chat-button { background: var(--primary); color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none; }
-        #chat-box-container { display: none; position: absolute; bottom: 80px; right: 0; width: 300px; height: 400px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); flex-direction: column; overflow: hidden; border: 1px solid #ddd; }
-        #chat-header { background: var(--dark); color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; }
-        #chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f9f9f9; }
-        
-        .msg-wrapper { display: flex; flex-direction: column; margin-bottom: 5px; }
-        .msg-info { font-size: 0.7rem; font-weight: bold; margin-bottom: 2px; color: #666; }
-        .c-msg { padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; max-width: 85%; position: relative; }
-        .msg-time { font-size: 0.6rem; opacity: 0.7; display: block; text-align: right; margin-top: 3px; }
-
-        .c-msg.admin { background: #eee; align-self: flex-start; color: #333; border-bottom-left-radius: 2px; }
-        .c-msg.user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-
-        #chat-input-area { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 5px; background: white; }
-        #chat-input-area input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px; outline: none; }
-        #chat-input-area button { background: var(--primary); border: none; color: white; padding: 0 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-
         /* AJUSTE DE ENQUADRAMENTO MOBILE */
         @media (max-width: 600px) {
             .event-card { min-width: 240px; padding: 15px; }
@@ -117,7 +97,6 @@
             nav { padding: 10px 15px !important; }
             .logo { font-size: 1.2rem !important; }
             .cart-btn { padding: 8px 15px !important; font-size: 0.8rem !important; }
-            #chat-box-container { width: 280px; right: -10px; }
         }
     </style>
 </head>
@@ -181,23 +160,6 @@
     <% }) %>
 </div>
 
-<div id="chat-widget">
-    <button id="chat-button" onclick="toggleChatWindow()"><i class="fa-solid fa-comment-dots"></i></button>
-    <div id="chat-box-container">
-        <div id="chat-header">Suporte Online <span style="cursor:pointer" onclick="toggleChatWindow()">×</span></div>
-        <div id="chat-messages">
-            <div class="msg-wrapper" style="align-items: flex-start;">
-                <span class="msg-info">Açaí Roxinho</span>
-                <div class="c-msg admin">Olá! Como podemos ajudar com seu pedido?</div>
-            </div>
-        </div>
-        <div id="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Digite sua mensagem...">
-            <button onclick="enviarMensagemChat()">Enviar</button>
-        </div>
-    </div>
-</div>
-
 <footer class="social-footer">
     <div class="status-container">
         <% if (estaAberto) { %>
@@ -250,65 +212,7 @@
     const socket = io();
     let carrinho = [];
 
-    // Lógica do Chat
-    function toggleChatWindow() {
-        const chat = document.getElementById('chat-box-container');
-        chat.style.display = chat.style.display === 'flex' ? 'none' : 'flex';
-        
-        const pedidoId = localStorage.getItem('ultimoPedidoId');
-        if (pedidoId) socket.emit('join', pedidoId);
-    }
-
-    function renderMsg(msg) {
-        const box = document.getElementById('chat-messages');
-        const wrapper = document.createElement('div');
-        wrapper.className = 'msg-wrapper';
-        
-        const ehAdmin = msg.usuario === 'Admin';
-        const nomeExibicao = ehAdmin ? 'Açaí Roxinho' : msg.usuario;
-        const horaExibicao = msg.hora || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-        wrapper.style.alignItems = ehAdmin ? 'flex-start' : 'flex-end';
-        
-        wrapper.innerHTML = `
-            <span class="msg-info">${nomeExibicao}</span>
-            <div class="c-msg ${ehAdmin ? 'admin' : 'user'}">
-                ${msg.texto}
-                <span class="msg-time">${horaExibicao}</span>
-            </div>
-        `;
-
-        box.appendChild(wrapper);
-        box.scrollTop = box.scrollHeight;
-    }
-
-    socket.on('novaMensagem', (msg) => {
-        renderMsg(msg);
-    });
-
-    socket.on('historico', (h) => {
-        document.getElementById('chat-messages').innerHTML = '';
-        h.forEach(m => renderMsg(m));
-    });
-
-    function enviarMensagemChat() {
-        const input = document.getElementById('chat-input');
-        const pedidoId = localStorage.getItem('ultimoPedidoId');
-        const nomeCliente = document.getElementById('cliente-nome').value || "Cliente";
-        
-        if(!pedidoId) return alert("Faça um pedido primeiro para falar com o suporte!");
-        if(!input.value.trim()) return;
-
-        socket.emit('enviarMensagem', {
-            usuario: nomeCliente,
-            texto: input.value,
-            pedidoId: pedidoId,
-            hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        });
-        input.value = '';
-    }
-
-    // Lógica original de categorias e carrinho
+    // Lógica de categorias
     function filtrarCategoria(categoria) {
         document.querySelectorAll('.cat-btn').forEach(btn => {
             btn.classList.remove('active');
@@ -389,11 +293,6 @@
             alert("Erro ao enviar pedido. Verifique se o restaurante ainda está aberto.");
         }
     }
-
-    // Atalho Enter para enviar chat
-    document.getElementById('chat-input').addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') enviarMensagemChat();
-    });
 </script>
 </body>
 </html>
