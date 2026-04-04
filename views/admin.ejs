@@ -221,21 +221,21 @@
             
             document.getElementById('chat-box').innerHTML = `<p style="color:var(--primary); text-align:center;">Carregando chat de ${cliente}...</p>`;
             
-            // Entra na sala do pedido e limpa o campo lida no servidor
+            // Entra na sala do pedido
             socket.emit('join', id);
-            socket.emit('lerMensagens', id);
         }
 
+        // Escuta o histórico vindo do servidor
         socket.on('historico', (h) => {
             document.getElementById('chat-box').innerHTML = '';
             h.forEach(renderizarMensagem);
         });
 
+        // Escuta novas mensagens (enviadas por você ou pelo cliente)
         socket.on('novaMensagem', (msg) => {
             if (msg.pedidoId === pedidoAtivoId) {
                 renderizarMensagem(msg);
             } else {
-                // Alerta visual de nova mensagem em outro chat
                 const item = document.getElementById(`chat-item-${msg.pedidoId}`);
                 if(item) item.classList.add('has-new');
             }
@@ -245,14 +245,16 @@
             const div = document.createElement('div');
             div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
             div.innerHTML = `<span style="font-size:10px; opacity:0.7">${msg.usuario} - ${msg.hora}</span><p style="margin:2px 0">${msg.texto}</p>`;
-            document.getElementById('chat-box').appendChild(div);
-            document.getElementById('chat-box').scrollTop = 9999;
+            const box = document.getElementById('chat-box');
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
         }
 
         function enviarParaCliente() {
             const input = document.getElementById('admin-msg');
             if(!input.value || !pedidoAtivoId) return alert("Selecione um chat primeiro!");
             
+            // Envia para o servidor processar e distribuir
             socket.emit('enviarMensagem', { 
                 usuario: 'Admin', 
                 texto: input.value, 

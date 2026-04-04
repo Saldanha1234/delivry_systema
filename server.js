@@ -9,6 +9,7 @@ const server = http.createServer(app);
 const io = new Server(server); 
 
 // --- CONEXÃO COM O BANCO DE DATOS ---
+// Certifique-se de ter a variável MONGODB_URI no seu .env ou ambiente
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("✅ Conectado ao Banco de Dados MongoDB!"))
     .catch(err => console.error("❌ Erro ao conectar ao Banco:", err));
@@ -47,7 +48,7 @@ const MensagemSchema = new mongoose.Schema({
 });
 const Mensagem = mongoose.model('Mensagem', MensagemSchema);
 
-// Configurações do Express
+// --- CONFIGURAÇÕES DO EXPRESS ---
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, 'public')));
@@ -58,6 +59,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // --- LÓGICA DE HORÁRIO DE FUNCIONAMENTO ---
 const checarAberta = () => {
     const agora = new Date();
+    // Ajuste para o fuso horário de Brasília (UTC-3)
     const horaBrasilia = agora.getUTCHours() - 3;
     const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
     return horaTratada >= 8 && horaTratada < 20;
@@ -114,12 +116,14 @@ app.delete('/delete-produto/:id', async (req, res) => {
 // --- STATUS E PEDIDOS ---
 
 app.get('/status/:id', async (req, res) => {
-    const pedido = await Pedido.findOne({ id: req.params.id });
-    if (pedido) {
-        res.render('status', { pedido });
-    } else {
-        res.status(404).send("Pedido não encontrado");
-    }
+    try {
+        const pedido = await Pedido.findOne({ id: req.params.id });
+        if (pedido) {
+            res.render('status', { pedido });
+        } else {
+            res.status(404).send("Pedido não encontrado");
+        }
+    } catch (err) { res.status(500).send("Erro ao buscar status."); }
 });
 
 app.get('/api/pedido/:id', async (req, res) => {
@@ -156,7 +160,6 @@ app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus });
-        // Se o pedido for concluído, poderíamos limpar as mensagens, mas manteremos para histórico por enquanto
         res.json({ success: true });
     } catch (err) { res.status(404).json({ success: false }); }
 });
@@ -192,13 +195,18 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Marcar mensagens como lidas
+    // Marcar mensagens como lidas quando o Admin abre a conversa
     socket.on('lerMensagens', async (pedidoId) => {
-        await Mensagem.updateMany({ pedidoId, usuario: { $ne: 'Admin' } }, { lida: true });
+        try {
+            await Mensagem.updateMany({ pedidoId, usuario: { $ne: 'Admin' } }, { lida: true });
+        } catch (err) { console.error("Erro ao marcar como lidas:", err); }
     });
 });
 
+// --- INICIALIZAÇÃO DO SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`\n🚀 SISTEMA ONLINE NA PORTA ${PORT}`);
+    console.log(`🏠 Loja: http://localhost:${PORT}`);
+    console.log(`⚙️ Admin: http://localhost:${PORT}/admin`);
 });
