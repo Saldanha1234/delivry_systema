@@ -12,7 +12,8 @@ const io = new Server(server);
 // ATENÇÃO: Substitua 'SUA_URL_AQUI' pelo link que você pegou no MongoDB Atlas
 const mongoURI = "SUA_URL_AQUI"; 
 
-mongoose.connect(mongoURI)
+// O segredo está no process.env. NOME_DA_VARIAVEL_NO_RAILWAY
+mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("✅ Conectado ao Banco de Dados MongoDB!"))
     .catch(err => console.error("❌ Erro ao conectar ao Banco:", err));
 
