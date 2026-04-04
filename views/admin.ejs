@@ -13,7 +13,7 @@
         .admin-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
 
         /* Sistema de Abas */
-        .tab-container { display: flex; background: #fff; border-bottom: 2px solid #ddd; padding: 0 20px; gap: 10px; }
+        .tab-container { display: flex; background: #fff; border-bottom: 2px solid #ddd; padding: 0 20px; gap: 10px; overflow-x: auto; white-space: nowrap; }
         .tab-btn { 
             padding: 15px 20px; border: none; background: none; cursor: pointer; 
             font-weight: bold; color: #666; transition: 0.3s; border-bottom: 3px solid transparent;
@@ -50,6 +50,18 @@
         /* Grid de Pedidos */
         .admin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* AJUSTES DE ENQUADRAMENTO MOBILE */
+        @media (max-width: 900px) {
+            .admin-layout { flex-direction: column; overflow-y: auto; height: auto; }
+            .admin-chat-sidebar { width: 100%; height: 400px; border-left: none; border-top: 2px solid #333; }
+            .admin-grid { grid-template-columns: 1fr; }
+            .tab-btn { padding: 12px 10px; font-size: 0.8rem; flex: 1; text-align: center; }
+            .manager-card form { grid-template-columns: 1fr !important; }
+            .admin-table { display: block; overflow-x: auto; }
+            .admin-nav { padding: 10px 15px !important; }
+            .logo { font-size: 1.1rem !important; }
+        }
     </style>
 </head>
 <body>
@@ -62,9 +74,9 @@
             </nav>
 
             <div class="tab-container">
-                <button class="tab-btn active" onclick="openTab(event, 'aba-pedidos')">📋 Pedidos em Tempo Real</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">🍔 Gerenciar Cardápio</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Relatório Financeiro</button>
+                <button class="tab-btn active" onclick="openTab(event, 'aba-pedidos')">📋 Pedidos</button>
+                <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">🍔 Cardápio</button>
+                <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Financeiro</button>
             </div>
 
             <div id="aba-pedidos" class="tab-content active">
@@ -129,6 +141,7 @@
                         </div>
                     </form>
 
+                    <div style="overflow-x: auto;">
                     <table class="admin-table">
                         <thead>
                             <tr>
@@ -154,6 +167,7 @@
                             <% }) %>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
 
@@ -235,7 +249,7 @@
         function prepararEdicao(p) {
             window.scrollTo({top: 0, behavior: 'smooth'});
             document.getElementById('form-title').innerText = "📝 Editando: " + p.nome;
-            document.getElementById('p-id').value = p._id; // Uso do _id do Mongo
+            document.getElementById('p-id').value = p._id;
             document.getElementById('p-nome').value = p.nome;
             document.getElementById('p-preco').value = p.preco;
             document.getElementById('p-cat').value = p.categoria;
@@ -264,7 +278,6 @@
             location.reload();
         }
 
-        // Chat
         socket.on('novaMensagem', renderizarMensagem);
         socket.on('historico', (h) => h.forEach(renderizarMensagem));
         function renderizarMensagem(msg) {
