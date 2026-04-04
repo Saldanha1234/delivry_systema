@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Status do Pedido #<%= pedido.id %></title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .step { flex: 1; transition: 0.3s; opacity: 0.3; font-weight: 400; text-align: center; }
+        .step.active { opacity: 1; font-weight: 800; transform: scale(1.1); }
+        .icon { display: block; font-size: 1.5rem; margin-bottom: 5px; }
+
+        /* Estilos do Chat de Suporte */
+        #chat-wrapper {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1000;
+            border: 1px solid #ddd;
+        }
+        .chat-header-st { background: var(--primary); color: white; padding: 12px; font-weight: bold; font-size: 0.9rem; }
+        #chat-content { height: 250px; overflow-y: auto; padding: 10px; background: #fdfdfd; display: flex; flex-direction: column; gap: 8px; }
+        .m-st { padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; max-width: 85%; line-height: 1.4; }
+        .m-st.cli { background: #e3f2fd; align-self: flex-end; color: #1565c0; border-bottom-right-radius: 2px; }
+        .m-st.adm { background: #f1f1f1; align-self: flex-start; color: #333; border-bottom-left-radius: 2px; border-left: 3px solid var(--primary); }
+        .chat-input-st { display: flex; border-top: 1px solid #eee; padding: 10px; }
+        .chat-input-st input { flex: 1; border: 1px solid #ddd; padding: 8px; border-radius: 5px; outline: none; font-size: 0.85rem; }
+        .chat-input-st button { background: var(--primary); color: white; border: none; margin-left: 5px; padding: 0 12px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body style="display:flex; justify-content:center; align-items:center; height:100vh; background:var(--bg); padding: 20px;">
+
+    <div class="modal-content" style="display:block; text-align:center; max-width: 500px; width: 100%;">
+        <h2 style="color:var(--primary);">Pedido #<%= pedido.id %></h2>
+        <p style="margin-bottom: 20px;">Olá <b><%= pedido.cliente %></b>, seu pedido está:</p>
+        
+        <div style="background: #f0f0f0; padding: 20px; border-radius: 12px; font-size: 1.5rem; font-weight: 800; color: var(--dark); text-transform: uppercase; margin-bottom: 30px;">
+            <%= pedido.status %>
+        </div>
+
+        <div class="status-tracker" style="display:flex; justify-content:space-around; margin: 20px 0; gap: 10px;">
+            
+            <div class="step <%= pedido.status === 'Pendente' ? 'active' : '' %>">
+                <span class="icon">🟡</span> Novo
+            </div>
+
+            <div class="step <%= pedido.status === 'Preparando' ? 'active' : '' %>">
+                <span class="icon">🔥</span> Cozinha
+            </div>
+
+            <div class="step <%= pedido.status === 'Saiu para Entrega' ? 'active' : '' %>">
+                <span class="icon">🛵</span> Entrega
+            </div>
+
+            <div class="step <%= pedido.status === 'Concluído' ? 'active' : '' %>">
+                <span class="icon">✅</span> Fim
+            </div>
+
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #EEE; margin: 20px 0;">
+        
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <a href="/" style="text-decoration:none; color:var(--primary); font-weight:700;">← Voltar para a Loja</a>
+            
+            <% if (pedido.status === 'Concluído') { %>
+                <button onclick="finalizarHistorico()" style="background: var(--dark); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700;">
+                    Encerrar e fazer novo pedido
+                </button>
+            <% } %>
+        </div>
+    </div>
+
+    <div id="chat-wrapper">
+        <div class="chat-header-st">💬 Suporte Online</div>
+        <div id="chat-content">
+            </div>
+        <div class="chat-input-st">
+            <input type="text" id="msg-input" placeholder="Dúvida sobre o pedido?">
+            <button onclick="enviarMensagem()">➤</button>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const pedidoId = "<%= pedido.id %>";
+        const clienteNome = "<%= pedido.cliente %>";
+        const statusAtual = "<%= pedido.status %>";
+
+        // --- ATUALIZAÇÃO DE STATUS ---
+        setInterval(async () => {
+            try {
+                const res = await fetch('/api/pedido/' + pedidoId);
+                const data = await res.json();
+                if (data.status && data.status !== statusAtual) {
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error("Erro na atualização automática");
+            }
+        }, 5000);
+
+        function finalizarHistorico() {
+            localStorage.removeItem('ultimoPedidoId');
+            window.location.href = '/';
+        }
+
+        // --- LÓGICA DO CHAT ---
+        socket.on('novaMensagem', (msg) => {
+            // Filtra mensagens: só mostra se for deste pedido ou do Admin
+            if (msg.pedidoId == pedidoId || msg.usuario === 'Admin') {
+                adicionarMensagemNaTela(msg);
+            }
+        });
+
+        socket.on('historico', (historico) => {
+            document.getElementById('chat-content').innerHTML = '';
+            historico.forEach(msg => {
+                if (msg.pedidoId == pedidoId || msg.usuario === 'Admin') {
+                    adicionarMensagemNaTela(msg);
+                }
+            });
+        });
+
+        function adicionarMensagemNaTela(msg) {
+            const box = document.getElementById('chat-content');
+            const div = document.createElement('div');
+            const ehAdmin = msg.usuario === 'Admin';
+            
+            div.className = `m-st ${ehAdmin ? 'adm' : 'cli'}`;
+            div.innerHTML = `<strong>${msg.usuario}:</strong><br>${msg.texto}`;
+            
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function enviarMensagem() {
+            const input = document.getElementById('msg-input');
+            if(!input.value) return;
+
+            socket.emit('enviarMensagem', {
+                usuario: clienteNome,
+                texto: input.value,
+                pedidoId: pedidoId
+            });
+
+            input.value = '';
+        }
+
+        // Permitir enviar com Enter
+        document.getElementById('msg-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') enviarMensagem();
+        });
+    </script>
+</body>
+</html>

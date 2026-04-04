@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Premium Delivery</title>
+    <style>
+        /* --- ESTILOS DE CATEGORIAS E FILTROS --- */
+        .category-nav {
+            display: flex;
+            gap: 10px;
+            padding: 10px 20px;
+            overflow-x: auto;
+            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+            border-bottom: 1px solid #eee;
+        }
+        .category-nav::-webkit-scrollbar { display: none; }
+
+        .cat-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #666;
+            cursor: pointer;
+            white-space: nowrap;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .cat-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .events-area {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        .events-area::-webkit-scrollbar { display: none; }
+
+        .event-card {
+            min-width: 280px;
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .event-card:active { transform: scale(0.95); }
+
+        .promo { background: linear-gradient(135deg, #ff4757, #ff6b81); }
+        .top-seller { background: linear-gradient(135deg, #2f3542, #57606f); }
+
+        /* Esconder produtos que não pertencem à categoria */
+        .card.hidden { display: none; }
+
+        .social-footer { margin-top: 50px; padding: 40px 20px; background: #fdfdfd; border-top: 1px solid #eee; text-align: center; }
+        .social-buttons { display: flex; justify-content: center; gap: 25px; margin-bottom: 20px; }
+        .social-icon { color: #888; font-size: 1.8rem; transition: 0.3s; text-decoration: none; }
+        .social-icon:hover { color: var(--primary); transform: translateY(-3px); }
+        .btn-location { display: inline-flex; align-items: center; gap: 8px; background: #f0f0f0; color: #666; padding: 10px 20px; border-radius: 30px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 1px solid #ddd; }
+
+        /* --- ESTILOS DO STATUS DE FUNCIONAMENTO --- */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .status-aberto { background: #e7f9ee; color: #2ecc71; border: 1px solid #2ecc71; }
+        .status-fechado { background: #feecef; color: #ff4757; border: 1px solid #ff4757; }
+        
+        .btn-disabled {
+            background: #ccc !important;
+            cursor: not-allowed !important;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+<div id="status-alerta" style="display:none; background: var(--warning); color: var(--dark); padding: 12px; text-align: center; font-weight: 800; cursor: pointer;" onclick="irParaStatus()">
+    ⏳ PEDIDO EM ANDAMENTO! CLIQUE PARA ACOMPANHAR.
+</div>
+
+<nav>
+    <div class="logo">Premium<span>Delivery</span></div>
+    <div class="cart-btn" onclick="toggleCart()">
+        <span>🛒 Carrinho</span>
+        <span id="cart-count">0</span>
+    </div>
+</nav>
+
+<section class="events-area">
+    <div class="event-card promo" onclick="filtrarCategoria('Promoção')">
+        <div style="font-size: 0.7rem; font-weight: 800;">CLIQUE PARA VER</div>
+        <h3>Ofertas do Dia 🏷️</h3>
+        <p>Produtos com preços especiais.</p>
+    </div>
+
+    <div class="event-card top-seller" onclick="filtrarCategoria('Destaques')">
+        <div style="font-size: 0.7rem; font-weight: 800;">CLIQUE PARA VER</div>
+        <h3>Mais Pedidos ⭐</h3>
+        <p>Os favoritos da nossa cozinha.</p>
+    </div>
+</section>
+
+<div class="category-nav">
+    <button class="cat-btn active" onclick="filtrarCategoria('todos')">Todos</button>
+    <button class="cat-btn" onclick="filtrarCategoria('Promoção')">Promoções</button>
+    <button class="cat-btn" onclick="filtrarCategoria('Destaques')">Mais Vendidos</button>
+    <button class="cat-btn" onclick="filtrarCategoria('Lanches')">Lanches</button>
+    <button class="cat-btn" onclick="filtrarCategoria('Bebidas')">Bebidas</button>
+</div>
+
+<div class="container" id="produtos-container">
+    <% produtos.forEach(p => { %>
+        <div class="card" data-categoria="<%= p.categoria || 'todos' %>">
+            <img src="<%= p.img %>">
+            <div class="card-content">
+                <h3><%= p.nome %></h3>
+                <p class="desc"><%= p.desc %></p>
+                <span class="price-tag">R$ <%= p.preco.toFixed(2) %></span>
+                
+                <% if (estaAberto) { %>
+                    <button class="btn-add" 
+                            data-nome="<%= p.nome %>" 
+                            data-preco="<%= p.preco %>" 
+                            onclick="adicionar(this)">
+                        Adicionar
+                    </button>
+                <% } else { %>
+                    <button class="btn-add btn-disabled" disabled>Fechado</button>
+                <% } %>
+            </div>
+        </div>
+    <% }) %>
+</div>
+
+<footer class="social-footer">
+    <div class="status-container">
+        <% if (estaAberto) { %>
+            <div class="status-badge status-aberto">● Aberto Agora</div>
+        <% } else { %>
+            <div class="status-badge status-fechado">● Fechado no Momento</div>
+        <% } %>
+        <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">
+            Horário de Funcionamento: <strong>08:00 às 20:00</strong>
+        </p>
+    </div>
+
+    <div class="social-buttons">
+        <a href="https://www.instagram.com/guilherme_giuliani" target="_blank" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
+        <a href="https://wa.link/3s32fj" target="_blank" class="social-icon"><i class="fa-brands fa-whatsapp"></i></a>
+    </div>
+    <a href="#" target="_blank" class="btn-location"><i class="fa-solid fa-location-dot"></i> Ver localização</a>
+    <span style="display:block; margin-top:20px; font-size:0.7rem; color:#bbb;">&copy; 2026 Premium Delivery</span>
+</footer>
+
+<div id="cart-modal" class="modal">
+    <div class="modal-content">
+        <h2>Seu Carrinho</h2>
+        <div id="cart-items" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;"></div>
+        <div class="form-group"><label>NOME</label><input type="text" id="cliente-nome"></div>
+        <div class="form-group"><label>ENDEREÇO</label><input type="text" id="cliente-end"></div>
+        <div class="form-group">
+            <label>PAGAMENTO</label>
+            <select id="cliente-pagto">
+                <option value="Pix">Pix</option>
+                <option value="Cartão">Cartão</option>
+                <option value="Dinheiro">Dinheiro</option>
+            </select>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin: 20px 0;">
+            <span>Total:</span><span id="cart-total" style="font-weight: 800; color: var(--primary);">R$ 0,00</span>
+        </div>
+
+        <% if (estaAberto) { %>
+            <button class="btn-confirm" onclick="finalizar()">Confirmar Pedido</button>
+        <% } else { %>
+            <button class="btn-confirm btn-disabled" disabled>Estamos Fechados</button>
+        <% } %>
+        
+        <button class="btn-close" onclick="toggleCart()">Voltar</button>
+    </div>
+</div>
+
+<script>
+    let carrinho = [];
+
+    function filtrarCategoria(categoria) {
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.innerText.includes(categoria) || (categoria === 'todos' && btn.innerText === 'Todos')) {
+                btn.classList.add('active');
+            }
+        });
+
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+            const catProduto = card.getAttribute('data-categoria');
+            if (categoria === 'todos' || catProduto === categoria) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+    }
+
+    window.onload = function() {
+        const idSalvo = localStorage.getItem('ultimoPedidoId');
+        if (idSalvo) document.getElementById('status-alerta').style.display = 'block';
+    }
+
+    function irParaStatus() {
+        const id = localStorage.getItem('ultimoPedidoId');
+        if (id) window.location.href = '/status/' + id;
+    }
+
+    function adicionar(btn) {
+        const item = { nome: btn.getAttribute('data-nome'), preco: parseFloat(btn.getAttribute('data-preco')) };
+        carrinho.push(item);
+        atualizarUI();
+        btn.innerText = "✓";
+        setTimeout(() => btn.innerText = "Adicionar", 1000);
+    }
+
+    function atualizarUI() {
+        document.getElementById('cart-count').innerText = carrinho.length;
+        const lista = document.getElementById('cart-items');
+        lista.innerHTML = carrinho.map(i => `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${i.nome}</span><b>R$ ${i.preco.toFixed(2)}</b></div>`).join('');
+        const total = carrinho.reduce((acc, i) => acc + i.preco, 0);
+        document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
+    }
+
+    function toggleCart() {
+        const m = document.getElementById('cart-modal');
+        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    async function finalizar() {
+        const nome = document.getElementById('cliente-nome').value;
+        const endereco = document.getElementById('cliente-end').value;
+        const pagto = document.getElementById('cliente-pagto').value;
+        
+        if(!nome || !endereco || carrinho.length === 0) return alert("Preencha todos os campos!");
+
+        const res = await fetch('/enviar-pedido', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                cliente: nome, 
+                endereco: endereco, 
+                pagamento: pagto,
+                itens: JSON.stringify(carrinho), 
+                total: carrinho.reduce((acc, i) => acc + i.preco, 0)
+            })
+        });
+
+        if(res.ok) {
+            const data = await res.json();
+            localStorage.setItem('ultimoPedidoId', data.id);
+            location.href = '/status/' + data.id;
+        } else {
+            alert("Erro ao enviar pedido. Verifique se o restaurante ainda está aberto.");
+        }
+    }
+</script>
+</body>
+</html>
