@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Status do Pedido #<%= pedido.id %></title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
@@ -11,23 +12,23 @@
         .step.active { opacity: 1; font-weight: 800; transform: scale(1.1); }
         .icon { display: block; font-size: 1.5rem; margin-bottom: 5px; }
 
-        /* Estilos do Chat de Suporte Online */
-        #chat-wrapper {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 320px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            z-index: 1000;
-            border: 1px solid #ddd;
+        /* --- AJUSTE DO CHAT PARA FORMATO WIDGET (IGUAL AO INDEX) --- */
+        #chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 1000; font-family: sans-serif; }
+        
+        #chat-button { 
+            background: var(--primary); color: white; width: 60px; height: 60px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; font-size: 24px; 
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none; outline: none;
         }
-        .chat-header-st { background: var(--primary); color: white; padding: 12px; font-weight: bold; font-size: 0.9rem; display: flex; justify-content: space-between; }
-        #chat-content { height: 280px; overflow-y: auto; padding: 15px; background: #fdfdfd; display: flex; flex-direction: column; gap: 12px; }
+
+        #chat-wrapper { 
+            display: none; position: absolute; bottom: 80px; right: 0; width: 300px; height: 400px; 
+            background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); 
+            flex-direction: column; overflow: hidden; border: 1px solid #ddd; 
+        }
+
+        .chat-header-st { background: var(--primary); color: white; padding: 12px; font-weight: bold; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
+        #chat-content { flex: 1; height: auto; overflow-y: auto; padding: 15px; background: #fdfdfd; display: flex; flex-direction: column; gap: 12px; }
         
         .m-st { padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; max-width: 85%; line-height: 1.4; position: relative; }
         .msg-info-st { font-size: 0.7rem; font-weight: bold; margin-bottom: 3px; display: block; color: #666; }
@@ -35,20 +36,17 @@
 
         .m-st.cli { background: var(--primary); align-self: flex-end; color: white; border-bottom-right-radius: 2px; }
         .m-st.cli .msg-info-st { color: rgba(255,255,255,0.9); }
-
         .m-st.adm { background: #f1f1f1; align-self: flex-start; color: #333; border-bottom-left-radius: 2px; border-left: 4px solid var(--primary); }
         
         .chat-input-st { display: flex; border-top: 1px solid #eee; padding: 10px; background: white; }
         .chat-input-st input { flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 8px; outline: none; font-size: 0.85rem; }
         .chat-input-st button { background: var(--primary); color: white; border: none; margin-left: 8px; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        /* Ajustes Mobile */
         @media (max-width: 600px) {
             body { align-items: flex-start !important; padding-top: 20px !important; height: auto !important; min-height: 100vh; }
-            #chat-wrapper { width: 90%; right: 5%; bottom: 10px; position: fixed; }
+            #chat-wrapper { width: 280px; right: -10px; bottom: 80px; }
             .icon { font-size: 1.2rem; }
             .step { font-size: 0.7rem; }
-            .modal-content { margin-bottom: 400px; } /* Espaço para o chat não cobrir o conteúdo */
         }
     </style>
 </head>
@@ -90,16 +88,22 @@
         </div>
     </div>
 
-    <div id="chat-wrapper">
-        <div class="chat-header-st">
-            <span>💬 Suporte Online</span>
-            <small style="font-size: 0.6rem; opacity: 0.8;">Açaí Roxinho</small>
-        </div>
-        <div id="chat-content">
+    <div id="chat-widget">
+        <button id="chat-button" onclick="toggleChat()">
+            <i class="fa-solid fa-comment-dots"></i>
+        </button>
+
+        <div id="chat-wrapper">
+            <div class="chat-header-st">
+                <span>💬 Suporte Online</span>
+                <span style="cursor:pointer" onclick="toggleChat()">×</span>
             </div>
-        <div class="chat-input-st">
-            <input type="text" id="msg-input" placeholder="Digite sua mensagem...">
-            <button onclick="enviarMensagem()">➤</button>
+            <div id="chat-content">
+                </div>
+            <div class="chat-input-st">
+                <input type="text" id="msg-input" placeholder="Digite sua mensagem...">
+                <button onclick="enviarMensagem()">➤</button>
+            </div>
         </div>
     </div>
 
@@ -111,6 +115,12 @@
 
         // Entrar na sala do pedido ao carregar
         socket.emit('join', pedidoId);
+
+        // FUNÇÃO PARA ABRIR/FECHAR CHAT
+        function toggleChat() {
+            const wrapper = document.getElementById('chat-wrapper');
+            wrapper.style.display = (wrapper.style.display === 'flex') ? 'none' : 'flex';
+        }
 
         // --- ATUALIZAÇÃO DE STATUS ---
         setInterval(async () => {
