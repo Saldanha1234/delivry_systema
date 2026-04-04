@@ -14,6 +14,7 @@
             --pendente: #e74c3c;
             --preparando: #3498db;
             --entrega: #2ecc71;
+            --card-inner: #252525;
         }
 
         body {
@@ -22,6 +23,7 @@
             color: var(--text-main);
             margin: 0;
             padding: 20px;
+            overflow-x: hidden;
         }
 
         .header-painel {
@@ -33,68 +35,87 @@
             border-bottom: 2px solid #333;
         }
 
-        .header-painel h1 { margin: 0; font-size: 1.5rem; }
+        .header-painel h1 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+
+        .status-badge {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--entrega);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            border: 1px solid var(--entrega);
+        }
 
         .btn-voltar {
             background: #333;
             color: white;
             text-decoration: none;
-            padding: 10px 15px;
-            border-radius: 5px;
+            padding: 10px 20px;
+            border-radius: 8px;
             font-weight: bold;
             transition: 0.3s;
+            border: 1px solid #444;
         }
 
-        .btn-voltar:hover { background: #444; }
+        .btn-voltar:hover { background: var(--pendente); border-color: var(--pendente); }
 
-        /* Estrutura de Colunas */
+        /* Estrutura Kanban */
         .kanban {
             display: flex;
             gap: 20px;
             overflow-x: auto;
             align-items: flex-start;
-            padding-bottom: 20px;
+            padding-bottom: 30px;
+            height: calc(100vh - 120px);
         }
 
         .col {
             background-color: var(--col-bg);
-            border-radius: 8px;
-            min-width: 320px;
-            max-width: 350px;
-            min-height: 80vh;
+            border-radius: 12px;
+            min-width: 350px;
+            max-width: 380px;
             display: flex;
             flex-direction: column;
+            max-height: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
         .col-header {
-            padding: 15px;
+            padding: 20px;
             text-align: center;
-            font-weight: bold;
+            font-weight: 800;
             text-transform: uppercase;
-            border-radius: 8px 8px 0 0;
+            border-radius: 12px 12px 0 0;
             letter-spacing: 1px;
+            font-size: 1.1rem;
         }
 
-        .col-pendente { border-top: 5px solid var(--pendente); background: rgba(231, 76, 60, 0.1); }
-        .col-preparando { border-top: 5px solid var(--preparando); background: rgba(52, 152, 219, 0.1); }
-        .col-entrega { border-top: 5px solid var(--entrega); background: rgba(46, 204, 113, 0.1); }
+        .col-pendente { border-top: 6px solid var(--pendente); background: rgba(231, 76, 60, 0.05); color: var(--pendente); }
+        .col-preparando { border-top: 6px solid var(--preparando); background: rgba(52, 152, 219, 0.05); color: var(--preparando); }
+        .col-entrega { border-top: 6px solid var(--entrega); background: rgba(46, 204, 113, 0.05); color: var(--entrega); }
 
         .lista-pedidos {
-            padding: 10px;
+            padding: 15px;
+            overflow-y: auto;
             flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        /* Ajustes para Mobile */
+        /* Estilização da Barra de Rolagem */
+        .lista-pedidos::-webkit-scrollbar { width: 6px; }
+        .lista-pedidos::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+
         @media (max-width: 768px) {
             .kanban {
                 flex-direction: column;
-                align-items: center;
+                height: auto;
             }
             .col {
-                width: 100%;
+                min-width: 100%;
                 max-width: 100%;
-                min-height: auto;
-                margin-bottom: 20px;
+                min-height: 400px;
             }
         }
     </style>
@@ -103,15 +124,18 @@
 
     <header class="header-painel">
         <div>
-            <h1>📋 Painel de Produção</h1>
-            <span id="socket-status" style="color: var(--entrega); font-size: 0.8rem;">● Conectado em Tempo Real</span>
+            <h1>📦 Monitor de Operações</h1>
+            <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
+                <span id="socket-status" class="status-badge">● Sistema Online</span>
+                <small style="color: #666;">Os pedidos concluídos são movidos para o Financeiro no Admin.</small>
+            </div>
         </div>
-        <a href="/admin" class="btn-voltar">⬅ Voltar ao Admin</a>
+        <a href="/admin" class="btn-voltar">🏠 Painel Administrativo</a>
     </header>
 
     <div class="kanban">
         <div class="col">
-            <div class="col-header col-pendente">Novos Pedidos</div>
+            <div class="col-header col-pendente">🟡 Novos Pedidos (<%= pedidos.filter(p => p.status === 'Pendente').length %>)</div>
             <div class="lista-pedidos" id="pendentes">
                 <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
                     <%- include('partials/card-comanda', {p: p}) %>
@@ -120,7 +144,7 @@
         </div>
 
         <div class="col">
-            <div class="col-header col-preparando">Em Preparação</div>
+            <div class="col-header col-preparando">🔥 Em Preparação (<%= pedidos.filter(p => p.status === 'Preparando').length %>)</div>
             <div class="lista-pedidos" id="preparando">
                 <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
                     <%- include('partials/card-comanda', {p: p}) %>
@@ -129,7 +153,7 @@
         </div>
 
         <div class="col">
-            <div class="col-header col-entrega">Entrega / Retirada</div>
+            <div class="col-header col-entrega">🛵 Entrega / Retirada (<%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %>)</div>
             <div class="lista-pedidos" id="entrega">
                 <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
                     <%- include('partials/card-comanda', {p: p}) %>
@@ -144,9 +168,12 @@
         const socket = io();
         const audio = document.getElementById('audioNotificacao');
 
-        // Função para mudar status via AJAX
+        // Lógica de Atualização de Status (Botões dos cards)
         async function atualizarStatus(id, novoStatus) {
             try {
+                // Feedback visual imediato para evitar cliques duplos
+                console.log(`Atualizando pedido ${id} para ${novoStatus}...`);
+                
                 const response = await fetch('/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -154,29 +181,52 @@
                 });
                 
                 if (response.ok) {
-                    // Recarregamos a página para mover o card de coluna
+                    // O servidor emitirá um 'statusAtualizado' via socket, mas forçamos o reload aqui por segurança
                     window.location.reload();
+                } else {
+                    alert("Erro ao atualizar o status do pedido.");
                 }
             } catch (err) {
-                console.error("Erro ao atualizar:", err);
+                console.error("Erro na requisição:", err);
             }
         }
 
-        // Ouvir novos pedidos via Socket
+        // Evento: Novo pedido entra no sistema
         socket.on('novoPedido', (pedido) => {
-            console.log("Novo pedido recebido:", pedido.id);
-            audio.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
+            console.log("Notificação: Novo pedido recebido!", pedido.id);
             
-            // Recarrega a página após 1 segundo para mostrar o novo card
+            // Tenta tocar o som (navegadores exigem interação prévia para liberar áudio)
+            audio.play().catch(e => {
+                console.warn("O som de notificação foi bloqueado pelo navegador. Clique em qualquer lugar da tela para ativar.");
+            });
+            
+            // Recarrega para exibir o card na primeira coluna
             setTimeout(() => {
                 window.location.reload();
-            }, 1000);
+            }, 800);
         });
 
-        // Ouvir atualizações de status (caso tenha outra aba aberta)
-        socket.on('statusAtualizado', () => {
+        // Evento: Alguém mudou o status (no Admin ou em outra aba de operação)
+        socket.on('statusAtualizado', (data) => {
+            console.log("Status atualizado via socket.");
             window.location.reload();
         });
+
+        // Verificação de conexão do Socket para o badge visual
+        socket.on('connect', () => {
+            const badge = document.getElementById('socket-status');
+            badge.style.color = "var(--entrega)";
+            badge.style.borderColor = "var(--entrega)";
+            badge.innerText = "● Sistema Online";
+        });
+
+        socket.on('disconnect', () => {
+            const badge = document.getElementById('socket-status');
+            badge.style.color = "var(--pendente)";
+            badge.style.borderColor = "var(--pendente)";
+            badge.innerText = "○ Tentando Reconectar...";
+        });
+
     </script>
 </body>
 </html>
