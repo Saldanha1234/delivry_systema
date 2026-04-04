@@ -3,18 +3,29 @@ const path = require('path');
 const http = require('http'); 
 const { Server } = require('socket.io'); 
 const mongoose = require('mongoose');
+require('dotenv').config(); // Carrega as variáveis do arquivo .env
 
 const app = express();
 const server = http.createServer(app); 
 const io = new Server(server); 
 
 // --- CONEXÃO COM O BANCO DE DATOS ---
-// Certifique-se de ter a variável MONGODB_URI no seu .env ou ambiente
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("✅ Conectado ao Banco de Dados MongoDB!"))
     .catch(err => console.error("❌ Erro ao conectar ao Banco:", err));
 
 // --- SCHEMAS (ESTRUTURA DO BANCO) ---
+
+// Novo Schema para Configurações (PIX e Loja)
+const ConfigSchema = new mongoose.Schema({
+    chave: { type: String, default: 'global' },
+    pixProvedor: { type: String, default: 'mercadopago' },
+    pixToken: String,
+    pixClientId: String,
+    pixClientSecret: String
+});
+const Config = mongoose.model('Config', ConfigSchema);
+
 const ProdutoSchema = new mongoose.Schema({
     nome: String,
     preco: Number,
@@ -37,7 +48,6 @@ const PedidoSchema = new mongoose.Schema({
 });
 const Pedido = mongoose.model('Pedido', PedidoSchema);
 
-// Novo Schema para o Chat persistente
 const MensagemSchema = new mongoose.Schema({
     pedidoId: String,
     usuario: String,
@@ -59,7 +69,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // --- LÓGICA DE HORÁRIO DE FUNCIONAMENTO ---
 const checarAberta = () => {
     const agora = new Date();
-    // Ajuste para o fuso horário de Brasília (UTC-3)
     const horaBrasilia = agora.getUTCHours() - 3;
     const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
     return horaTratada >= 8 && horaTratada < 20;
@@ -83,10 +92,30 @@ app.get('/admin', async (req, res) => {
     try {
         const pedidos = await Pedido.find().sort({ createdAt: -1 });
         const produtos = await Produto.find();
-        // Buscamos mensagens não lidas para o alerta no painel
+        
+        // Busca as configurações de PIX para mostrar no painel
+        let config = await Config.findOne({ chave: 'global' });
+        if (!config) config = await Config.create({ chave: 'global' });
+
         const mensagensNaoLidas = await Mensagem.find({ lida: false, usuario: { $ne: 'Admin' } });
-        res.render('admin', { pedidos, produtos, mensagensNaoLidas });
+        res.render('admin', { pedidos, produtos, mensagensNaoLidas, config });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
+});
+
+// --- CONFIGURAÇÃO DO PIX (BACKEND) ---
+
+app.post('/update-config-pix', async (req, res) => {
+    try {
+        const { pixProvedor, pixToken, pixClientId, pixClientSecret } = req.body;
+        await Config.findOneAndUpdate(
+            { chave: 'global' },
+            { pixProvedor, pixToken, pixClientId, pixClientSecret },
+            { upsert: true }
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false });
+    }
 });
 
 // --- GERENCIAMENTO DE PRODUTOS ---
@@ -167,10 +196,8 @@ app.post('/update-status', async (req, res) => {
 // --- CHAT (SOCKET.IO COM SALAS PRIVADAS) ---
 
 io.on('connection', (socket) => {
-    // Cliente ou Admin entra em uma sala específica do Pedido
     socket.on('join', async (pedidoId) => {
         socket.join(pedidoId);
-        // Carrega histórico apenas daquela conversa
         const historico = await Mensagem.find({ pedidoId }).sort({ createdAt: 1 });
         socket.emit('historico', historico);
     });
@@ -185,17 +212,13 @@ io.on('connection', (socket) => {
         });
         
         await msg.save();
-        
-        // Envia a mensagem para todos na sala do pedido (Cliente + Admin se estiver com chat aberto)
         io.to(data.pedidoId).emit('novaMensagem', msg);
         
-        // Alerta global para o Admin (para a lista de chats na aba suporte)
         if(data.usuario !== 'Admin') {
             io.emit('alertaAdmin', msg);
         }
     });
 
-    // Marcar mensagens como lidas quando o Admin abre a conversa
     socket.on('lerMensagens', async (pedidoId) => {
         try {
             await Mensagem.updateMany({ pedidoId, usuario: { $ne: 'Admin' } }, { lida: true });
