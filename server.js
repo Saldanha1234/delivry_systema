@@ -3,7 +3,7 @@ const path = require('path');
 const http = require('http'); 
 const { Server } = require('socket.io'); 
 const mongoose = require('mongoose');
-require('dotenv').config(); // Carrega as variáveis do arquivo .env
+require('dotenv').config(); 
 
 const app = express();
 const server = http.createServer(app); 
@@ -14,9 +14,8 @@ mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("✅ Conectado ao Banco de Dados MongoDB!"))
     .catch(err => console.error("❌ Erro ao conectar ao Banco:", err));
 
-// --- SCHEMAS (ESTRUTURA DO BANCO) ---
+// --- SCHEMAS ---
 
-// Novo Schema para Configurações (PIX e Loja)
 const ConfigSchema = new mongoose.Schema({
     chave: { type: String, default: 'global' },
     pixProvedor: { type: String, default: 'mercadopago' },
@@ -66,7 +65,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// --- LÓGICA DE HORÁRIO DE FUNCIONAMENTO ---
+// --- LÓGICA DE HORÁRIO ---
 const checarAberta = () => {
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
@@ -88,32 +87,37 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
+// ADMIN ATUALIZADO: APENAS GESTÃO (SEM LISTA DE PEDIDOS OPERACIONAIS)
 app.get('/admin', async (req, res) => {
     try {
-        const pedidos = await Pedido.find().sort({ createdAt: -1 });
         const produtos = await Produto.find();
+        const todosOsPedidos = await Pedido.find(); // Necessário para o cálculo do Financeiro
         
-        // Busca as configurações de PIX para mostrar no painel
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
 
         const mensagensNaoLidas = await Mensagem.find({ lida: false, usuario: { $ne: 'Admin' } });
-        res.render('admin', { pedidos, produtos, mensagensNaoLidas, config });
+        
+        // Enviamos 'pedidos' apenas para o cálculo financeiro que já existe no seu EJS
+        res.render('admin', { pedidos: todosOsPedidos, produtos, mensagensNaoLidas, config });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
-// --- NOVA ROTA: DASHBOARD DE OPERAÇÃO (COMANDAS) ---
+// OPERAÇÃO ATUALIZADA: FOCO TOTAL EM COMANDAS
 app.get('/operacao', async (req, res) => {
     try {
-        // Busca pedidos que não foram concluídos ou cancelados (opcional filtrar apenas ativos)
-        const pedidos = await Pedido.find({ status: { $ne: 'Concluído' } }).sort({ createdAt: 1 });
-        res.render('operacao', { pedidos });
+        const pedidosAtivos = await Pedido.find({ status: { $ne: 'Concluído' } }).sort({ createdAt: 1 });
+        let config = await Config.findOne({ chave: 'global' });
+        const produtos = await Produto.find();
+
+        res.render('operacao', { pedidos: pedidosAtivos, config, produtos });
     } catch (err) {
-        res.status(500).send("Erro ao carregar painel de operação.");
+        console.error(err);
+        res.status(500).send("Erro interno ao carregar painel de operação.");
     }
 });
 
-// --- CONFIGURAÇÃO DO PIX (BACKEND) ---
+// --- CONFIGURAÇÃO DO PIX ---
 
 app.post('/update-config-pix', async (req, res) => {
     try {
@@ -124,9 +128,7 @@ app.post('/update-config-pix', async (req, res) => {
             { upsert: true }
         );
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ success: false });
-    }
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 // --- GERENCIAMENTO DE PRODUTOS ---
@@ -158,11 +160,8 @@ app.delete('/delete-produto/:id', async (req, res) => {
 app.get('/status/:id', async (req, res) => {
     try {
         const pedido = await Pedido.findOne({ id: req.params.id });
-        if (pedido) {
-            res.render('status', { pedido });
-        } else {
-            res.status(404).send("Pedido não encontrado");
-        }
+        if (pedido) res.render('status', { pedido });
+        else res.status(404).send("Pedido não encontrado");
     } catch (err) { res.status(500).send("Erro ao buscar status."); }
 });
 
@@ -190,29 +189,21 @@ app.post('/enviar-pedido', async (req, res) => {
         });
 
         await novoPedido.save(); 
-        
-        // Notifica a Dashboard de Operação em tempo real
         io.emit('novoPedido', novoPedido);
-        
         res.json({ success: true, id: novoPedido.id });
-    } catch (error) {
-        res.status(500).json({ success: false });
-    }
+    } catch (error) { res.status(500).json({ success: false }); }
 });
 
 app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus });
-        
-        // Notifica todos que o status mudou (atualiza as colunas no KDS)
         io.emit('statusAtualizado', { id, novoStatus });
-        
         res.json({ success: true });
     } catch (err) { res.status(404).json({ success: false }); }
 });
 
-// --- CHAT (SOCKET.IO COM SALAS PRIVADAS) ---
+// --- CHAT ---
 
 io.on('connection', (socket) => {
     socket.on('join', async (pedidoId) => {
@@ -229,13 +220,9 @@ io.on('connection', (socket) => {
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
             lida: data.usuario === 'Admin' ? true : false
         });
-        
         await msg.save();
         io.to(data.pedidoId).emit('novaMensagem', msg);
-        
-        if(data.usuario !== 'Admin') {
-            io.emit('alertaAdmin', msg);
-        }
+        if(data.usuario !== 'Admin') io.emit('alertaAdmin', msg);
     });
 
     socket.on('lerMensagens', async (pedidoId) => {
@@ -245,11 +232,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// --- INICIALIZAÇÃO DO SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`\n🚀 SISTEMA ONLINE NA PORTA ${PORT}`);
-    console.log(`🏠 Loja: http://localhost:${PORT}`);
-    console.log(`⚙️ Admin: http://localhost:${PORT}/admin`);
-    console.log(`📋 Operação/Comandas: http://localhost:${PORT}/operacao`);
 });
