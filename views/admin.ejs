@@ -35,7 +35,7 @@
         .admin-table td { padding: 15px; border-bottom: 1px solid #eee; }
         .img-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
 
-        /* NOVO: LISTA DE CHATS NA SIDEBAR */
+        /* LISTA DE CHATS NA SIDEBAR */
         .admin-chat-sidebar { width: 350px; background: var(--dark); display: flex; flex-direction: column; border-left: 1px solid #333; }
         .chat-selector { background: #222; padding: 10px; border-bottom: 1px solid #444; max-height: 200px; overflow-y: auto; }
         .chat-item { 
@@ -53,9 +53,17 @@
         /* Grid de Pedidos */
         .admin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .order-card-admin { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid #ddd; }
-        .btn-next, .btn-finish { width: 100%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn-next, .btn-finish, .btn-detalhes { width: 100%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         .btn-next { background: var(--dark); color: white; }
         .btn-finish { background: var(--success); color: white; }
+        .btn-detalhes { background: #eee; color: #333; margin-top: 5px; }
+
+        /* ESTILO DO MODAL DE DETALHES */
+        .modal-detalhes { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; }
+        .modal-detalhes-content { background: white; width: 90%; max-width: 500px; border-radius: 15px; padding: 25px; position: relative; animation: fadeIn 0.3s; }
+        .modal-detalhes-header { border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
+        .item-linha { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px inset #f9f9f9; font-size: 0.9rem; }
+        .total-linha { display: flex; justify-content: space-between; margin-top: 15px; padding-top: 10px; border-top: 2px solid #eee; font-weight: 800; font-size: 1.1rem; color: var(--danger); }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -67,6 +75,25 @@
     </style>
 </head>
 <body>
+
+    <div id="modal-detalhes" class="modal-detalhes">
+        <div class="modal-detalhes-content">
+            <div class="modal-detalhes-header">
+                <h2 id="det-nome-cliente">Nome do Cliente</h2>
+                <small id="det-id-pedido" style="color: #888; font-weight: bold;"></small>
+            </div>
+            <div id="det-lista-itens">
+                </div>
+            <div class="total-linha">
+                <span>Total:</span>
+                <span id="det-total-pedido">R$ 0,00</span>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.85rem; color: #555;"><strong>Pagamento:</strong> <span id="det-pagto-pedido">---</span></p>
+            <p style="font-size: 0.85rem; color: #555;"><strong>Endereço:</strong> <span id="det-end-pedido">---</span></p>
+            
+            <button onclick="fecharModalDetalhes()" style="margin-top: 20px; width: 100%; padding: 12px; background: var(--dark); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">FECHAR DETALHES</button>
+        </div>
+    </div>
 
     <div class="admin-layout">
         <div class="admin-main">
@@ -88,8 +115,11 @@
                         <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
                             <div class="order-card-admin" style="border-top-color: var(--primary);">
                                 <h3><%= p.cliente %> <small>#<%= p.id %></small></h3>
-                                <p style="font-size: 12px; margin-bottom: 10px;"><%= p.endereco %></p>
-                                <button onclick="mudarStatus('<%= p.id %>', 'Preparando')" class="btn-next">Aceitar ➔</button>
+                                <p style="font-size: 12px; margin-bottom: 10px; color: #666;"><%= p.endereco %></p>
+                                <div style="display: flex; gap: 5px;">
+                                    <button onclick="mudarStatus('<%= p.id %>', 'Preparando')" class="btn-next" style="flex: 2;">Aceitar ➔</button>
+                                    <button onclick='abrirDetalhes(<%- JSON.stringify(p) %>)' class="btn-detalhes" style="flex: 1; margin-top: 10px;">Deta.</button>
+                                </div>
                             </div>
                         <% }) %>
                     </section>
@@ -100,6 +130,7 @@
                             <div class="order-card-admin" style="border-top-color: var(--info);">
                                 <h3><%= p.cliente %></h3>
                                 <button onclick="mudarStatus('<%= p.id %>', 'Saiu para Entrega')" class="btn-next">Pronto ➔</button>
+                                <button onclick='abrirDetalhes(<%- JSON.stringify(p) %>)' class="btn-detalhes">Ver Detalhes</button>
                             </div>
                         <% }) %>
                     </section>
@@ -110,6 +141,7 @@
                             <div class="order-card-admin" style="border-top-color: var(--success);">
                                 <h3><%= p.cliente %></h3>
                                 <button onclick="mudarStatus('<%= p.id %>', 'Concluído')" class="btn-finish">✓ Entregue</button>
+                                <button onclick='abrirDetalhes(<%- JSON.stringify(p) %>)' class="btn-detalhes">Ver Detalhes</button>
                             </div>
                         <% }) %>
                     </section>
@@ -179,7 +211,6 @@
 
         <aside class="admin-chat-sidebar">
             <div class="chat-header" style="color:white; padding:15px; font-weight:bold; border-bottom:1px solid #333;">💬 SUPORTE ATIVO</div>
-            
             <div class="chat-selector" id="lista-pedidos-chat">
                 <% pedidos.filter(p => p.status !== 'Concluído').forEach(p => { %>
                     <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
@@ -187,11 +218,9 @@
                     </div>
                 <% }) %>
             </div>
-
             <div class="chat-messages" id="chat-box">
                 <p style="color:#666; text-align:center; margin-top:20px;">Selecione um pedido para conversar</p>
             </div>
-
             <div class="chat-input-area" style="padding:15px; display:flex; gap:5px; border-top:1px solid #333;">
                 <input type="text" id="admin-msg" placeholder="Responder..." style="flex:1; padding:10px; border-radius:6px; border:none; background:#222; color:#fff;">
                 <button onclick="enviarParaCliente()" style="background:var(--primary); border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">➤</button>
@@ -204,6 +233,36 @@
         let imagemBase64 = "";
         let pedidoAtivoId = null;
 
+        // --- LÓGICA DO MODAL DE DETALHES ---
+        function abrirDetalhes(pedido) {
+            document.getElementById('det-nome-cliente').innerText = pedido.cliente;
+            document.getElementById('det-id-pedido').innerText = "PEDIDO #" + pedido.id;
+            document.getElementById('det-total-pedido').innerText = "R$ " + pedido.total.toFixed(2);
+            document.getElementById('det-pagto-pedido').innerText = pedido.pagamento;
+            document.getElementById('det-end-pedido').innerText = pedido.endereco;
+
+            // Limpa e preenche a lista de itens
+            const lista = document.getElementById('det-lista-itens');
+            lista.innerHTML = "";
+            
+            // Tenta dar parse se os itens vierem como String (JSON)
+            let itens = typeof pedido.itens === 'string' ? JSON.parse(pedido.itens) : pedido.itens;
+            
+            itens.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item-linha';
+                div.innerHTML = `<span>${item.nome}</span> <b>R$ ${item.preco.toFixed(2)}</b>`;
+                lista.appendChild(div);
+            });
+
+            document.getElementById('modal-detalhes').style.display = 'flex';
+        }
+
+        function fecharModalDetalhes() {
+            document.getElementById('modal-detalhes').style.display = 'none';
+        }
+
+        // Funções Originais
         function openTab(evt, tabName) {
             const contents = document.getElementsByClassName("tab-content");
             for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
@@ -213,25 +272,19 @@
             if(evt) evt.currentTarget.classList.add("active");
         }
 
-        // Lógica de Seleção de Chat Individual
         function selecionarChat(id, cliente) {
             pedidoAtivoId = id;
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
             document.getElementById(`chat-item-${id}`).classList.add('active');
-            
             document.getElementById('chat-box').innerHTML = `<p style="color:var(--primary); text-align:center;">Carregando chat de ${cliente}...</p>`;
-            
-            // Entra na sala do pedido
             socket.emit('join', id);
         }
 
-        // Escuta o histórico vindo do servidor
         socket.on('historico', (h) => {
             document.getElementById('chat-box').innerHTML = '';
             h.forEach(renderizarMensagem);
         });
 
-        // Escuta novas mensagens (enviadas por você ou pelo cliente)
         socket.on('novaMensagem', (msg) => {
             if (msg.pedidoId === pedidoAtivoId) {
                 renderizarMensagem(msg);
@@ -253,24 +306,14 @@
         function enviarParaCliente() {
             const input = document.getElementById('admin-msg');
             if(!input.value || !pedidoAtivoId) return alert("Selecione um chat primeiro!");
-            
-            // Envia para o servidor processar e distribuir
-            socket.emit('enviarMensagem', { 
-                usuario: 'Admin', 
-                texto: input.value, 
-                pedidoId: pedidoAtivoId 
-            });
+            socket.emit('enviarMensagem', { usuario: 'Admin', texto: input.value, pedidoId: pedidoAtivoId });
             input.value = '';
         }
 
-        // --- Funções do Cardápio ---
         function converterImagem() {
             const file = document.getElementById('p-file').files[0];
             const reader = new FileReader();
-            reader.onloadend = () => { 
-                imagemBase64 = reader.result; 
-                document.getElementById('p-img-data').value = reader.result; 
-            }
+            reader.onloadend = () => { imagemBase64 = reader.result; document.getElementById('p-img-data').value = reader.result; }
             if (file) reader.readAsDataURL(file);
         }
 
@@ -283,7 +326,6 @@
                 desc: document.getElementById('p-desc').value,
                 img: imagemBase64 || document.getElementById('p-img-data').value
             };
-            if(!dados.nome || !dados.preco) return alert("Erro: Nome e Preço obrigatórios!");
             const res = await fetch(id ? `/edit-produto/${id}` : '/add-produto', {
                 method: id ? 'PUT' : 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -312,8 +354,6 @@
                 location.reload();
             }
         }
-
-        function limparForm() { location.reload(); }
 
         async function mudarStatus(id, novoStatus) {
             await fetch('/update-status', {
