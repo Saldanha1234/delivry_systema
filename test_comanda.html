@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualização de Comanda</title>
+    <style>
+        /* Container apenas para simular o fundo do sistema */
+        body {
+            background-color: #121212;
+            display: flex;
+            justify-content: center;
+            padding: 50px;
+        }
+
+        .comanda-card {
+            width: 320px; /* Largura padrão de impressora térmica */
+            background-color: #ffffff;
+            color: #000;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border-radius: 2px;
+            line-height: 1.2;
+        }
+
+        .comanda-header {
+            text-align: center;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .comanda-header strong { font-size: 1.3rem; display: block; margin-top: 5px; }
+
+        .tipo-entrega { font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
+
+        .secao { margin-bottom: 10px; font-size: 0.85rem; }
+        .secao-titulo { font-weight: bold; border-bottom: 1px solid #eee; display: block; margin-bottom: 3px; }
+
+        .tracejado-duplo { border-bottom: 1px dashed #000; margin: 10px 0; }
+
+        .item-linha {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .comanda-footer {
+            border-top: 1px dashed #000;
+            padding-top: 8px;
+            margin-top: 10px;
+        }
+
+        .total-final {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* Botões de Controle */
+        .acoes-comanda {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-acao {
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: sans-serif;
+            text-transform: uppercase;
+        }
+
+        .btn-preparar { background-color: #2980b9; color: white; }
+        .btn-entregar { background-color: #27ae60; color: white; }
+        .btn-concluir { background-color: #333; color: white; }
+
+        @media print {
+            body { background-color: white; padding: 0; }
+            .acoes-comanda { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="comanda-card">
+        <div class="comanda-header">
+            <span class="tipo-entrega">PARA ENTREGA</span>
+            <span>20:30</span>
+            <strong>Pedido #1234</strong>
+        </div>
+
+        <div class="secao">
+            <span class="secao-titulo">Cliente</span>
+            <strong>Nome:</strong> João Silva da Costa<br>
+            <strong>Telefone:</strong> (11) 98888-7777<br>
+            <strong>Endereço:</strong> Rua das Flores, 123 - Apto 42
+        </div>
+
+        <div class="tracejado-duplo"></div>
+
+        <div class="secao">
+            <span class="secao-titulo">Itens</span>
+            
+            <div class="item-linha">
+                <span>(1) X-Tudo Especial</span>
+                <span>R$ 35.00</span>
+            </div>
+            <div class="item-linha">
+                <span>(1) Coca-Cola 2L</span>
+                <span>R$ 12.00</span>
+            </div>
+            <div class="item-linha">
+                <span>(1) Batata Frita M</span>
+                <span>R$ 18.50</span>
+            </div>
+        </div>
+
+        <div class="tracejado-duplo"></div>
+
+        <div class="secao">
+            <span class="secao-titulo">Pagamento</span>
+            <strong>Forma:</strong> Cartão de Crédito (Online)<br>
+            <span style="font-size: 0.8rem; color: #27ae60;">* Pagamento via Sistema *</span>
+        </div>
+
+        <div class="comanda-footer">
+            <div class="total-final">
+                <span>TOTAL:</span>
+                <span>R$ 65.50</span>
+            </div>
+        </div>
+
+        <div class="acoes-comanda">
+            <button class="btn-acao btn-preparar">
+                👨‍🍳 Iniciar Preparo
+            </button>
+            <small style="color: #666; text-align: center; font-family: sans-serif; font-size: 10px;">
+                (Exemplo de botão do Painel)
+            </small>
+        </div>
+    </div>
+
+</body>
+</html>
