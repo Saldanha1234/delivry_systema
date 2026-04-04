@@ -2,17 +2,13 @@ const express = require('express');
 const path = require('path');
 const http = require('http'); 
 const { Server } = require('socket.io'); 
-const mongoose = require('mongoose'); // Biblioteca para o Banco de Dados
+const mongoose = require('mongoose');
 
 const app = express();
 const server = http.createServer(app); 
 const io = new Server(server); 
 
 // --- CONEXÃO COM O BANCO DE DATOS ---
-// ATENÇÃO: Substitua 'SUA_URL_AQUI' pelo link que você pegou no MongoDB Atlas
-const mongoURI = "SUA_URL_AQUI"; 
-
-// O segredo está no process.env. NOME_DA_VARIAVEL_NO_RAILWAY
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("✅ Conectado ao Banco de Dados MongoDB!"))
     .catch(err => console.error("❌ Erro ao conectar ao Banco:", err));
@@ -40,7 +36,16 @@ const PedidoSchema = new mongoose.Schema({
 });
 const Pedido = mongoose.model('Pedido', PedidoSchema);
 
-let suporteMensagens = []; // Chat mantido em memória (pode ser migrado depois se quiser)
+// Novo Schema para o Chat persistente
+const MensagemSchema = new mongoose.Schema({
+    pedidoId: String,
+    usuario: String,
+    texto: String,
+    hora: String,
+    lida: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+});
+const Mensagem = mongoose.model('Mensagem', MensagemSchema);
 
 // Configurações do Express
 app.set('views', path.join(__dirname, 'views'));
@@ -53,10 +58,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // --- LÓGICA DE HORÁRIO DE FUNCIONAMENTO ---
 const checarAberta = () => {
     const agora = new Date();
-    // Ajuste para Horário de Brasília (UTC-3) caso o servidor esteja nos EUA
     const horaBrasilia = agora.getUTCHours() - 3;
     const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
-    
     return horaTratada >= 8 && horaTratada < 20;
 };
 
@@ -69,20 +72,22 @@ app.use((req, res, next) => {
 
 app.get('/', async (req, res) => {
     try {
-        const produtos = await Produto.find(); // Busca produtos do banco
+        const produtos = await Produto.find();
         res.render('index', { produtos });
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
 app.get('/admin', async (req, res) => {
     try {
-        const pedidos = await Pedido.find().sort({ createdAt: -1 }); // Mais recentes primeiro
+        const pedidos = await Pedido.find().sort({ createdAt: -1 });
         const produtos = await Produto.find();
-        res.render('admin', { pedidos, produtos });
+        // Buscamos mensagens não lidas para o alerta no painel
+        const mensagensNaoLidas = await Mensagem.find({ lida: false, usuario: { $ne: 'Admin' } });
+        res.render('admin', { pedidos, produtos, mensagensNaoLidas });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
-// --- GERENCIAMENTO DE PRODUTOS (BANCO DE DATOS) ---
+// --- GERENCIAMENTO DE PRODUTOS ---
 
 app.post('/add-produto', async (req, res) => {
     try {
@@ -94,7 +99,6 @@ app.post('/add-produto', async (req, res) => {
 
 app.put('/edit-produto/:id', async (req, res) => {
     try {
-        // No MongoDB usamos o ID interno _id para buscar e atualizar
         await Produto.findByIdAndUpdate(req.params.id, req.body);
         res.json({ success: true });
     } catch (err) { res.status(404).json({ success: false }); }
@@ -107,7 +111,7 @@ app.delete('/delete-produto/:id', async (req, res) => {
     } catch (err) { res.json({ success: false }); }
 });
 
-// --- STATUS E PEDIDOS (BANCO DE DATOS) ---
+// --- STATUS E PEDIDOS ---
 
 app.get('/status/:id', async (req, res) => {
     const pedido = await Pedido.findOne({ id: req.params.id });
@@ -127,7 +131,6 @@ app.post('/enviar-pedido', async (req, res) => {
     if (!checarAberta()) {
         return res.status(403).json({ success: false, message: "Estamos fechados no momento!" });
     }
-
     try {
         const { cliente, endereco, pagamento, itens, total } = req.body;
         let itensProcessados = typeof itens === 'string' ? JSON.parse(itens) : itens;
@@ -153,28 +156,49 @@ app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus });
+        // Se o pedido for concluído, poderíamos limpar as mensagens, mas manteremos para histórico por enquanto
         res.json({ success: true });
     } catch (err) { res.status(404).json({ success: false }); }
 });
 
-// CHAT (SOCKET.IO)
+// --- CHAT (SOCKET.IO COM SALAS PRIVADAS) ---
+
 io.on('connection', (socket) => {
-    socket.emit('historico', suporteMensagens);
-    socket.on('enviarMensagem', (data) => {
-        const msg = {
+    // Cliente ou Admin entra em uma sala específica do Pedido
+    socket.on('join', async (pedidoId) => {
+        socket.join(pedidoId);
+        // Carrega histórico apenas daquela conversa
+        const historico = await Mensagem.find({ pedidoId }).sort({ createdAt: 1 });
+        socket.emit('historico', historico);
+    });
+
+    socket.on('enviarMensagem', async (data) => {
+        const msg = new Mensagem({
+            pedidoId: data.pedidoId,
             usuario: data.usuario, 
             texto: data.texto,
-            pedidoId: data.pedidoId,
-            hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        };
-        suporteMensagens.push(msg);
-        io.emit('novaMensagem', msg); 
+            hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            lida: data.usuario === 'Admin' ? true : false
+        });
+        
+        await msg.save();
+        
+        // Envia a mensagem para todos na sala do pedido (Cliente + Admin se estiver com chat aberto)
+        io.to(data.pedidoId).emit('novaMensagem', msg);
+        
+        // Alerta global para o Admin (para a lista de chats na aba suporte)
+        if(data.usuario !== 'Admin') {
+            io.emit('alertaAdmin', msg);
+        }
+    });
+
+    // Marcar mensagens como lidas
+    socket.on('lerMensagens', async (pedidoId) => {
+        await Mensagem.updateMany({ pedidoId, usuario: { $ne: 'Admin' } }, { lida: true });
     });
 });
 
-// PORTA DINÂMICA PARA HOSPEDAGEM (RENDER)
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`\n🚀 SISTEMA ONLINE NA PORTA ${PORT}`);
-    console.log(`⏰ Funcionamento: 08:00 às 20:00`);
 });

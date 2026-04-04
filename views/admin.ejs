@@ -28,41 +28,41 @@
         .stat-card h4 { margin: 0 0 10px 0; color: #888; font-size: 0.9rem; text-transform: uppercase; }
         .stat-card .value { font-size: 2rem; font-weight: 800; color: var(--dark); }
 
-        /* Botões de Ação Personalizados */
+        /* Botões e Tabelas */
         .btn-edit { background: var(--info); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.2s; }
         .btn-del { background: var(--danger); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.2s; margin-left: 5px; }
-        .btn-edit:hover { background: #1572d3; transform: scale(1.05); }
-        .btn-del:hover { background: #e03848; transform: scale(1.05); }
-
-        /* Tabela de Produtos */
         .admin-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-top: 15px; }
-        .admin-table th { background: #f8f9fa; padding: 15px; text-align: left; border-bottom: 2px solid #eee; }
-        .admin-table td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        .img-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
+        .admin-table td { padding: 15px; border-bottom: 1px solid #eee; }
+        .img-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
 
-        /* Chat Lateral */
+        /* NOVO: LISTA DE CHATS NA SIDEBAR */
         .admin-chat-sidebar { width: 350px; background: var(--dark); display: flex; flex-direction: column; border-left: 1px solid #333; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px; border-radius: 8px; font-size: 0.85rem; max-width: 85%; color: white; }
+        .chat-selector { background: #222; padding: 10px; border-bottom: 1px solid #444; max-height: 200px; overflow-y: auto; }
+        .chat-item { 
+            padding: 10px; color: #bbb; cursor: pointer; border-radius: 6px; margin-bottom: 5px; font-size: 0.8rem; border: 1px solid transparent;
+        }
+        .chat-item:hover { background: #333; }
+        .chat-item.active { border-color: var(--primary); color: white; background: #333; }
+        .chat-item.has-new { border-left: 4px solid var(--primary); }
+
+        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #1a1a1a; }
+        .msg { padding: 10px; border-radius: 8px; font-size: 0.85rem; max-width: 85%; color: white; position: relative; }
         .msg.cliente { background: #333; align-self: flex-start; border-left: 3px solid var(--primary); }
         .msg.admin { background: var(--primary); color: #000; align-self: flex-end; }
         
         /* Grid de Pedidos */
         .admin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .order-card-admin { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid #ddd; }
+        .btn-next, .btn-finish { width: 100%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn-next { background: var(--dark); color: white; }
+        .btn-finish { background: var(--success); color: white; }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* AJUSTES DE ENQUADRAMENTO MOBILE - CORRIGIDO */
         @media (max-width: 900px) {
-            .admin-layout { flex-direction: column; overflow-y: auto; height: auto; }
-            .admin-main { flex: none; overflow-y: visible; }
-            .admin-chat-sidebar { width: 100%; height: 400px; border-left: none; border-top: 2px solid #333; }
+            .admin-layout { flex-direction: column; height: auto; }
+            .admin-chat-sidebar { width: 100%; height: 500px; }
             .admin-grid { grid-template-columns: 1fr; }
-            .tab-container { position: sticky; top: 0; z-index: 100; padding: 0 10px; }
-            .tab-btn { padding: 15px 10px; font-size: 0.85rem; flex: 1; text-align: center; border-bottom: 4px solid transparent; }
-            .manager-card form { grid-template-columns: 1fr !important; }
-            .admin-table { display: block; overflow-x: auto; }
-            .admin-nav { padding: 10px 15px !important; }
-            .logo { font-size: 1.1rem !important; }
         }
     </style>
 </head>
@@ -86,7 +86,7 @@
                     <section class="column">
                         <div class="column-header">🟡 NOVOS PEDIDOS</div>
                         <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                            <div class="order-card-admin">
+                            <div class="order-card-admin" style="border-top-color: var(--primary);">
                                 <h3><%= p.cliente %> <small>#<%= p.id %></small></h3>
                                 <p style="font-size: 12px; margin-bottom: 10px;"><%= p.endereco %></p>
                                 <button onclick="mudarStatus('<%= p.id %>', 'Preparando')" class="btn-next">Aceitar ➔</button>
@@ -97,7 +97,7 @@
                     <section class="column">
                         <div class="column-header">🔥 NA COZINHA</div>
                         <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                            <div class="order-card-admin">
+                            <div class="order-card-admin" style="border-top-color: var(--info);">
                                 <h3><%= p.cliente %></h3>
                                 <button onclick="mudarStatus('<%= p.id %>', 'Saiu para Entrega')" class="btn-next">Pronto ➔</button>
                             </div>
@@ -107,7 +107,7 @@
                     <section class="column">
                         <div class="column-header">🛵 EM ROTA</div>
                         <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
-                            <div class="order-card-admin">
+                            <div class="order-card-admin" style="border-top-color: var(--success);">
                                 <h3><%= p.cliente %></h3>
                                 <button onclick="mudarStatus('<%= p.id %>', 'Concluído')" class="btn-finish">✓ Entregue</button>
                             </div>
@@ -120,55 +120,44 @@
                 <div class="manager-card" style="background:#fff; padding:25px; border-radius:12px;">
                     <h3 id="form-title">➕ Adicionar Novo Item</h3>
                     <form id="form-produto" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top: 20px;">
-                        <input type="hidden" id="p-id"> <input type="text" id="p-nome" placeholder="Nome do Produto" required style="padding:12px; border-radius:8px; border:1px solid #ddd;">
+                        <input type="hidden" id="p-id"> 
+                        <input type="text" id="p-nome" placeholder="Nome do Produto" required style="padding:12px; border-radius:8px; border:1px solid #ddd;">
                         <input type="number" id="p-preco" placeholder="Preço" step="0.01" required style="padding:12px; border-radius:8px; border:1px solid #ddd;">
-                        
                         <select id="p-cat" style="padding:12px; border-radius:8px; border:1px solid #ddd;">
                             <option value="Lanches">Lanches</option>
                             <option value="Promoção">Promoção</option>
                             <option value="Destaques">Destaques</option>
                             <option value="Bebidas">Bebidas</option>
                         </select>
-                        
-                        <div style="display: flex; flex-direction: column;">
-                            <input type="file" id="p-file" onchange="converterImagem()" style="font-size: 12px;">
-                            <input type="hidden" id="p-img-data">
-                        </div>
-
-                        <textarea id="p-desc" placeholder="Descrição dos ingredientes" style="grid-column: 1 / -1; padding:12px; border-radius:8px; border:1px solid #ddd; height: 80px;"></textarea>
-                        
+                        <input type="file" id="p-file" onchange="converterImagem()">
+                        <input type="hidden" id="p-img-data">
+                        <textarea id="p-desc" placeholder="Descrição" style="grid-column: 1 / -1; padding:12px; border:1px solid #ddd; height: 80px;"></textarea>
                         <div style="grid-column: 1 / -1; display:flex; gap:10px;">
                             <button type="button" onclick="salvarProduto()" id="btn-submit" style="flex:1; background:var(--success); color:#fff; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">SALVAR PRODUTO</button>
-                            <button type="button" onclick="limparForm()" id="btn-cancel" style="display:none; background:#888; color:#fff; padding:15px; border:none; border-radius:8px; cursor:pointer;">CANCELAR EDIÇÃO</button>
+                            <button type="button" onclick="limparForm()" id="btn-cancel" style="display:none; background:#888; color:#fff; padding:15px; border:none; border-radius:8px; cursor:pointer;">CANCELAR</button>
                         </div>
                     </form>
 
-                    <div style="overflow-x: auto;">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Foto</th>
-                                <th>Produto</th>
-                                <th>Categoria</th>
-                                <th>Preço</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% produtos.forEach(p => { %>
-                                <tr>
-                                    <td><img src="<%= p.img %>" class="img-thumb"></td>
-                                    <td><strong><%= p.nome %></strong></td>
-                                    <td><span style="background:#eee; padding:4px 8px; border-radius:4px; font-size:11px;"><%= p.categoria %></span></td>
-                                    <td>R$ <%= p.preco.toFixed(2) %></td>
-                                    <td>
-                                        <button class="btn-edit" onclick='prepararEdicao(<%- JSON.stringify(p) %>)'>EDITAR</button>
-                                        <button class="btn-del" onclick="excluirProduto('<%= p._id %>')">EXCLUIR</button>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
+                    <div style="overflow-x: auto; margin-top:20px;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr><th>Foto</th><th>Produto</th><th>Categoria</th><th>Preço</th><th>Ações</th></tr>
+                            </thead>
+                            <tbody>
+                                <% produtos.forEach(p => { %>
+                                    <tr>
+                                        <td><img src="<%= p.img %>" class="img-thumb"></td>
+                                        <td><strong><%= p.nome %></strong></td>
+                                        <td><%= p.categoria %></td>
+                                        <td>R$ <%= p.preco.toFixed(2) %></td>
+                                        <td>
+                                            <button class="btn-edit" onclick='prepararEdicao(<%- JSON.stringify(p) %>)'>EDITAR</button>
+                                            <button class="btn-del" onclick="excluirProduto('<%= p._id %>')">EXCLUIR</button>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -177,14 +166,11 @@
                 <div class="finance-grid">
                     <div class="stat-card">
                         <h4>💰 Faturamento do Dia</h4>
-                        <% 
-                           let totalDia = pedidos.filter(p => p.status === 'Concluído').reduce((acc, p) => acc + p.total, 0);
-                        %>
+                        <% let totalDia = pedidos.filter(p => p.status === 'Concluído').reduce((acc, p) => acc + p.total, 0); %>
                         <div class="value">R$ <%= totalDia.toFixed(2) %></div>
                     </div>
-
                     <div class="stat-card" style="border-left-color: #3498db;">
-                        <h4>✅ Pedidos Concluídos</h4>
+                        <h4>✅ Concluídos</h4>
                         <div class="value"><%= pedidos.filter(p => p.status === 'Concluído').length %></div>
                     </div>
                 </div>
@@ -192,8 +178,20 @@
         </div>
 
         <aside class="admin-chat-sidebar">
-            <div class="chat-header" style="color:white; padding:15px; font-weight:bold; border-bottom:1px solid #333;">💬 SUPORTE AO CLIENTE</div>
-            <div class="chat-messages" id="chat-box"></div>
+            <div class="chat-header" style="color:white; padding:15px; font-weight:bold; border-bottom:1px solid #333;">💬 SUPORTE ATIVO</div>
+            
+            <div class="chat-selector" id="lista-pedidos-chat">
+                <% pedidos.filter(p => p.status !== 'Concluído').forEach(p => { %>
+                    <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
+                        Pedido #<%= p.id %> - <%= p.cliente %>
+                    </div>
+                <% }) %>
+            </div>
+
+            <div class="chat-messages" id="chat-box">
+                <p style="color:#666; text-align:center; margin-top:20px;">Selecione um pedido para conversar</p>
+            </div>
+
             <div class="chat-input-area" style="padding:15px; display:flex; gap:5px; border-top:1px solid #333;">
                 <input type="text" id="admin-msg" placeholder="Responder..." style="flex:1; padding:10px; border-radius:6px; border:none; background:#222; color:#fff;">
                 <button onclick="enviarParaCliente()" style="background:var(--primary); border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">➤</button>
@@ -204,6 +202,7 @@
     <script>
         const socket = io();
         let imagemBase64 = "";
+        let pedidoAtivoId = null;
 
         function openTab(evt, tabName) {
             const contents = document.getElementsByClassName("tab-content");
@@ -214,6 +213,55 @@
             if(evt) evt.currentTarget.classList.add("active");
         }
 
+        // Lógica de Seleção de Chat Individual
+        function selecionarChat(id, cliente) {
+            pedidoAtivoId = id;
+            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
+            document.getElementById(`chat-item-${id}`).classList.add('active');
+            
+            document.getElementById('chat-box').innerHTML = `<p style="color:var(--primary); text-align:center;">Carregando chat de ${cliente}...</p>`;
+            
+            // Entra na sala do pedido e limpa o campo lida no servidor
+            socket.emit('join', id);
+            socket.emit('lerMensagens', id);
+        }
+
+        socket.on('historico', (h) => {
+            document.getElementById('chat-box').innerHTML = '';
+            h.forEach(renderizarMensagem);
+        });
+
+        socket.on('novaMensagem', (msg) => {
+            if (msg.pedidoId === pedidoAtivoId) {
+                renderizarMensagem(msg);
+            } else {
+                // Alerta visual de nova mensagem em outro chat
+                const item = document.getElementById(`chat-item-${msg.pedidoId}`);
+                if(item) item.classList.add('has-new');
+            }
+        });
+
+        function renderizarMensagem(msg) {
+            const div = document.createElement('div');
+            div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
+            div.innerHTML = `<span style="font-size:10px; opacity:0.7">${msg.usuario} - ${msg.hora}</span><p style="margin:2px 0">${msg.texto}</p>`;
+            document.getElementById('chat-box').appendChild(div);
+            document.getElementById('chat-box').scrollTop = 9999;
+        }
+
+        function enviarParaCliente() {
+            const input = document.getElementById('admin-msg');
+            if(!input.value || !pedidoAtivoId) return alert("Selecione um chat primeiro!");
+            
+            socket.emit('enviarMensagem', { 
+                usuario: 'Admin', 
+                texto: input.value, 
+                pedidoId: pedidoAtivoId 
+            });
+            input.value = '';
+        }
+
+        // --- Funções do Cardápio ---
         function converterImagem() {
             const file = document.getElementById('p-file').files[0];
             const reader = new FileReader();
@@ -233,22 +281,17 @@
                 desc: document.getElementById('p-desc').value,
                 img: imagemBase64 || document.getElementById('p-img-data').value
             };
-
-            if(!dados.nome || !dados.preco) return alert("Preencha Nome e Preço!");
-
-            const rota = id ? `/edit-produto/${id}` : '/add-produto';
-            const metodo = id ? 'PUT' : 'POST';
-
-            const res = await fetch(rota, {
-                method: metodo,
+            if(!dados.nome || !dados.preco) return alert("Erro: Nome e Preço obrigatórios!");
+            const res = await fetch(id ? `/edit-produto/${id}` : '/add-produto', {
+                method: id ? 'PUT' : 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(dados)
             });
-            
             if(res.ok) location.reload();
         }
 
         function prepararEdicao(p) {
+            openTab(null, 'aba-cardapio');
             window.scrollTo({top: 0, behavior: 'smooth'});
             document.getElementById('form-title').innerText = "📝 Editando: " + p.nome;
             document.getElementById('p-id').value = p._id;
@@ -257,13 +300,12 @@
             document.getElementById('p-cat').value = p.categoria;
             document.getElementById('p-desc').value = p.desc || "";
             document.getElementById('p-img-data').value = p.img;
-            
-            document.getElementById('btn-submit').innerText = "ATUALIZAR AGORA";
+            document.getElementById('btn-submit').innerText = "ATUALIZAR PRODUTO";
             document.getElementById('btn-cancel').style.display = "block";
         }
 
         async function excluirProduto(id) {
-            if(confirm("Deseja realmente remover este item?")) {
+            if(confirm("Excluir item definitivamente?")) {
                 await fetch(`/delete-produto/${id}`, { method: 'DELETE' });
                 location.reload();
             }
@@ -278,22 +320,6 @@
                 body: JSON.stringify({ id, novoStatus })
             });
             location.reload();
-        }
-
-        socket.on('novaMensagem', renderizarMensagem);
-        socket.on('historico', (h) => h.forEach(renderizarMensagem));
-        function renderizarMensagem(msg) {
-            const div = document.createElement('div');
-            div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
-            div.innerHTML = `<span style="font-size:10px; opacity:0.7">${msg.usuario}</span><p style="margin:2px 0">${msg.texto}</p>`;
-            document.getElementById('chat-box').appendChild(div);
-            document.getElementById('chat-box').scrollTop = 9999;
-        }
-        function enviarParaCliente() {
-            const input = document.getElementById('admin-msg');
-            if(!input.value) return;
-            socket.emit('enviarMensagem', { usuario: 'Admin', texto: input.value, pedidoId: 'Painel' });
-            input.value = '';
         }
     </script>
 </body>
