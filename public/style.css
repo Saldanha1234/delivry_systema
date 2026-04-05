@@ -33,7 +33,7 @@ body {
 }
 
 /* =========================================
-   NAVEGAÇÃO (CLIENTE E ADMIN)
+   NAVEGAÇÃO
    ========================================= */
 nav {
     background: rgba(255, 255, 255, 0.85);
@@ -61,19 +61,27 @@ nav {
     display: flex;
     align-items: center;
     gap: 10px;
-    transition: transform 0.2s;
+    transition: 0.2s;
 }
 
-.cart-btn:hover { transform: scale(1.05); }
+.cart-btn:hover { transform: scale(1.05); background: var(--dark-light); }
+
+#cart-count {
+    background: var(--primary);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
 
 /* =========================================
-   LOJA DO CLIENTE (GRID E CARDS)
+   GRID DE PRODUTOS
    ========================================= */
 .container {
     max-width: 1200px;
-    margin: 40px auto;
+    margin: 30px auto;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 25px;
     padding: 0 20px;
 }
@@ -83,49 +91,29 @@ nav {
     border-radius: var(--radius);
     overflow: hidden;
     box-shadow: var(--shadow);
-    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: 1px solid transparent;
-    cursor: pointer; /* Adicionado para indicar que o card é clicável */
+    cursor: pointer;
 }
 
 .card:hover { 
     transform: translateY(-8px); 
     border-color: var(--primary); 
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
 }
 
-.card img { width: 100%; height: 200px; object-fit: cover; }
+.card img { width: 100%; height: 200px; object-fit: cover; transition: 0.3s; }
+.card:hover img { transform: scale(1.05); }
 
 .card-content { padding: 20px; }
-.card-content h3 { margin-bottom: 8px; font-size: 1.2rem; font-weight: 700; }
-.card-content .desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px; min-height: 40px; }
+.card-content h3 { margin-bottom: 8px; font-size: 1.1rem; font-weight: 700; color: var(--dark); }
+.card-content .desc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px; line-height: 1.4; }
 
 .price-tag {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 800;
     color: var(--dark);
-    margin-bottom: 15px;
     display: block;
-}
-
-.btn-add {
-    width: 100%;
-    background: var(--bg);
-    color: var(--dark);
-    border: none;
-    padding: 12px;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.btn-add:hover:not(:disabled) { background: var(--primary); color: white; }
-
-.btn-disabled {
-    background: #e0e0e0 !important;
-    color: #999 !important;
-    cursor: not-allowed !important;
-    border: 1px dashed #ccc !important;
 }
 
 /* =========================================
@@ -136,8 +124,8 @@ nav {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
     z-index: 2000;
     justify-content: center;
     align-items: center;
@@ -146,75 +134,90 @@ nav {
 .modal-content {
     background: var(--white);
     width: 95%;
-    max-width: 480px;
+    max-width: 500px;
     border-radius: 24px;
-    padding: 30px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-    animation: slideUp 0.3s ease-out;
+    padding: 25px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+    animation: slideUp 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     max-height: 90vh;
     overflow-y: auto;
+    position: relative;
 }
 
 @keyframes slideUp {
-    from { transform: translateY(30px); opacity: 0; }
+    from { transform: translateY(50px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
 
-/* --- Estilos Adicionais para Modal de Montagem --- */
+/* --- Estilos do Modal de Montagem --- */
 .search-box {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #eee;
-    border-radius: 10px;
+    padding: 14px;
+    border: 2px solid #f0f0f0;
+    border-radius: 12px;
     margin: 15px 0;
     outline: none;
     background: #f9f9f9;
+    font-size: 0.95rem;
+    transition: 0.2s;
 }
 
+.search-box:focus { border-color: var(--primary); background: white; }
+
 .cat-section { margin-bottom: 25px; }
-.cat-header { background: #f8f8f8; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+.cat-header { 
+    background: #f8f8f8; 
+    padding: 12px 15px; 
+    border-radius: 10px; 
+    margin-bottom: 12px; 
+    border-left: 5px solid var(--primary);
+}
 
 .item-add {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px;
-    border-bottom: 1px solid #f5f5f5;
+    padding: 12px 5px;
+    border-bottom: 1px solid #f0f0f0;
 }
 
-.item-controls { display: flex; align-items: center; gap: 12px; }
+.item-controls { display: flex; align-items: center; gap: 15px; }
 
 .btn-qty {
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    border: 1px solid var(--primary);
+    border: 2px solid var(--primary);
     background: white;
     color: var(--primary);
-    font-weight: bold;
+    font-weight: 800;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: 0.2s;
 }
 
 .btn-qty:hover { background: var(--primary); color: white; }
+.btn-qty:active { transform: scale(0.9); }
 
 .obs-box {
     width: 100%;
-    height: 80px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    padding: 10px;
-    margin: 15px 0;
+    height: 90px;
+    border: 2px solid #f0f0f0;
+    border-radius: 12px;
+    padding: 12px;
+    margin: 10px 0;
     resize: none;
+    background: #f9f9f9;
+    font-size: 0.9rem;
 }
 
 /* =========================================
-   FORMULÁRIOS
+   FORMULÁRIOS E BOTÕES
    ========================================= */
-.form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 6px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; margin-bottom: 8px; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
 input, select, textarea {
     width: 100%;
@@ -224,127 +227,73 @@ input, select, textarea {
     background: #F9F9F9;
     font-size: 1rem;
     transition: 0.2s;
+    color: var(--dark);
 }
 
-input:focus { border-color: var(--primary); outline: none; background: white; }
+input:focus, select:focus { border-color: var(--primary); outline: none; background: white; }
 
 .btn-confirm {
     width: 100%;
     background: var(--primary);
     color: white;
     border: none;
-    padding: 16px;
-    border-radius: 14px;
+    padding: 18px;
+    border-radius: 16px;
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
-    margin-top: 15px;
-    transition: 0.2s;
+    transition: 0.3s;
 }
 
-.btn-confirm:hover:not(:disabled) { background: var(--primary-hover); transform: scale(1.02); }
+.btn-confirm:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 56, 92, 0.3); }
 
 .btn-close {
     width: 100%;
     background: none;
     border: none;
     color: var(--text-muted);
-    padding: 10px;
+    padding: 12px;
     cursor: pointer;
     font-weight: 600;
-    margin-top: 5px;
+    margin-top: 10px;
+    transition: 0.2s;
 }
 
+.btn-close:hover { color: var(--dark); }
+
 /* =========================================
-   STATUS DE FUNCIONAMENTO (RODAPÉ)
+   CARRINHO (DETALHES)
    ========================================= */
-.status-badge {
-    display: inline-block;
-    padding: 8px 18px;
-    border-radius: 50px;
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 12px;
+#cart-items .cart-item-row {
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
 }
 
-.status-aberto { background: #e8f9ef; color: #10ac84; border: 1px solid #10ac84; }
-.status-fechado { background: #fff0f0; color: #ff4757; border: 1px solid #ff4757; }
+.remove-product {
+    color: #ff4757;
+    cursor: pointer;
+    margin-left: 15px;
+    font-size: 1.1rem;
+    transition: 0.2s;
+}
+.remove-product:hover { transform: scale(1.2); }
 
 /* =========================================
-   PAINEL DO ADMINISTRADOR (KANBAN)
+   ADMIN E KANBAN
    ========================================= */
 .admin-body { background: #0F0F0F; color: #EEE; }
-.admin-nav { background: #181818; border-bottom: 1px solid #333; }
 .admin-layout { display: flex; height: 100vh; overflow: hidden; }
 .admin-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
 
-.tab-container { display: flex; background: #181818; padding: 0 25px; border-bottom: 1px solid #333; gap: 15px; }
-.tab-btn { 
-    padding: 18px 20px; border: none; background: none; cursor: pointer; 
-    font-weight: 800; color: #555; transition: 0.3s; border-bottom: 3px solid transparent;
-    font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
-}
-.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
-.tab-content { display: none; padding: 25px; animation: slideUp 0.4s ease-out; }
-.tab-content.active { display: block; }
+.column { background: #181818; border-radius: 18px; padding: 15px; border: 1px solid #222; min-height: 500px; }
+.column-header { font-weight: 800; font-size: 0.8rem; color: #666; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1.5px; }
 
-.admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; padding: 0; }
-
-.column { background: #181818; border-radius: 18px; display: flex; flex-direction: column; padding: 15px; border: 1px solid #222; }
-.column-header { font-weight: 800; font-size: 0.85rem; color: #666; margin-bottom: 20px; padding: 0 10px; text-transform: uppercase; letter-spacing: 1.5px; }
-
-.order-card-admin { background: #222; border-radius: 14px; padding: 18px; margin-bottom: 15px; border-left: 6px solid #444; transition: 0.2s; }
-.pulse { border-left-color: var(--warning); animation: pulseEffect 2s infinite; }
-@keyframes pulseEffect { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
-
+.order-card-admin { background: #222; border-radius: 14px; padding: 18px; margin-bottom: 15px; border-left: 6px solid #444; }
 .in-progress { border-left-color: var(--primary); }
 .delivery { border-left-color: var(--success); }
 
-.order-info { display: flex; justify-content: space-between; font-size: 0.75rem; color: #777; margin-bottom: 12px; }
-.order-items { background: #2a2a2a; padding: 12px; border-radius: 10px; margin: 12px 0; font-size: 0.9rem; border: 1px solid #333; }
-.order-items span { display: block; margin-bottom: 4px; }
-
-.btn-next, .btn-finish { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; margin-top: 10px; background: #333; color: white; transition: 0.2s; }
-.btn-next:hover { background: var(--primary); }
-.btn-finish { background: var(--success); }
-
 /* =========================================
-   FINANCEIRO E CARDÁPIO ADMIN
-   ========================================= */
-.finance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 30px; }
-.stat-card { background: #181818; padding: 30px; border-radius: 20px; border: 1px solid #222; border-left: 6px solid var(--primary); }
-.stat-card h4 { color: #666; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; }
-.stat-card .value { font-size: 2.2rem; font-weight: 800; color: #fff; }
-
-.admin-table { width: 100%; border-collapse: collapse; background: #181818; border-radius: 16px; overflow: hidden; border: 1px solid #222; }
-.admin-table th { background: #222; padding: 18px; text-align: left; color: #666; font-size: 0.8rem; text-transform: uppercase; }
-.admin-table td { padding: 18px; border-bottom: 1px solid #222; color: #EEE; font-size: 0.9rem; }
-.img-thumb { width: 55px; height: 55px; object-fit: cover; border-radius: 10px; }
-
-/* =========================================
-   SISTEMA DE CHAT (SIDEBAR)
-   ========================================= */
-.admin-chat-sidebar { width: 380px; background: #111; display: flex; flex-direction: column; border-left: 1px solid #222; }
-.chat-header { padding: 25px; border-bottom: 1px solid #222; background: #181818; }
-.chat-header h3 { font-size: 1.1rem; color: #fff; }
-.chat-selector { background: #151515; padding: 15px; max-height: 300px; overflow-y: auto; border-bottom: 1px solid #222; }
-.chat-item { padding: 15px; color: #888; cursor: pointer; border-radius: 12px; margin-bottom: 8px; font-size: 0.85rem; transition: 0.2s; border: 1px solid transparent; }
-.chat-item:hover { background: #222; color: #fff; }
-.chat-item.active { background: #222; color: white; border-color: var(--primary); }
-.chat-item.has-new { border-left: 4px solid var(--primary); background: rgba(255, 56, 92, 0.05); }
-
-.chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background: #0a0a0a; }
-.msg { padding: 12px 16px; border-radius: 14px; font-size: 0.9rem; max-width: 85%; line-height: 1.5; }
-.msg.cliente { background: #222; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
-.msg.admin { background: var(--primary); color: #000; align-self: flex-end; font-weight: 600; border-bottom-right-radius: 2px; }
-
-.chat-input-area { padding: 20px; background: #181818; border-top: 1px solid #222; display: flex; gap: 10px; }
-.chat-input-area input { background: #222; border: 1px solid #333; color: white; padding: 12px; }
-
-/* =========================================
-   IMPLEMENTAÇÃO DE ENQUADRAMENTO MOBILE
+   RESPONSIVIDADE MOBILE
    ========================================= */
 @media (max-width: 768px) {
     nav { padding: 15px 5%; }
@@ -358,22 +307,17 @@ input:focus { border-color: var(--primary); outline: none; background: white; }
         margin: 20px auto;
     }
 
-    .card img { height: 140px; }
+    .card img { height: 150px; }
     .card-content { padding: 12px; }
-    .card-content h3 { font-size: 1rem; }
-    .card-content .desc { font-size: 0.8rem; min-height: 30px; margin-bottom: 10px; }
-    .price-tag { font-size: 1.1rem; margin-bottom: 10px; }
-    .btn-add { padding: 10px; font-size: 0.85rem; }
+    .card-content h3 { font-size: 0.95rem; }
+    .card-content .desc { font-size: 0.75rem; min-height: auto; margin-bottom: 10px; }
+    .price-tag { font-size: 1.1rem; }
 
-    .modal-content { width: 92%; padding: 20px; border-radius: 18px; }
-
-    .admin-layout { flex-direction: column; overflow-y: auto; height: auto; }
-    .admin-chat-sidebar { width: 100%; height: 500px; border-left: none; border-top: 4px solid #222; }
-    .admin-grid { grid-template-columns: 1fr; padding: 0; }
-    .tab-container { overflow-x: auto; white-space: nowrap; }
+    .modal-content { width: 95%; padding: 20px; border-radius: 20px; }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 480px) {
     .container { grid-template-columns: 1fr; }
+    .card img { height: 200px; }
     .logo span { display: none; }
 }

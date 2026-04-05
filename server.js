@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 require('dotenv').config(); 
 
 // Importação da configuração de adicionais (Açaí/Montar)
+// Nota: Certifique-se que o arquivo exporta { ConfigEstrutura }
 const { ConfigEstrutura } = require('./public/js/estrutura-produtos');
 
 const app = express();
@@ -42,7 +43,7 @@ const PedidoSchema = new mongoose.Schema({
     cliente: String,
     endereco: String,
     pagamento: String,
-    itens: Array,
+    itens: Array, // Aqui serão salvos os produtos com seus adicionais selecionados
     total: Number,
     status: { type: String, default: "Pendente" },
     hora: String,
@@ -77,7 +78,8 @@ const checarAberta = () => {
 };
 
 app.use((req, res, next) => {
-    res.locals.estaAberto = true;
+    // Mantive como true conforme seu código original
+    res.locals.estaAberto = true; 
     next();
 });
 
@@ -90,12 +92,19 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
-// Rota para o Front-end obter a estrutura de adicionais/modal
+/**
+ * Rota para o Front-end obter a estrutura de adicionais/modal.
+ * Esta rota é crucial para que o modal de "+" e "-" funcione dinamicamente.
+ */
 app.get('/api/config-estrutura', (req, res) => {
-    res.json(ConfigEstrutura);
+    if (ConfigEstrutura) {
+        res.json(ConfigEstrutura);
+    } else {
+        res.status(404).json({ error: "Configuração de adicionais não encontrada." });
+    }
 });
 
-// ADMIN ATUALIZADO: APENAS GESTÃO
+// ADMIN: GESTÃO
 app.get('/admin', async (req, res) => {
     try {
         const produtos = await Produto.find();
@@ -110,7 +119,7 @@ app.get('/admin', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
-// OPERAÇÃO ATUALIZADA: FOCO TOTAL EM COMANDAS
+// OPERAÇÃO: FOCO EM COMANDAS
 app.get('/operacao', async (req, res) => {
     try {
         const pedidosAtivos = await Pedido.find({ status: { $ne: 'Concluído' } }).sort({ createdAt: 1 });
@@ -182,7 +191,9 @@ app.post('/enviar-pedido', async (req, res) => {
         return res.status(403).json({ success: false, message: "Estamos fechados no momento!" });
     }
     try {
-        const { cliente, endereco, pagamento, itens, total } = req.body;
+        const { cliente, endereco, pagamento, itens, total, observacaoGeral } = req.body;
+        
+        // Garante que os itens (que agora contêm adicionais) sejam processados corretamente
         let itensProcessados = typeof itens === 'string' ? JSON.parse(itens) : itens;
 
         const novoPedido = new Pedido({
@@ -198,7 +209,10 @@ app.post('/enviar-pedido', async (req, res) => {
         await novoPedido.save(); 
         io.emit('novoPedido', novoPedido);
         res.json({ success: true, id: novoPedido.id });
-    } catch (error) { res.status(500).json({ success: false }); }
+    } catch (error) { 
+        console.error("Erro ao salvar pedido:", error);
+        res.status(500).json({ success: false }); 
+    }
 });
 
 app.post('/update-status', async (req, res) => {
@@ -210,7 +224,7 @@ app.post('/update-status', async (req, res) => {
     } catch (err) { res.status(404).json({ success: false }); }
 });
 
-// --- CHAT ---
+// --- CHAT SOCKET.IO ---
 
 io.on('connection', (socket) => {
     socket.on('join', async (pedidoId) => {

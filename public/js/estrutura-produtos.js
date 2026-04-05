@@ -82,8 +82,35 @@ const ConfigEstrutura = {
 
 /**
  * FUNÇÕES DE UTILIDADE
- * Essas funções facilitam a vida do script principal que você vai me enviar.
  */
+
+// Adicionar +1 a um item específico respeitando o limite da categoria
+function adicionarQtd(categoriaId, opcaoId) {
+    const categoria = ConfigEstrutura.categorias.find(c => c.id === categoriaId);
+    if (!categoria) return false;
+
+    const totalAtualNaCategoria = categoria.opcoes.reduce((acc, curr) => acc + curr.qtd, 0);
+    const opcao = categoria.opcoes.find(o => o.id === opcaoId);
+
+    if (opcao && totalAtualNaCategoria < categoria.limite) {
+        opcao.qtd++;
+        return true;
+    }
+    return false; // Limite atingido ou opção não encontrada
+}
+
+// Remover -1 de um item específico
+function removerQtd(categoriaId, opcaoId) {
+    const categoria = ConfigEstrutura.categorias.find(c => c.id === categoriaId);
+    if (!categoria) return false;
+
+    const opcao = categoria.opcoes.find(o => o.id === opcaoId);
+    if (opcao && opcao.qtd > 0) {
+        opcao.qtd--;
+        return true;
+    }
+    return false;
+}
 
 // Resetar todas as quantidades (usar ao fechar o modal ou trocar de produto)
 function resetarMontagem() {
@@ -96,18 +123,39 @@ function resetarMontagem() {
 function obterItensSelecionados() {
     let selecionados = [];
     ConfigEstrutura.categorias.forEach(cat => {
-        const itens = cat.opcoes.filter(opt => opt.qtd > 0);
-        if (itens.length > 0) {
+        const itensFiltrados = cat.opcoes.filter(opt => opt.qtd > 0);
+        if (itensFiltrados.length > 0) {
             selecionados.push({
-                categoria: cat.nome,
-                itens: itens.map(i => ({ nome: i.nome, qtd: i.qtd, preco: i.preco }))
+                categoriaId: cat.id,
+                categoriaNome: cat.nome,
+                itens: itensFiltrados.map(i => ({ 
+                    id: i.id, 
+                    nome: i.nome, 
+                    qtd: i.qtd, 
+                    preco: i.preco 
+                }))
             });
         }
     });
     return selecionados;
 }
 
-// Exportação
-if (typeof module !== 'undefined') {
-    module.exports = { ConfigEstrutura, resetarMontagem, obterItensSelecionados };
+// Exportação para Node.js (Backend) e compatibilidade com Navegador (Frontend)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { 
+        ConfigEstrutura, 
+        adicionarQtd, 
+        removerQtd, 
+        resetarMontagem, 
+        obterItensSelecionados 
+    };
+} else {
+    // Para uso no front-end sem módulos
+    window.ConfigEstruturaUtils = { 
+        ConfigEstrutura, 
+        adicionarQtd, 
+        removerQtd, 
+        resetarMontagem, 
+        obterItensSelecionados 
+    };
 }

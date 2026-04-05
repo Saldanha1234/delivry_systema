@@ -8,6 +8,8 @@
     <title>Premium Delivery</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        :root { --primary: #FF385C; --dark: #2f3542; --warning: #f1c40f; }
+
         /* --- ESTILOS DE CATEGORIAS E FILTROS --- */
         .category-nav {
             display: flex; gap: 10px; padding: 10px 20px; overflow-x: auto;
@@ -28,26 +30,31 @@
         .promo { background: linear-gradient(135deg, #ff4757, #ff6b81); }
         .top-seller { background: linear-gradient(135deg, #2f3542, #57606f); }
 
-        .card { cursor: pointer; transition: 0.2s; }
-        .card:hover { transform: translateY(-5px); }
+        /* CARD CLICÁVEL */
+        .card { cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .card.hidden { display: none; }
 
-        /* ESTILOS DO MODAL DE MONTAGEM (NOVO) */
-        .modal-montagem-content { width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; }
-        .search-box { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 10px; margin: 15px 0; outline: none; }
-        .cat-section { margin-bottom: 25px; }
-        .cat-header { background: #f8f8f8; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        /* ESTILOS DO MODAL DE MONTAGEM */
+        .modal-montagem-content { width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 0 !important; }
+        .modal-body { padding: 20px; }
+        .search-box { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 10px; margin: 15px 0; outline: none; font-size: 1rem; }
+        .cat-section { margin-bottom: 20px; }
+        .cat-header { background: #f8f8f8; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--primary); }
         .item-add { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f5f5f5; }
         .item-controls { display: flex; align-items: center; gap: 12px; }
-        .btn-qty { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--primary); background: white; color: var(--primary); font-weight: bold; cursor: pointer; }
-        .btn-qty:disabled { opacity: 0.3; }
-        .obs-box { width: 100%; height: 80px; border: 1px solid #ddd; border-radius: 10px; padding: 10px; margin: 15px 0; resize: none; }
+        .btn-qty { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--primary); background: white; color: var(--primary); font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .btn-qty:active { background: var(--primary); color: white; }
+        .obs-box { width: 100%; height: 80px; border: 1px solid #ddd; border-radius: 10px; padding: 10px; margin: 10px 0; resize: none; font-family: inherit; }
 
+        /* CARRINHO */
+        .cart-item-row { border-bottom: 1px solid #eee; padding: 15px 0; position: relative; }
+        .remove-product { color: #ff4757; cursor: pointer; font-size: 1.2rem; margin-left: 10px; }
+        
         .social-footer { margin-top: 50px; padding: 40px 20px; background: #fdfdfd; border-top: 1px solid #eee; text-align: center; }
         .social-buttons { display: flex; justify-content: center; gap: 25px; margin-bottom: 20px; }
         .social-icon { color: #888; font-size: 1.8rem; transition: 0.3s; text-decoration: none; }
         .social-icon:hover { color: var(--primary); transform: translateY(-3px); }
-        .btn-location { display: inline-flex; align-items: center; gap: 8px; background: #f0f0f0; color: #666; padding: 10px 20px; border-radius: 30px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 1px solid #ddd; }
 
         .status-badge { display: inline-block; padding: 6px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
         .status-aberto { background: #e7f9ee; color: #2ecc71; border: 1px solid #2ecc71; }
@@ -57,7 +64,6 @@
         @media (max-width: 600px) {
             .event-card { min-width: 240px; padding: 15px; }
             .category-nav { padding: 10px; }
-            nav { padding: 10px 15px !important; }
         }
     </style>
 </head>
@@ -100,11 +106,14 @@
     <% produtos.forEach(p => { %>
         <div class="card" data-categoria="<%= p.categoria || 'todos' %>" 
              onclick="abrirModalMontagem('<%= p.nome %>', '<%= p.preco %>', '<%= p.desc %>', '<%= p.img %>')">
-            <img src="<%= p.img %>">
+            <img src="<%= p.img %>" alt="<%= p.nome %>">
             <div class="card-content">
                 <h3><%= p.nome %></h3>
                 <p class="desc"><%= p.desc %></p>
-                <span class="price-tag">R$ <%= p.preco.toFixed(2) %></span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <span class="price-tag">R$ <%= p.preco.toFixed(2) %></span>
+                    <span style="color: var(--primary); font-weight: bold; font-size: 0.8rem;">Ver detalhes +</span>
+                </div>
             </div>
         </div>
     <% }) %>
@@ -112,51 +121,60 @@
 
 <div id="modal-montagem" class="modal">
     <div class="modal-content modal-montagem-content">
-        <img id="m-img" style="width:100%; height:180px; object-fit:cover; border-radius:15px;">
-        <h2 id="m-nome" style="margin-top:15px;"></h2>
-        <p id="m-desc" style="color:#666; font-size:0.9rem;"></p>
-        
-        <input type="text" class="search-box" placeholder="Pesquisar adicional..." oninput="filtrarAdicionais(this.value)">
-        
-        <div id="categorias-container"></div>
-
-        <label style="font-weight:bold; font-size:0.9rem;">Alguma observação?</label>
-        <textarea id="m-obs" class="obs-box" placeholder="Ex: tirar cebola, sem gelo..."></textarea>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding:15px; background:#f9f9f9; border-radius:12px;">
-            <div>
-                <div style="font-size:0.8rem; color:#666;">Total do item</div>
-                <div id="m-total" style="font-size:1.2rem; font-weight:800; color:var(--primary);">R$ 0,00</div>
-            </div>
-            <button class="btn-confirm" onclick="confirmarMontagem()" style="margin:0; width:auto; padding:12px 25px;">Adicionar</button>
+        <div style="position: relative;">
+            <img id="m-img" style="width:100%; height:220px; object-fit:cover;">
+            <button onclick="fecharModalMontagem()" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-weight: bold;">X</button>
         </div>
-        <button class="btn-close" onclick="fecharModalMontagem()">Cancelar</button>
+        
+        <div class="modal-body">
+            <h2 id="m-nome"></h2>
+            <p id="m-desc" style="color:#666; font-size:0.9rem; margin-bottom: 10px;"></p>
+            
+            <input type="text" class="search-box" placeholder="🔎 Pesquisar adicional..." oninput="filtrarAdicionais(this.value)">
+            
+            <div id="categorias-container"></div>
+
+            <label style="font-weight:bold; font-size:0.9rem; margin-top: 10px; display: block;">Alguma observação?</label>
+            <textarea id="m-obs" class="obs-box" placeholder="Ex: tirar cebola, sem gelo..."></textarea>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding:15px; background:#f9f9f9; border-radius:12px; position: sticky; bottom: 0;">
+                <div>
+                    <div style="font-size:0.8rem; color:#666;">Total do item</div>
+                    <div id="m-total" style="font-size:1.3rem; font-weight:800; color:var(--primary);">R$ 0,00</div>
+                </div>
+                <button class="btn-confirm" onclick="confirmarMontagem()" style="margin:0; width:auto; padding:12px 30px;">Adicionar</button>
+            </div>
+        </div>
     </div>
 </div>
 
 <div id="cart-modal" class="modal">
     <div class="modal-content">
         <h2>Seu Carrinho</h2>
-        <div id="cart-items" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;"></div>
-        <div class="form-group"><label>NOME</label><input type="text" id="cliente-nome"></div>
-        <div class="form-group"><label>ENDEREÇO</label><input type="text" id="cliente-end"></div>
+        <div id="cart-items" style="max-height: 350px; overflow-y: auto; margin-bottom: 20px;"></div>
+        
+        <div class="form-group"><label>NOME</label><input type="text" id="cliente-nome" placeholder="Seu nome completo"></div>
+        <div class="form-group"><label>ENDEREÇO</label><input type="text" id="cliente-end" placeholder="Rua, número, bairro"></div>
         <div class="form-group">
             <label>PAGAMENTO</label>
             <select id="cliente-pagto">
                 <option value="Pix">Pix</option>
-                <option value="Cartão">Cartão</option>
+                <option value="Cartão">Cartão de Crédito/Débito</option>
                 <option value="Dinheiro">Dinheiro</option>
             </select>
         </div>
-        <div style="display: flex; justify-content: space-between; margin: 20px 0;">
-            <span>Total:</span><span id="cart-total" style="font-weight: 800; color: var(--primary);">R$ 0,00</span>
+        
+        <div style="display: flex; justify-content: space-between; margin: 20px 0; font-size: 1.2rem; border-top: 2px solid #eee; padding-top: 15px;">
+            <span style="font-weight: bold;">Total Geral:</span>
+            <span id="cart-total" style="font-weight: 800; color: var(--primary);">R$ 0,00</span>
         </div>
+        
         <% if (estaAberto) { %>
-            <button class="btn-confirm" onclick="finalizar()">Confirmar Pedido</button>
+            <button class="btn-confirm" onclick="finalizar()">Finalizar Pedido</button>
         <% } else { %>
-            <button class="btn-confirm btn-disabled" disabled>Estamos Fechados</button>
+            <button class="btn-confirm btn-disabled" disabled>Loja Fechada</button>
         <% } %>
-        <button class="btn-close" onclick="toggleCart()">Voltar</button>
+        <button class="btn-close" onclick="toggleCart()">Continuar Comprando</button>
     </div>
 </div>
 
@@ -187,18 +205,22 @@
 
     // Carregar configurações do servidor ao iniciar
     async function carregarEstrutura() {
-        const res = await fetch('/api/config-estrutura');
-        configLocal = await res.json();
+        try {
+            const res = await fetch('/api/config-estrutura');
+            configLocal = await res.json();
+        } catch (e) { console.error("Erro ao carregar adicionais", e); }
     }
     carregarEstrutura();
 
     function abrirModalMontagem(nome, preco, desc, img) {
-        if ("<%= estaAberto %>" === "false") return alert("Estamos fechados!");
+        if ("<%= estaAberto %>" === "false") return alert("Estamos fechados no momento!");
         
-        produtoAtual = { nome, precoBase: parseFloat(preco), desc, img, adicionais: [] };
+        produtoAtual = { nome, precoBase: parseFloat(preco), desc, img };
         
-        // Resetar quantidades localmente para o novo modal
-        configLocal.categorias.forEach(cat => cat.opcoes.forEach(opt => opt.qtd = 0));
+        // Resetar quantidades das opções para o novo produto
+        if(configLocal) {
+            configLocal.categorias.forEach(cat => cat.opcoes.forEach(opt => opt.qtd = 0));
+        }
         
         document.getElementById('m-img').src = img;
         document.getElementById('m-nome').innerText = nome;
@@ -213,20 +235,21 @@
     function renderizarCategorias(filtro = "") {
         const container = document.getElementById('categorias-container');
         container.innerHTML = "";
+        if(!configLocal) return;
 
         configLocal.categorias.forEach(cat => {
             let htmlOpcoes = "";
             cat.opcoes.forEach(opt => {
                 if (filtro === "" || opt.nome.toLowerCase().includes(filtro.toLowerCase())) {
                     htmlOpcoes += `
-                        <div class="item-add" data-nome="${opt.nome}">
+                        <div class="item-add">
                             <div>
-                                <div>${opt.nome}</div>
+                                <div style="font-weight: 500;">${opt.nome}</div>
                                 <div style="font-size:0.75rem; color:var(--primary);">${opt.preco > 0 ? '+ R$ '+opt.preco.toFixed(2) : 'Incluso'}</div>
                             </div>
                             <div class="item-controls">
                                 <button class="btn-qty" onclick="alterarQtd('${cat.id}', '${opt.id}', -1)">-</button>
-                                <span id="qtd-${opt.id}">${opt.qtd}</span>
+                                <span id="qtd-${opt.id}" style="font-weight: bold; min-width: 20px; text-align: center;">${opt.qtd}</span>
                                 <button class="btn-qty" onclick="alterarQtd('${cat.id}', '${opt.id}', 1)">+</button>
                             </div>
                         </div>`;
@@ -237,7 +260,7 @@
                 container.innerHTML += `
                     <div class="cat-section">
                         <div class="cat-header">
-                            <div style="font-weight:bold;">${cat.nome}</div>
+                            <div style="font-weight:bold; color: var(--dark);">${cat.nome}</div>
                             <div style="font-size:0.7rem; color:#888;">${cat.descricao}</div>
                         </div>
                         ${htmlOpcoes}
@@ -253,7 +276,7 @@
         const totalNaCategoria = categoria.opcoes.reduce((acc, curr) => acc + curr.qtd, 0);
 
         if (delta > 0 && totalNaCategoria >= categoria.limite) {
-            return alert(`Limite máximo de ${categoria.limite} itens para ${categoria.nome}`);
+            return alert(`Limite máximo atingido para ${categoria.nome} (${categoria.limite} itens).`);
         }
 
         if (opcao.qtd + delta >= 0) {
@@ -266,41 +289,36 @@
     function atualizarTotalModal() {
         let extra = 0;
         configLocal.categorias.forEach(cat => {
-            cat.opcoes.forEach(opt => {
-                extra += (opt.preco * opt.qtd);
-            });
+            cat.opcoes.forEach(opt => { extra += (opt.preco * opt.qtd); });
         });
         const total = produtoAtual.precoBase + extra;
         document.getElementById('m-total').innerText = `R$ ${total.toFixed(2)}`;
     }
 
-    function filtrarAdicionais(val) {
-        renderizarCategorias(val);
-    }
+    function filtrarAdicionais(val) { renderizarCategorias(val); }
 
-    function fecharModalMontagem() {
-        document.getElementById('modal-montagem').style.display = 'none';
-    }
+    function fecharModalMontagem() { document.getElementById('modal-montagem').style.display = 'none'; }
 
     function confirmarMontagem() {
-        let resumoAdicionais = [];
+        let selecionados = [];
         let precoFinal = produtoAtual.precoBase;
 
         configLocal.categorias.forEach(cat => {
             cat.opcoes.forEach(opt => {
                 if(opt.qtd > 0) {
-                    resumoAdicionais.push(`${opt.qtd}x ${opt.nome}`);
+                    selecionados.push({ nome: opt.nome, qtd: opt.qtd, preco: opt.preco });
                     precoFinal += (opt.preco * opt.qtd);
                 }
             });
         });
 
         const obs = document.getElementById('m-obs').value;
-        const nomeFinal = produtoAtual.nome + (resumoAdicionais.length > 0 ? " (" + resumoAdicionais.join(", ") + ")" : "");
         
         carrinho.push({
-            nome: nomeFinal,
+            id_temp: Date.now(),
+            nome: produtoAtual.nome,
             preco: precoFinal,
+            adicionais: selecionados,
             obs: obs
         });
 
@@ -308,23 +326,41 @@
         fecharModalMontagem();
     }
 
+    function removerDoCarrinho(id_temp) {
+        carrinho = carrinho.filter(item => item.id_temp !== id_temp);
+        atualizarUI();
+    }
+
     function atualizarUI() {
         document.getElementById('cart-count').innerText = carrinho.length;
         const lista = document.getElementById('cart-items');
-        lista.innerHTML = carrinho.map(i => `
-            <div style="border-bottom:1px solid #eee; padding:10px 0;">
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="font-size:0.9rem; font-weight:600;">${i.nome}</span>
-                    <b>R$ ${i.preco.toFixed(2)}</b>
+        
+        if(carrinho.length === 0) {
+            lista.innerHTML = "<p style='text-align:center; color:#888; padding:20px;'>Seu carrinho está vazio.</p>";
+        } else {
+            lista.innerHTML = carrinho.map(i => `
+                <div class="cart-item-row">
+                    <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+                        <div>
+                            <strong style="color: var(--dark);">${i.nome}</strong>
+                            <div style="font-size:0.75rem; color:#666; margin-top:4px;">
+                                ${i.adicionais.map(a => `${a.qtd}x ${a.nome}`).join(', ')}
+                            </div>
+                            ${i.obs ? `<div style="font-size:0.75rem; color:var(--primary); font-style: italic;">Obs: ${i.obs}</div>` : ''}
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            <b style="color: var(--dark);">R$ ${i.preco.toFixed(2)}</b>
+                            <i class="fa-solid fa-trash-can remove-product" onclick="removerDoCarrinho(${i.id_temp})"></i>
+                        </div>
+                    </div>
                 </div>
-                ${i.obs ? `<div style="font-size:0.75rem; color:#888;">Obs: ${i.obs}</div>` : ''}
-            </div>
-        `).join('');
+            `).join('');
+        }
+        
         const total = carrinho.reduce((acc, i) => acc + i.preco, 0);
         document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
     }
 
-    // --- FUNÇÕES ORIGINAIS DO SISTEMA ---
     function filtrarCategoria(categoria) {
         document.querySelectorAll('.cat-btn').forEach(btn => {
             btn.classList.remove('active');
@@ -346,22 +382,27 @@
         const nome = document.getElementById('cliente-nome').value;
         const endereco = document.getElementById('cliente-end').value;
         const pagto = document.getElementById('cliente-pagto').value;
-        if(!nome || !endereco || carrinho.length === 0) return alert("Preencha todos os campos!");
+        
+        if(!nome || !endereco) return alert("Por favor, informe seu nome e endereço!");
+        if(carrinho.length === 0) return alert("Seu carrinho está vazio!");
 
         const res = await fetch('/enviar-pedido', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                cliente: nome, endereco: endereco, pagamento: pagto,
-                itens: JSON.stringify(carrinho), 
+                cliente: nome, 
+                endereco: endereco, 
+                pagamento: pagto,
+                itens: carrinho, 
                 total: carrinho.reduce((acc, i) => acc + i.preco, 0)
             })
         });
+        
         if(res.ok) {
             const data = await res.json();
             localStorage.setItem('ultimoPedidoId', data.id);
             location.href = '/status/' + data.id;
-        } else alert("Erro ao enviar pedido.");
+        } else alert("Ocorreu um erro ao processar seu pedido.");
     }
 
     window.onload = function() {
