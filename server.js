@@ -128,7 +128,7 @@ app.get('/admin', async (req, res) => {
     try {
         const produtos = await Produto.find();
         const todosOsPedidos = await Pedido.find(); 
-        const motoboys = await Motoboy.find(); // Busca todos os motoboys para a tabela
+        const motoboys = await Motoboy.find() || []; // Busca todos os motoboys para a tabela
         
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
@@ -172,11 +172,15 @@ app.post('/motoboy/login', async (req, res) => {
 });
 
 app.get('/motoboy/dashboard', async (req, res) => {
-    if (!req.session.motoboy) return res.redirect('/motoboy/login');
-    const pedidosParaEntrega = await Pedido.find({ 
-        status: { $in: ['Pronto para Entrega', 'Em Rota'] } 
-    });
-    res.render('motoboy/dashboard', { pedidos: pedidosParaEntrega });
+    try {
+        if (!req.session.motoboy) return res.redirect('/motoboy/login');
+        const pedidosParaEntrega = await Pedido.find({ 
+            status: { $in: ['Pronto para Entrega', 'Em Rota'] } 
+        });
+        res.render('motoboy/dashboard', { pedidos: pedidosParaEntrega });
+    } catch (err) {
+        res.status(500).send("Erro ao carregar dashboard.");
+    }
 });
 
 app.get('/motoboy/perfil', async (req, res) => {
