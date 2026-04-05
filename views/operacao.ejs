@@ -81,7 +81,7 @@
             display: grid; grid-template-columns: 1fr; gap: 10px;
         }
 
-        /* Estilo Mini Card Compacto */
+        /* Mini Card Compacto */
         .mini-card {
             background: var(--card-inner); border-radius: 8px;
             padding: 12px; border: 1px solid #333;
@@ -101,22 +101,26 @@
         .btn-detalhes { background: #444; color: white; }
         .btn-proximo { background: var(--primary); color: white; }
 
-        /* Modal de Comanda */
+        /* Modal que preserva o estilo da comanda original */
         .modal {
             display: none; position: fixed; z-index: 999;
             left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            justify-content: center; align-items: center;
         }
         .modal-content {
-            background-color: #fff; color: #333; margin: 5% auto;
-            padding: 20px; border-radius: 15px; width: 90%; max-width: 450px;
-            position: relative; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            width: 95%; max-width: 400px; position: relative;
+            animation: fadeIn 0.3s ease;
         }
-        .close { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #888; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        
+        .close-modal-btn { 
+            position: absolute; top: -35px; right: 0; color: white; 
+            font-size: 30px; cursor: pointer; background: none; border: none;
+        }
 
-        .comanda-header { border-bottom: 2px dashed #ccc; padding-bottom: 10px; margin-bottom: 15px; text-align: center; }
-        .comanda-item { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .comanda-obs { background: #fff3cd; padding: 10px; border-radius: 5px; font-size: 0.85rem; color: #856404; margin-top: 10px; }
+        /* Esconde o card original na listagem para manter o painel compacto */
+        .original-card-wrapper { display: none; }
 
         @media (max-width: 768px) {
             .kanban { flex-direction: column; height: auto; }
@@ -141,14 +145,17 @@
             <div class="col-header col-pendente">🟡 Novos Pedidos (<span id="count-pendente"><%= pedidos.filter(p => p.status === 'Pendente').length %></span>)</div>
             <div class="lista-pedidos" id="pendentes">
                 <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                    <div class="mini-card" id="pedido-<%= p.id %>">
+                    <div class="mini-card">
                         <div class="mini-card-info">
                             <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
                             <span class="mini-card-cliente"><%= p.cliente %></span>
                         </div>
                         <div class="btn-group">
-                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= JSON.stringify(p) %>')">Detalhes</button>
+                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                             <button class="btn-acao btn-proximo" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Iniciar</button>
+                        </div>
+                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper">
+                            <%- include('partials/card-comanda', {p: p}) %>
                         </div>
                     </div>
                 <% }) %>
@@ -165,8 +172,11 @@
                             <span class="mini-card-cliente"><%= p.cliente %></span>
                         </div>
                         <div class="btn-group">
-                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= JSON.stringify(p) %>')">Detalhes</button>
+                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                             <button class="btn-acao btn-proximo" style="background:var(--preparando)" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar</button>
+                        </div>
+                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper">
+                            <%- include('partials/card-comanda', {p: p}) %>
                         </div>
                     </div>
                 <% }) %>
@@ -183,8 +193,11 @@
                             <span class="mini-card-cliente"><%= p.cliente %></span>
                         </div>
                         <div class="btn-group">
-                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= JSON.stringify(p) %>')">Detalhes</button>
+                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                             <button class="btn-acao btn-proximo" style="background:var(--entrega)" onclick="atualizarStatus('<%= p.id %>', 'Concluído')">Concluir</button>
+                        </div>
+                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper">
+                            <%- include('partials/card-comanda', {p: p}) %>
                         </div>
                     </div>
                 <% }) %>
@@ -194,9 +207,8 @@
 
     <div id="modalDetalhes" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="fecharModal()">&times;</span>
-            <div id="comanda-interna">
-                </div>
+            <button class="close-modal-btn" onclick="fecharModal()">&times;</button>
+            <div id="comanda-interna"></div>
         </div>
     </div>
 
@@ -206,36 +218,15 @@
         const socket = io();
         const audio = document.getElementById('audioNotificacao');
 
-        function abrirDetalhes(pedidoRaw) {
-            const p = JSON.parse(pedidoRaw);
-            const container = document.getElementById('comanda-interna');
-            
-            let itensHtml = p.itens.map(item => `
-                <div class="comanda-item">
-                    <span><strong>${item.quantidade}x</strong> ${item.nome}</span>
-                    <span>R$ ${item.preco.toFixed(2)}</span>
-                </div>
-            `).join('');
-
-            container.innerHTML = `
-                <div class="comanda-header">
-                    <h2 style="margin:0">COMANDA #${p.id.toString().slice(-4)}</h2>
-                    <p style="margin:5px 0">Cliente: <strong>${p.cliente}</strong></p>
-                    <small>Status: ${p.status}</small>
-                </div>
-                <div style="margin-top:15px">
-                    ${itensHtml}
-                </div>
-                ${p.observacao ? `<div class="comanda-obs"><strong>OBS:</strong> ${p.observacao}</div>` : ''}
-                <div style="margin-top:20px; text-align:right; font-weight:bold; font-size:1.2rem;">
-                    Total: R$ ${p.total.toFixed(2)}
-                </div>
-            `;
-            document.getElementById('modalDetalhes').style.display = "block";
+        function abrirDetalhes(id) {
+            const originalCardHtml = document.getElementById(`wrapper-${id}`).innerHTML;
+            document.getElementById('comanda-interna').innerHTML = originalCardHtml;
+            document.getElementById('modalDetalhes').style.display = "flex";
         }
 
         function fecharModal() {
             document.getElementById('modalDetalhes').style.display = "none";
+            document.getElementById('comanda-interna').innerHTML = "";
         }
 
         async function atualizarStatus(id, novoStatus) {
@@ -245,12 +236,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, novoStatus })
                 });
-                if (response.ok) { console.log("Status atualizado"); }
+                if (response.ok) { window.location.reload(); }
             } catch (err) { console.error("Erro:", err); }
         }
 
         socket.on('novoPedido', (pedido) => {
-            audio.play().catch(e => console.log("Áudio aguardando interação."));
+            audio.play().catch(e => console.log("Áudio pendente de interação."));
             setTimeout(() => { window.location.reload(); }, 500);
         });
 
