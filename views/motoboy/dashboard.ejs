@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motoboy Dash | Entrega Ativa</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <style>
+        :root {
+            --primary: #FFD700; /* Amarelo vibrante para destaque */
+            --dark: #1a1a1a;
+            --card: #2d2d2d;
+            --text: #ffffff;
+            --success: #27ae60;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--dark);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Menu Lateral (Drawer) */
+        .sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 2000;
+            top: 0;
+            left: 0;
+            background-color: var(--card);
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+        }
+
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            color: #ccc;
+            display: block;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover { color: var(--primary); }
+
+        /* Header com Foto e Perfil */
+        header {
+            background: var(--card);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .perfil-topo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .foto-perfil {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            object-fit: cover;
+        }
+
+        /* Container do Mapa */
+        #map {
+            width: 100%;
+            height: 300px;
+            background: #333;
+            margin-bottom: 10px;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        /* Lista de Pedidos e Comanda */
+        .container { padding: 15px; }
+
+        .card-pedido {
+            background: var(--card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .btn-acao {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-aceitar { background: var(--primary); color: var(--dark); }
+        .btn-finalizar { background: var(--success); color: white; display: none; }
+        .btn-finalizar:disabled { background: #555; cursor: not-allowed; }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: rgba(255,215,0,0.2);
+            color: var(--primary);
+        }
+
+        /* Comanda Detalhada (Hidden por padrão ao aceitar) */
+        .detalhes-entrega {
+            margin-top: 15px;
+            border-top: 1px solid #444;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="mySidebar" class="sidebar">
+        <a href="javascript:void(0)" onclick="closeNav()" style="font-size: 30px;">&times;</a>
+        <div style="text-align: center; padding: 20px;">
+            <img src="<%= motoboy.foto || '/img/default-user.png' %>" class="foto-perfil" style="width: 80px; height: 80px;">
+            <h4><%= motoboy.nome %></h4>
+        </div>
+        <a href="/motoboy/pedidos-disponiveis">📦 Pedidos em Espera</a>
+        <a href="/motoboy/minha-entrega">🛵 Entrega Atual</a>
+        <a href="/motoboy/perfil">⚙️ Meu Perfil</a>
+        <a href="/logout" style="color: #ff4444;">🚪 Sair</a>
+    </div>
+
+    <header>
+        <div onclick="openNav()" style="font-size: 24px; cursor: pointer;">&#9776;</div>
+        <div class="perfil-topo" onclick="window.location.href='/motoboy/perfil'">
+            <div style="text-align: right;">
+                <div style="font-weight: bold; font-size: 0.9rem;"><%= motoboy.nome %></div>
+                <div style="font-size: 0.7rem; color: #aaa;">Online</div>
+            </div>
+            <img src="<%= motoboy.foto || '/img/default-user.png' %>" class="foto-perfil">
+        </div>
+    </header>
+
+    <div id="map"></div>
+
+    <div class="container" id="app-content">
+        <div class="card-pedido" id="pedido-ativo">
+            <div style="display: flex; justify-content: space-between;">
+                <span class="status-badge">PRONTO PARA COLETA</span>
+                <strong>#<%= pedido.id.slice(-4) %></strong>
+            </div>
+            <h3><%= pedido.cliente %></h3>
+            <p>📍 <%= pedido.endereco %></p>
+            
+            <div class="detalhes-entrega" id="comanda-info">
+                <strong>Itens do Pedido:</strong>
+                <p><%= pedido.descricao %></p>
+                <hr style="border: 0.5px solid #444;">
+                <p><strong>Total: R$ <%= pedido.total %></strong></p>
+            </div>
+
+            <button class="btn-acao btn-aceitar" id="btn-principal" onclick="iniciarRota()">ACEITAR E INICIAR ROTA</button>
+            <button class="btn-acao btn-finalizar" id="btn-finalizar" onclick="finalizarEntrega()" disabled>CHEGUE AO DESTINO PARA FINALIZAR</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map, markerMotoboy, markerDestino, routeLine;
+        const socket = io();
+
+        // 1. Configuração Inicial do Mapa
+        function initMap(latDestino, lngDestino) {
+            map = L.map('map').setView([latDestino, lngDestino], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            markerDestino = L.marker([latDestino, lngDestino]).addTo(map)
+                .bindPopup('Destino do Cliente').openPopup();
+        }
+
+        // 2. Lógica de Rota e Geofencing
+        function iniciarRota() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(position => {
+                    const { latitude, longitude } = position.coords;
+                    
+                    // Atualiza posição do motoboy no mapa
+                    if (!markerMotoboy) {
+                        markerMotoboy = L.circleMarker([latitude, longitude], { color: 'blue', radius: 10 }).addTo(map);
+                    } else {
+                        markerMotoboy.setLatLng([latitude, longitude]);
+                    }
+
+                    // Cálculo de distância simples (Haversine)
+                    const dist = calcularDistancia(latitude, longitude, -23.5505, -46.6333); // Exemplo de coordenadas
+
+                    if (dist < 0.05) { // 50 metros
+                        const btnFin = document.getElementById('btn-finalizar');
+                        btnFin.disabled = false;
+                        btnFin.style.display = 'block';
+                        btnFin.innerText = "FINALIZAR ENTREGA";
+                        document.getElementById('btn-principal').style.display = 'none';
+                    }
+                });
+
+                // Notifica o servidor que o status mudou para 'Em Rota'
+                socket.emit('aceitarPedido', { pedidoId: '<%= pedido.id %>', motoboy: '<%= motoboy.nome %>' });
+            }
+        }
+
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Raio da Terra em km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // UI Funções
+        function openNav() { document.getElementById("mySidebar").style.width = "250px"; }
+        function closeNav() { document.getElementById("mySidebar").style.width = "0"; }
+
+        // Inicia o mapa com coordenadas fictícias do cliente (substituir por variáveis do EJS)
+        initMap(-23.5505, -46.6333);
+    </script>
+</body>
+</html>
