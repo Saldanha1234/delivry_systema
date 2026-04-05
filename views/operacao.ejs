@@ -15,7 +15,7 @@
             --preparando: #3498db;
             --entrega: #2ecc71;
             --card-inner: #252525;
-            --primary: #FF385C; /* Cor do novo estilo */
+            --primary: #FF385C;
         }
 
         body {
@@ -45,52 +45,31 @@
             border-radius: 20px;
             font-size: 0.8rem;
             border: 1px solid var(--entrega);
-            transition: 0.3s;
         }
 
         .btn-voltar {
-            background: #333;
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            transition: 0.3s;
-            border: 1px solid #444;
+            background: #333; color: white; text-decoration: none;
+            padding: 10px 20px; border-radius: 8px; font-weight: bold;
+            transition: 0.3s; border: 1px solid #444;
         }
 
-        .btn-voltar:hover { background: var(--primary); border-color: var(--primary); }
-
-        /* Estrutura Kanban */
         .kanban {
-            display: flex;
-            gap: 20px;
-            overflow-x: auto;
-            align-items: flex-start;
-            padding-bottom: 30px;
+            display: flex; gap: 20px; overflow-x: auto;
+            align-items: flex-start; padding-bottom: 30px;
             height: calc(100vh - 140px);
         }
 
         .col {
-            background-color: var(--col-bg);
-            border-radius: 12px;
-            min-width: 350px;
-            max-width: 380px;
-            display: flex;
-            flex-direction: column;
-            max-height: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 1px solid #333;
+            background-color: var(--col-bg); border-radius: 12px;
+            min-width: 320px; max-width: 350px; display: flex;
+            flex-direction: column; max-height: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid #333;
         }
 
         .col-header {
-            padding: 20px;
-            text-align: center;
-            font-weight: 800;
-            text-transform: uppercase;
-            border-radius: 12px 12px 0 0;
-            letter-spacing: 1px;
-            font-size: 0.9rem;
+            padding: 15px; text-align: center; font-weight: 800;
+            text-transform: uppercase; border-radius: 12px 12px 0 0;
+            font-size: 0.85rem;
         }
 
         .col-pendente { border-top: 6px solid var(--pendente); background: rgba(231, 76, 60, 0.1); color: var(--pendente); }
@@ -98,30 +77,50 @@
         .col-entrega { border-top: 6px solid var(--entrega); background: rgba(46, 204, 113, 0.1); color: var(--entrega); }
 
         .lista-pedidos {
-            padding: 15px;
-            overflow-y: auto;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            padding: 10px; overflow-y: auto; flex-grow: 1;
+            display: grid; grid-template-columns: 1fr; gap: 10px;
         }
 
-        /* Estilização da Barra de Rolagem */
-        .lista-pedidos::-webkit-scrollbar { width: 6px; }
-        .lista-pedidos::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        /* Estilo Mini Card Compacto */
+        .mini-card {
+            background: var(--card-inner); border-radius: 8px;
+            padding: 12px; border: 1px solid #333;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+
+        .mini-card-info { display: flex; justify-content: space-between; align-items: center; }
+        .mini-card-id { font-weight: bold; color: var(--accent); font-size: 0.9rem; }
+        .mini-card-cliente { font-size: 0.85rem; color: #bbb; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+
+        .btn-group { display: flex; gap: 5px; }
+        .btn-acao {
+            flex: 1; padding: 8px; border: none; border-radius: 5px;
+            font-size: 0.7rem; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; transition: 0.2s;
+        }
+        .btn-detalhes { background: #444; color: white; }
+        .btn-proximo { background: var(--primary); color: white; }
+
+        /* Modal de Comanda */
+        .modal {
+            display: none; position: fixed; z-index: 999;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background-color: #fff; color: #333; margin: 5% auto;
+            padding: 20px; border-radius: 15px; width: 90%; max-width: 450px;
+            position: relative; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        .close { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #888; }
+
+        .comanda-header { border-bottom: 2px dashed #ccc; padding-bottom: 10px; margin-bottom: 15px; text-align: center; }
+        .comanda-item { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .comanda-obs { background: #fff3cd; padding: 10px; border-radius: 5px; font-size: 0.85rem; color: #856404; margin-top: 10px; }
 
         @media (max-width: 768px) {
-            .kanban {
-                flex-direction: column;
-                height: auto;
-                overflow-x: hidden;
-            }
-            .col {
-                min-width: 100%;
-                max-width: 100%;
-                min-height: 300px;
-                margin-bottom: 20px;
-            }
+            .kanban { flex-direction: column; height: auto; }
+            .col { min-width: 100%; margin-bottom: 20px; }
         }
     </style>
 </head>
@@ -132,10 +131,9 @@
             <h1>📦 Gerenciamento de Pedidos</h1>
             <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
                 <span id="socket-status" class="status-badge">● Sistema Online</span>
-                <small style="color: #888;">Monitorando novos pedidos com adicionais em tempo real.</small>
             </div>
         </div>
-        <a href="/admin" class="btn-voltar">🏠 Painel Administrativo</a>
+        <a href="/admin" class="btn-voltar">🏠 Sair</a>
     </header>
 
     <div class="kanban">
@@ -143,7 +141,16 @@
             <div class="col-header col-pendente">🟡 Novos Pedidos (<span id="count-pendente"><%= pedidos.filter(p => p.status === 'Pendente').length %></span>)</div>
             <div class="lista-pedidos" id="pendentes">
                 <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                    <%- include('partials/card-comanda', {p: p}) %>
+                    <div class="mini-card" id="pedido-<%= p.id %>">
+                        <div class="mini-card-info">
+                            <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
+                            <span class="mini-card-cliente"><%= p.cliente %></span>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= JSON.stringify(p) %>')">Detalhes</button>
+                            <button class="btn-acao btn-proximo" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Iniciar</button>
+                        </div>
+                    </div>
                 <% }) %>
             </div>
         </div>
@@ -152,18 +159,44 @@
             <div class="col-header col-preparando">🔥 Em Preparação (<span id="count-preparando"><%= pedidos.filter(p => p.status === 'Preparando').length %></span>)</div>
             <div class="lista-pedidos" id="preparando">
                 <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                    <%- include('partials/card-comanda', {p: p}) %>
+                    <div class="mini-card">
+                        <div class="mini-card-info">
+                            <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
+                            <span class="mini-card-cliente"><%= p.cliente %></span>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= JSON.stringify(p) %>')">Detalhes</button>
+                            <button class="btn-acao btn-proximo" style="background:var(--preparando)" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar</button>
+                        </div>
+                    </div>
                 <% }) %>
             </div>
         </div>
 
         <div class="col">
-            <div class="col-header col-entrega">🛵 Entrega / Retirada (<span id="count-entrega"><%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %></span>)</div>
+            <div class="col-header col-entrega">🛵 Entrega (<span id="count-entrega"><%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %></span>)</div>
             <div class="lista-pedidos" id="entrega">
                 <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
-                    <%- include('partials/card-comanda', {p: p}) %>
+                    <div class="mini-card">
+                        <div class="mini-card-info">
+                            <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
+                            <span class="mini-card-cliente"><%= p.cliente %></span>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= JSON.stringify(p) %>')">Detalhes</button>
+                            <button class="btn-acao btn-proximo" style="background:var(--entrega)" onclick="atualizarStatus('<%= p.id %>', 'Concluído')">Concluir</button>
+                        </div>
+                    </div>
                 <% }) %>
             </div>
+        </div>
+    </div>
+
+    <div id="modalDetalhes" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModal()">&times;</span>
+            <div id="comanda-interna">
+                </div>
         </div>
     </div>
 
@@ -173,64 +206,60 @@
         const socket = io();
         const audio = document.getElementById('audioNotificacao');
 
-        // Função principal para atualizar status (chamada pelos botões no card-comanda)
+        function abrirDetalhes(pedidoRaw) {
+            const p = JSON.parse(pedidoRaw);
+            const container = document.getElementById('comanda-interna');
+            
+            let itensHtml = p.itens.map(item => `
+                <div class="comanda-item">
+                    <span><strong>${item.quantidade}x</strong> ${item.nome}</span>
+                    <span>R$ ${item.preco.toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="comanda-header">
+                    <h2 style="margin:0">COMANDA #${p.id.toString().slice(-4)}</h2>
+                    <p style="margin:5px 0">Cliente: <strong>${p.cliente}</strong></p>
+                    <small>Status: ${p.status}</small>
+                </div>
+                <div style="margin-top:15px">
+                    ${itensHtml}
+                </div>
+                ${p.observacao ? `<div class="comanda-obs"><strong>OBS:</strong> ${p.observacao}</div>` : ''}
+                <div style="margin-top:20px; text-align:right; font-weight:bold; font-size:1.2rem;">
+                    Total: R$ ${p.total.toFixed(2)}
+                </div>
+            `;
+            document.getElementById('modalDetalhes').style.display = "block";
+        }
+
+        function fecharModal() {
+            document.getElementById('modalDetalhes').style.display = "none";
+        }
+
         async function atualizarStatus(id, novoStatus) {
             try {
-                // Desabilita o botão temporariamente no front para evitar múltiplos cliques
-                const btn = event?.target;
-                if(btn) btn.style.opacity = "0.5";
-
                 const response = await fetch('/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, novoStatus })
                 });
-                
-                if (response.ok) {
-                    // O recarregamento será disparado pelo evento de socket 'statusAtualizado'
-                    // ou por aqui caso o socket falhe por um instante.
-                    console.log(`Pedido ${id} movido para ${novoStatus}`);
-                } else {
-                    alert("Erro ao processar mudança de status.");
-                    if(btn) btn.style.opacity = "1";
-                }
-            } catch (err) {
-                console.error("Erro na comunicação com o servidor:", err);
-            }
+                if (response.ok) { console.log("Status atualizado"); }
+            } catch (err) { console.error("Erro:", err); }
         }
 
-        // SOCKET: Receber novo pedido
         socket.on('novoPedido', (pedido) => {
-            console.log("Novo pedido detectado:", pedido);
-            
-            // Tenta tocar o som
             audio.play().catch(e => console.log("Áudio aguardando interação."));
-            
-            // Recarrega a página para processar o novo formato de objeto enviado
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
+            setTimeout(() => { window.location.reload(); }, 500);
         });
 
-        // SOCKET: Atualização de status em tempo real (Sync entre abas)
-        socket.on('statusAtualizado', (data) => {
-            window.location.reload();
-        });
+        socket.on('statusAtualizado', () => { window.location.reload(); });
 
-        // Feedback visual do Socket
-        socket.on('connect', () => {
-            const badge = document.getElementById('socket-status');
-            badge.style.color = "var(--entrega)";
-            badge.style.borderColor = "var(--entrega)";
-            badge.innerText = "● Sistema Online";
-        });
-
-        socket.on('disconnect', () => {
-            const badge = document.getElementById('socket-status');
-            badge.style.color = "var(--pendente)";
-            badge.style.borderColor = "var(--pendente)";
-            badge.innerText = "○ Reconectando...";
-        });
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalDetalhes');
+            if (event.target == modal) fecharModal();
+        }
     </script>
 </body>
 </html>
