@@ -15,6 +15,7 @@
             --preparando: #3498db;
             --entrega: #2ecc71;
             --card-inner: #252525;
+            --primary: #FF385C; /* Cor do novo estilo */
         }
 
         body {
@@ -44,6 +45,7 @@
             border-radius: 20px;
             font-size: 0.8rem;
             border: 1px solid var(--entrega);
+            transition: 0.3s;
         }
 
         .btn-voltar {
@@ -57,7 +59,7 @@
             border: 1px solid #444;
         }
 
-        .btn-voltar:hover { background: var(--pendente); border-color: var(--pendente); }
+        .btn-voltar:hover { background: var(--primary); border-color: var(--primary); }
 
         /* Estrutura Kanban */
         .kanban {
@@ -66,7 +68,7 @@
             overflow-x: auto;
             align-items: flex-start;
             padding-bottom: 30px;
-            height: calc(100vh - 120px);
+            height: calc(100vh - 140px);
         }
 
         .col {
@@ -78,6 +80,7 @@
             flex-direction: column;
             max-height: 100%;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid #333;
         }
 
         .col-header {
@@ -87,12 +90,12 @@
             text-transform: uppercase;
             border-radius: 12px 12px 0 0;
             letter-spacing: 1px;
-            font-size: 1.1rem;
+            font-size: 0.9rem;
         }
 
-        .col-pendente { border-top: 6px solid var(--pendente); background: rgba(231, 76, 60, 0.05); color: var(--pendente); }
-        .col-preparando { border-top: 6px solid var(--preparando); background: rgba(52, 152, 219, 0.05); color: var(--preparando); }
-        .col-entrega { border-top: 6px solid var(--entrega); background: rgba(46, 204, 113, 0.05); color: var(--entrega); }
+        .col-pendente { border-top: 6px solid var(--pendente); background: rgba(231, 76, 60, 0.1); color: var(--pendente); }
+        .col-preparando { border-top: 6px solid var(--preparando); background: rgba(52, 152, 219, 0.1); color: var(--preparando); }
+        .col-entrega { border-top: 6px solid var(--entrega); background: rgba(46, 204, 113, 0.1); color: var(--entrega); }
 
         .lista-pedidos {
             padding: 15px;
@@ -111,11 +114,13 @@
             .kanban {
                 flex-direction: column;
                 height: auto;
+                overflow-x: hidden;
             }
             .col {
                 min-width: 100%;
                 max-width: 100%;
-                min-height: 400px;
+                min-height: 300px;
+                margin-bottom: 20px;
             }
         }
     </style>
@@ -127,7 +132,7 @@
             <h1>📦 Gerenciamento de Pedidos</h1>
             <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
                 <span id="socket-status" class="status-badge">● Sistema Online</span>
-                <small style="color: #666;">Os pedidos concluídos são movidos para o Financeiro no Admin.</small>
+                <small style="color: #888;">Monitorando novos pedidos com adicionais em tempo real.</small>
             </div>
         </div>
         <a href="/admin" class="btn-voltar">🏠 Painel Administrativo</a>
@@ -135,7 +140,7 @@
 
     <div class="kanban">
         <div class="col">
-            <div class="col-header col-pendente">🟡 Novos Pedidos (<%= pedidos.filter(p => p.status === 'Pendente').length %>)</div>
+            <div class="col-header col-pendente">🟡 Novos Pedidos (<span id="count-pendente"><%= pedidos.filter(p => p.status === 'Pendente').length %></span>)</div>
             <div class="lista-pedidos" id="pendentes">
                 <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
                     <%- include('partials/card-comanda', {p: p}) %>
@@ -144,7 +149,7 @@
         </div>
 
         <div class="col">
-            <div class="col-header col-preparando">🔥 Em Preparação (<%= pedidos.filter(p => p.status === 'Preparando').length %>)</div>
+            <div class="col-header col-preparando">🔥 Em Preparação (<span id="count-preparando"><%= pedidos.filter(p => p.status === 'Preparando').length %></span>)</div>
             <div class="lista-pedidos" id="preparando">
                 <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
                     <%- include('partials/card-comanda', {p: p}) %>
@@ -153,7 +158,7 @@
         </div>
 
         <div class="col">
-            <div class="col-header col-entrega">🛵 Entrega / Retirada (<%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %>)</div>
+            <div class="col-header col-entrega">🛵 Entrega / Retirada (<span id="count-entrega"><%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %></span>)</div>
             <div class="lista-pedidos" id="entrega">
                 <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
                     <%- include('partials/card-comanda', {p: p}) %>
@@ -168,12 +173,13 @@
         const socket = io();
         const audio = document.getElementById('audioNotificacao');
 
-        // Lógica de Atualização de Status (Botões dos cards)
+        // Função principal para atualizar status (chamada pelos botões no card-comanda)
         async function atualizarStatus(id, novoStatus) {
             try {
-                // Feedback visual imediato para evitar cliques duplos
-                console.log(`Atualizando pedido ${id} para ${novoStatus}...`);
-                
+                // Desabilita o botão temporariamente no front para evitar múltiplos cliques
+                const btn = event?.target;
+                if(btn) btn.style.opacity = "0.5";
+
                 const response = await fetch('/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -181,38 +187,37 @@
                 });
                 
                 if (response.ok) {
-                    // O servidor emitirá um 'statusAtualizado' via socket, mas forçamos o reload aqui por segurança
-                    window.location.reload();
+                    // O recarregamento será disparado pelo evento de socket 'statusAtualizado'
+                    // ou por aqui caso o socket falhe por um instante.
+                    console.log(`Pedido ${id} movido para ${novoStatus}`);
                 } else {
-                    alert("Erro ao atualizar o status do pedido.");
+                    alert("Erro ao processar mudança de status.");
+                    if(btn) btn.style.opacity = "1";
                 }
             } catch (err) {
-                console.error("Erro na requisição:", err);
+                console.error("Erro na comunicação com o servidor:", err);
             }
         }
 
-        // Evento: Novo pedido entra no sistema
+        // SOCKET: Receber novo pedido
         socket.on('novoPedido', (pedido) => {
-            console.log("Notificação: Novo pedido recebido!", pedido.id);
+            console.log("Novo pedido detectado:", pedido);
             
-            // Tenta tocar o som (navegadores exigem interação prévia para liberar áudio)
-            audio.play().catch(e => {
-                console.warn("O som de notificação foi bloqueado pelo navegador. Clique em qualquer lugar da tela para ativar.");
-            });
+            // Tenta tocar o som
+            audio.play().catch(e => console.log("Áudio aguardando interação."));
             
-            // Recarrega para exibir o card na primeira coluna
+            // Recarrega a página para processar o novo formato de objeto enviado
             setTimeout(() => {
                 window.location.reload();
-            }, 800);
+            }, 500);
         });
 
-        // Evento: Alguém mudou o status (no Admin ou em outra aba de operação)
+        // SOCKET: Atualização de status em tempo real (Sync entre abas)
         socket.on('statusAtualizado', (data) => {
-            console.log("Status atualizado via socket.");
             window.location.reload();
         });
 
-        // Verificação de conexão do Socket para o badge visual
+        // Feedback visual do Socket
         socket.on('connect', () => {
             const badge = document.getElementById('socket-status');
             badge.style.color = "var(--entrega)";
@@ -224,9 +229,8 @@
             const badge = document.getElementById('socket-status');
             badge.style.color = "var(--pendente)";
             badge.style.borderColor = "var(--pendente)";
-            badge.innerText = "○ Tentando Reconectar...";
+            badge.innerText = "○ Reconectando...";
         });
-
     </script>
 </body>
 </html>
