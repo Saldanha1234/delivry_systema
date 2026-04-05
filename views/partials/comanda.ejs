@@ -30,6 +30,24 @@
         display: flex;
         justify-content: space-between;
         margin-bottom: 4px;
+        font-weight: bold;
+    }
+
+    /* Estilos para Adicionais e Observações */
+    .item-adicionais {
+        font-size: 0.75rem;
+        padding-left: 15px;
+        color: #333;
+        margin-bottom: 8px;
+        font-style: italic;
+    }
+
+    .item-obs {
+        background: #f0f0f0;
+        padding: 5px;
+        font-size: 0.75rem;
+        margin: 5px 0 10px 15px;
+        border-left: 3px solid #000;
     }
 
     .comanda-footer {
@@ -45,7 +63,6 @@
         font-size: 1.1rem;
     }
 
-    /* Botões de Controle (Não aparecem na impressão se um dia você imprimir) */
     .acoes-comanda {
         margin-top: 15px;
         display: flex;
@@ -55,27 +72,30 @@
 
     .btn-acao {
         border: none;
-        padding: 10px;
+        padding: 12px;
         border-radius: 4px;
         font-weight: bold;
         cursor: pointer;
         font-family: sans-serif;
         text-transform: uppercase;
+        transition: 0.2s;
     }
 
     .btn-preparar { background-color: #2980b9; color: white; }
     .btn-entregar { background-color: #27ae60; color: white; }
     .btn-concluir { background-color: #333; color: white; }
+    .btn-acao:active { transform: scale(0.98); }
 
     @media print {
         .acoes-comanda { display: none; }
+        .comanda-card { box-shadow: none; border: 1px solid #000; }
     }
 </style>
 
 <div class="comanda-card">
     <div class="comanda-header">
         <span class="tipo-entrega">
-            <%= p.pagamento.toLowerCase().includes('retirada') ? 'PARA RETIRADA' : 'PARA ENTREGA' %>
+            <%= (p.pagamento && p.pagamento.toLowerCase().includes('retirada')) ? 'PARA RETIRADA' : 'PARA ENTREGA' %>
         </span>
         <span><%= p.hora %></span>
         <strong>Pedido #<%= p.id %></strong>
@@ -91,16 +111,36 @@
     <div class="tracejado-duplo"></div>
 
     <div class="secao">
-        <span class="secao-titulo">Itens</span>
+        <span class="secao-titulo">Itens do Pedido</span>
         <% 
-           // Garante que os itens sejam tratados como array, mesmo se vierem como string JSON
-           let itensLista = Array.isArray(p.itens) ? p.itens : JSON.parse(p.itens || '[]');
-           itensLista.forEach(item => { 
+            // Tratamento robusto para garantir que itens seja um Array
+            let itensLista = [];
+            try {
+                itensLista = Array.isArray(p.itens) ? p.itens : JSON.parse(p.itens || '[]');
+            } catch(e) {
+                console.error("Erro ao processar itens do pedido", p.id);
+            }
+
+            itensLista.forEach(item => { 
         %>
             <div class="item-linha">
-                <span>(1) <%= item.nome %></span>
+                <span>(1x) <%= item.nome %></span>
                 <span>R$ <%= parseFloat(item.preco).toFixed(2) %></span>
             </div>
+
+            <% if (item.adicionais && item.adicionais.length > 0) { %>
+                <div class="item-adicionais">
+                    <% item.adicionais.forEach(add => { %>
+                        + <%= add.nome %> (R$ <%= parseFloat(add.preco).toFixed(2) %>)<br>
+                    <% }) %>
+                </div>
+            <% } %>
+
+            <% if (item.obs && item.obs.trim() !== "") { %>
+                <div class="item-obs">
+                    <strong>OBS:</strong> <%= item.obs %>
+                </div>
+            <% } %>
         <% }) %>
     </div>
 
@@ -109,7 +149,11 @@
     <div class="secao">
         <span class="secao-titulo">Pagamento</span>
         <strong>Forma:</strong> <%= p.pagamento %><br>
-        <span style="font-size: 0.8rem; color: #27ae60;">* Pagamento via Sistema *</span>
+        <% if(p.pagamento.toLowerCase().includes('pix') || p.pagamento.toLowerCase().includes('cartão')) { %>
+            <span style="font-size: 0.8rem; color: #27ae60; font-weight: bold;">* PAGAMENTO CONFIRMADO *</span>
+        <% } else { %>
+            <span style="font-size: 0.8rem; color: #e67e22; font-weight: bold;">* COBRAR NO ATO *</span>
+        <% } %>
     </div>
 
     <div class="comanda-footer">
