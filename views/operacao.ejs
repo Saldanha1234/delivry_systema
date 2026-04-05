@@ -47,11 +47,7 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        /* Barra de Pesquisa */
-        .search-container {
-            flex-grow: 1;
-            max-width: 400px;
-        }
+        .search-container { flex-grow: 1; max-width: 400px; }
         .search-input {
             width: 100%;
             padding: 10px 15px;
@@ -102,11 +98,7 @@
             font-size: 0.7rem;
         }
 
-        .lista-pedidos {
-            padding: 10px;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
+        .lista-pedidos { padding: 10px; overflow-y: auto; flex-grow: 1; }
 
         .mini-card {
             background: var(--card-bg);
@@ -117,7 +109,6 @@
             border: 1px solid #eee;
         }
 
-        /* Texto superior de espera (Igual na foto) */
         .waiting-text {
             font-size: 0.75rem;
             font-weight: bold;
@@ -126,6 +117,7 @@
         }
         .text-danger { color: var(--primary); }
         .text-warning { color: var(--warning); }
+        .text-success { color: var(--success); }
 
         .mini-card-id { font-size: 1.4rem; font-weight: 800; margin: 2px 0; display: block; }
         .mini-card-cliente { font-size: 0.9rem; color: var(--text-light); margin-bottom: 12px; display: block; }
@@ -143,9 +135,9 @@
         }
 
         .btn-aceitar { background: var(--primary); color: white; }
+        .btn-preparando { background: #ddd; color: #777; cursor: not-allowed; }
         .btn-pronto { background: var(--success); color: white; }
         .btn-enviar { background: var(--info); color: white; }
-        .btn-atrasado { background: #333; color: white; pointer-events: none; }
         .btn-detalhe { background: #eee; color: #555; }
         .btn-cancelar { background: #fdf2f2; color: var(--primary); font-size: 0.75rem; }
 
@@ -179,16 +171,14 @@
             <div class="lista-pedidos" id="pendentes">
                 <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
                     <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.createdAt %>">
-                        <span class="waiting-text label-espera" id="label-aceitar-<%= p.id %>"></span>
+                        <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
-                        
-                        <div id="btn-area-aceitar-<%= p.id %>">
+                        <div id="btn-area-<%= p.id %>">
                             <button class="btn-main btn-aceitar" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceitar em até 5min</button>
                         </div>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
-
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
                 <% }) %>
@@ -200,14 +190,14 @@
             <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
                     <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
-                        <span class="waiting-text label-espera" id="label-preparo-<%= p.id %>"></span>
+                        <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
-                        
-                        <div id="btn-area-preparo-<%= p.id %>">
+                        <div id="btn-area-<%= p.id %>">
                             </div>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
+                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
                 <% }) %>
             </div>
@@ -218,15 +208,15 @@
             <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Pronto').forEach(p => { %>
                     <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
-                        <span class="waiting-text label-espera" id="label-pronto-<%= p.id %>"></span>
+                        <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
-                        
-                        <div id="btn-area-pronto-<%= p.id %>">
-                            <button class="btn-main btn-pronto" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar para entrega</button>
+                        <div id="btn-area-<%= p.id %>">
+                            <button class="btn-main btn-enviar" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar para rota</button>
                         </div>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
+                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
                 <% }) %>
             </div>
@@ -237,10 +227,11 @@
             <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
                     <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
-                        <span class="waiting-text text-warning">🛵 Chega em até 15min</span>
+                        <span class="waiting-text text-warning">🛵 Em rota de entrega</span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
                 <% }) %>
             </div>
@@ -259,7 +250,6 @@
     <script>
         const socket = io();
 
-        // --- LÓGICA DE TEMPO E BOTÕES ---
         function updateFarol() {
             const now = new Date();
             const cards = document.querySelectorAll('.mini-card[data-time]');
@@ -270,69 +260,55 @@
                 const startTime = new Date(card.getAttribute('data-time'));
                 const diffMin = Math.floor((now - startTime) / 60000);
                 
-                // Pegar elementos do card
-                const label = card.querySelector('.label-espera');
-                const btnArea = card.querySelector('[id^="btn-area-"]');
-                const statusCard = card.closest('.col').querySelector('.col-header').innerText;
+                const labelTopo = card.querySelector('.label-topo');
+                const btnArea = card.querySelector(`#btn-area-${id}`);
+                const statusCol = card.closest('.col').querySelector('.col-header').innerText;
 
-                // 1. Lógica para coluna ACEITAR
-                if (statusCard.includes("Aceitar")) {
+                // LOGICA COLUNA ACEITAR
+                if (statusCol.includes("Aceitar")) {
                     if (diffMin >= 5) {
-                        label.innerHTML = `<span class="text-danger">⚠️ ${cliente} aguardando há ${diffMin} min</span>`;
-                        btnArea.innerHTML = `<button class="btn-main btn-atrasado">Pedido em atraso há ${diffMin} min</button>`;
+                        labelTopo.innerHTML = `<span class="text-danger">${cliente} aguardando a ${diffMin} min</span>`;
+                        btnArea.innerHTML = `<button class="btn-main btn-aceitar" onclick="atualizarStatus('${id}', 'Preparando')">Pedido em atraso a ${diffMin} min</button>`;
                     } else {
-                        label.innerHTML = `Novo pedido agora`;
+                        labelTopo.innerHTML = `<span class="text-light">Novo pedido</span>`;
                     }
                 }
 
-                // 2. Lógica para coluna EM PREPARO
-                if (statusCard.includes("Em preparo")) {
+                // LOGICA COLUNA EM PREPARO
+                if (statusCol.includes("Em preparo")) {
                     if (diffMin < 5) {
-                        label.innerHTML = `<span class="text-warning">Cozinhando... Pronto em ${5 - diffMin} min</span>`;
-                        btnArea.innerHTML = ""; // Esconde o botão enquanto prepara
+                        labelTopo.innerHTML = `<span class="text-warning">Em preparo... ${5 - diffMin} min restantes</span>`;
+                        btnArea.innerHTML = `<button class="btn-main btn-preparando">Em preparo</button>`;
                     } else {
-                        const atrasoPreparo = diffMin - 5;
-                        if (atrasoPreparo > 0) {
-                            label.innerHTML = `<span class="text-danger">⚠️ ${cliente} aguardando há ${atrasoPreparo} min</span>`;
-                            btnArea.innerHTML = `<button class="btn-main btn-pronto" onclick="atualizarStatus('${id}', 'Pronto')">Pronto (Atrasado ${atrasoPreparo} min)</button>`;
-                        } else {
-                            label.innerHTML = `<span class="text-success">Pedido pronto!</span>`;
-                            btnArea.innerHTML = `<button class="btn-main btn-pronto" onclick="atualizarStatus('${id}', 'Pronto')">Marcar como Pronto</button>`;
-                        }
+                        const atraso = diffMin - 5;
+                        labelTopo.innerHTML = atraso > 0 ? `<span class="text-danger">⚠️ ${cliente} aguardando a ${diffMin} min</span>` : `<span class="text-success">Pronto para finalizar</span>`;
+                        btnArea.innerHTML = `<button class="btn-main btn-pronto" onclick="atualizarStatus('${id}', 'Pronto')">Pronto</button>`;
                     }
                 }
 
-                // 3. Lógica para coluna PRONTO
-                if (statusCard.includes("Pronto")) {
-                    if (diffMin >= 10) {
-                        label.innerHTML = `<span class="text-danger">⚠️ Atraso na entrega: ${diffMin} min</span>`;
+                // LOGICA COLUNA PRONTO (Atraso 15 min)
+                if (statusCol.includes("Pronto")) {
+                    if (diffMin >= 15) {
+                        labelTopo.innerHTML = `<span class="text-danger">⚠️ Pedido pronto em atraso a ${diffMin} min</span>`;
                     } else {
-                        label.innerHTML = `<span class="text-success">Pronto há ${diffMin} min</span>`;
+                        labelTopo.innerHTML = `<span class="text-success">Pedido pronto há ${diffMin} min</span>`;
                     }
                 }
             });
         }
 
-        setInterval(updateFarol, 10000); // Atualiza a cada 10 seg
+        setInterval(updateFarol, 5000);
         updateFarol();
 
-        // --- BARRA DE PESQUISA ---
-        document.getElementById('searchInput').addEventListener('input', function(e) {
+        // BUSCA
+        document.getElementById('searchInput').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            const items = document.querySelectorAll('.search-item');
-
-            items.forEach(item => {
-                const cliente = item.getAttribute('data-cliente');
-                const id = item.getAttribute('data-id').toLowerCase();
-                if (cliente.includes(term) || id.includes(term)) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
-                }
+            document.querySelectorAll('.search-item').forEach(item => {
+                const searchStr = item.getAttribute('data-cliente') + item.getAttribute('data-id');
+                item.style.display = searchStr.includes(term) ? 'block' : 'none';
             });
         });
 
-        // --- FUNÇÕES DE COMUNICAÇÃO ---
         async function atualizarStatus(id, novoStatus) {
             try {
                 const res = await fetch('/update-status', {
@@ -345,7 +321,7 @@
         }
 
         async function cancelarPedido(id) {
-            if (confirm("Deseja cancelar?")) atualizarStatus(id, 'Cancelado');
+            if (confirm("Cancelar pedido?")) atualizarStatus(id, 'Cancelado');
         }
 
         function abrirDetalhes(id) {
