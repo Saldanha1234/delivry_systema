@@ -317,7 +317,15 @@
         }
 
         async function salvarProduto() {
+            const btn = document.getElementById('btn-submit');
             const id = document.getElementById('p-id').value;
+            
+            // Proteção contra duplo clique e feedback imediato
+            btn.disabled = true;
+            const originalText = btn.innerText;
+            btn.innerText = "SALVANDO...";
+            btn.style.opacity = "0.7";
+
             const dados = {
                 nome: document.getElementById('p-nome').value,
                 preco: document.getElementById('p-preco').value,
@@ -325,12 +333,28 @@
                 desc: document.getElementById('p-desc').value,
                 img: imagemBase64 || document.getElementById('p-img-data').value
             };
-            const res = await fetch(id ? `/edit-produto/${id}` : '/add-produto', {
-                method: id ? 'PUT' : 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(dados)
-            });
-            if(res.ok) location.reload();
+
+            try {
+                const res = await fetch(id ? `/edit-produto/${id}` : '/add-produto', {
+                    method: id ? 'PUT' : 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(dados)
+                });
+                
+                if(res.ok) {
+                    location.reload();
+                } else {
+                    alert("Erro ao salvar produto.");
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                    btn.style.opacity = "1";
+                }
+            } catch (err) {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerText = originalText;
+                btn.style.opacity = "1";
+            }
         }
 
         function prepararEdicao(p) {

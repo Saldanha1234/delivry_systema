@@ -170,7 +170,7 @@
         </div>
         
         <% if (estaAberto) { %>
-            <button class="btn-confirm" onclick="finalizar()">Finalizar Pedido</button>
+            <button id="btn-finalizar" class="btn-confirm" onclick="finalizar()">Finalizar Pedido</button>
         <% } else { %>
             <button class="btn-confirm btn-disabled" disabled>Loja Fechada</button>
         <% } %>
@@ -382,27 +382,46 @@
         const nome = document.getElementById('cliente-nome').value;
         const endereco = document.getElementById('cliente-end').value;
         const pagto = document.getElementById('cliente-pagto').value;
+        const btnFinalizar = document.getElementById('btn-finalizar');
         
         if(!nome || !endereco) return alert("Por favor, informe seu nome e endereço!");
         if(carrinho.length === 0) return alert("Seu carrinho está vazio!");
 
-        const res = await fetch('/enviar-pedido', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                cliente: nome, 
-                endereco: endereco, 
-                pagamento: pagto,
-                itens: carrinho, 
-                total: carrinho.reduce((acc, i) => acc + i.preco, 0)
-            })
-        });
-        
-        if(res.ok) {
-            const data = await res.json();
-            localStorage.setItem('ultimoPedidoId', data.id);
-            location.href = '/status/' + data.id;
-        } else alert("Ocorreu um erro ao processar seu pedido.");
+        // --- PREVENÇÃO DE CLIQUE DUPLO ---
+        btnFinalizar.disabled = true;
+        btnFinalizar.innerText = "Processando...";
+        btnFinalizar.classList.add('btn-disabled');
+
+        try {
+            const res = await fetch('/enviar-pedido', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    cliente: nome, 
+                    endereco: endereco, 
+                    pagamento: pagto,
+                    itens: carrinho, 
+                    total: carrinho.reduce((acc, i) => acc + i.preco, 0)
+                })
+            });
+            
+            if(res.ok) {
+                const data = await res.json();
+                localStorage.setItem('ultimoPedidoId', data.id);
+                location.href = '/status/' + data.id;
+            } else {
+                alert("Ocorreu um erro ao processar seu pedido.");
+                // Se der erro, reabilita o botão para o usuário tentar de novo
+                btnFinalizar.disabled = false;
+                btnFinalizar.innerText = "Finalizar Pedido";
+                btnFinalizar.classList.remove('btn-disabled');
+            }
+        } catch (error) {
+            console.error(error);
+            btnFinalizar.disabled = false;
+            btnFinalizar.innerText = "Finalizar Pedido";
+            btnFinalizar.classList.remove('btn-disabled');
+        }
     }
 
     window.onload = function() {
