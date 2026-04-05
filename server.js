@@ -5,6 +5,9 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 require('dotenv').config(); 
 
+// Importação da configuração de adicionais (Açaí/Montar)
+const { ConfigEstrutura } = require('./public/js/estrutura-produtos');
+
 const app = express();
 const server = http.createServer(app); 
 const io = new Server(server); 
@@ -87,18 +90,22 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
-// ADMIN ATUALIZADO: APENAS GESTÃO (SEM LISTA DE PEDIDOS OPERACIONAIS)
+// Rota para o Front-end obter a estrutura de adicionais/modal
+app.get('/api/config-estrutura', (req, res) => {
+    res.json(ConfigEstrutura);
+});
+
+// ADMIN ATUALIZADO: APENAS GESTÃO
 app.get('/admin', async (req, res) => {
     try {
         const produtos = await Produto.find();
-        const todosOsPedidos = await Pedido.find(); // Necessário para o cálculo do Financeiro
+        const todosOsPedidos = await Pedido.find(); 
         
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
 
         const mensagensNaoLidas = await Mensagem.find({ lida: false, usuario: { $ne: 'Admin' } });
         
-        // Enviamos 'pedidos' apenas para o cálculo financeiro que já existe no seu EJS
         res.render('admin', { pedidos: todosOsPedidos, produtos, mensagensNaoLidas, config });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
