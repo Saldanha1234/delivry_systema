@@ -75,7 +75,7 @@ const checarAberta = () => {
 };
 
 app.use((req, res, next) => {
-    res.locals.estaAberto = checarAberta();
+    res.locals.estaAberto = true;
     next();
 });
 
