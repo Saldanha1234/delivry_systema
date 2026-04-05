@@ -3,9 +3,10 @@ const path = require('path');
 const http = require('http'); 
 const { Server } = require('socket.io'); 
 const mongoose = require('mongoose');
-const session = require('express-session'); // Adicionado para login do motoboy
 require('dotenv').config(); 
 
+// Importação da configuração de adicionais (Açaí/Montar)
+// Nota: Certifique-se que o arquivo exporta { ConfigEstrutura }
 const { ConfigEstrutura } = require('./public/js/estrutura-produtos');
 
 const app = express();
@@ -37,32 +38,15 @@ const ProdutoSchema = new mongoose.Schema({
 });
 const Produto = mongoose.model('Produto', ProdutoSchema);
 
-// SCHEMA MOTOBOY (IMPLEMENTAÇÃO SOLICITADA)
-const MotoboySchema = new mongoose.Schema({
-    nome: String,
-    email: { type: String, unique: true },
-    senha: { type: String }, 
-    telefone: String,
-    cpf: String,
-    foto: { type: String, default: '' },
-    localizacao: {
-        lat: Number,
-        lng: Number
-    },
-    online: { type: Boolean, default: false }
-});
-const Motoboy = mongoose.model('Motoboy', MotoboySchema);
-
 const PedidoSchema = new mongoose.Schema({
     id: Number,
     cliente: String,
     endereco: String,
     pagamento: String,
-    itens: Array, 
+    itens: Array, // Aqui serão salvos os produtos com seus adicionais selecionados
     total: Number,
     status: { type: String, default: "Pendente" },
     hora: String,
-    motoboyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Motoboy' }, // Vínculo com entregador
     createdAt: { type: Date, default: Date.now }
 });
 const Pedido = mongoose.model('Pedido', PedidoSchema);
@@ -85,13 +69,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Configuração de Sessão para Login
-app.use(session({
-    secret: 'secret-delivery-key',
-    resave: false,
-    saveUninitialized: true
-}));
-
 // --- LÓGICA DE HORÁRIO ---
 const checarAberta = () => {
     const agora = new Date();
@@ -101,8 +78,8 @@ const checarAberta = () => {
 };
 
 app.use((req, res, next) => {
+    // Mantive como true conforme seu código original
     res.locals.estaAberto = checarAberta();
-    res.locals.motoboy = req.session.motoboy || null; // Disponibiliza motoboy para as views
     next();
 });
 
@@ -115,6 +92,10 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
+/**
+ * Rota para o Front-end obter a estrutura de adicionais/modal.
+ * Esta rota é crucial para que o modal de "+" e "-" funcione dinamicamente.
+ */
 app.get('/api/config-estrutura', (req, res) => {
     if (ConfigEstrutura) {
         res.json(ConfigEstrutura);
@@ -128,18 +109,14 @@ app.get('/admin', async (req, res) => {
     try {
         const produtos = await Produto.find();
         const todosOsPedidos = await Pedido.find(); 
-        const motoboys = await Motoboy.find() || []; // Busca todos os motoboys para a tabela
         
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
 
         const mensagensNaoLidas = await Mensagem.find({ lida: false, usuario: { $ne: 'Admin' } });
         
-        res.render('admin', { pedidos: todosOsPedidos, produtos, mensagensNaoLidas, config, motoboys });
-    } catch (err) { 
-        console.error(err);
-        res.status(500).send("Erro ao carregar admin."); 
-    }
+        res.render('admin', { pedidos: todosOsPedidos, produtos, mensagensNaoLidas, config });
+    } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
 // OPERAÇÃO: FOCO EM COMANDAS
@@ -154,84 +131,6 @@ app.get('/operacao', async (req, res) => {
         console.error(err);
         res.status(500).send("Erro interno ao carregar painel de operação.");
     }
-});
-
-// --- SISTEMA DO MOTOBOY ---
-
-app.get('/motoboy/login', (req, res) => res.render('motoboy/login'));
-
-app.post('/motoboy/login', async (req, res) => {
-    const { email, password } = req.body;
-    const motoboy = await Motoboy.findOne({ email, senha: password });
-    if (motoboy) {
-        req.session.motoboy = motoboy;
-        res.redirect('/motoboy/dashboard');
-    } else {
-        res.send("<script>alert('Acesso negado!'); window.location='/motoboy/login';</script>");
-    }
-});
-
-app.get('/motoboy/dashboard', async (req, res) => {
-    try {
-        if (!req.session.motoboy) return res.redirect('/motoboy/login');
-        
-        // CORREÇÃO: Busca apenas pedidos que não foram concluídos e estão disponíveis para entrega
-        const pedidosParaEntrega = await Pedido.find({ 
-            status: { $in: ['Pronto para Entrega', 'Em Rota'] } 
-        }).sort({ createdAt: -1 });
-
-        res.render('motoboy/dashboard', { pedidos: pedidosParaEntrega });
-    } catch (err) {
-        console.error("Erro no Dashboard Motoboy:", err);
-        res.status(500).send("Erro ao carregar dashboard.");
-    }
-});
-
-app.get('/motoboy/perfil', async (req, res) => {
-    if (!req.session.motoboy) return res.redirect('/motoboy/login');
-    const motoboy = await Motoboy.findById(req.session.motoboy._id);
-    res.render('motoboy/perfil', { motoboy });
-});
-
-// Admin cadastra motoboy - Senha automática baseada no CPF
-app.post('/add-motoboy', async (req, res) => {
-    try {
-        const dados = req.body;
-        // Se não houver senha, gera uma automática com os 4 últimos dígitos do CPF
-        if (!dados.senha) {
-            const cpfLimpo = dados.cpf.replace(/\D/g, "");
-            dados.senha = cpfLimpo.slice(-4) || "123456";
-        }
-        const novo = new Motoboy(dados);
-        await novo.save();
-        res.json({ success: true });
-    } catch (err) { 
-        console.error(err);
-        res.status(500).json({ success: false, message: "Erro ou E-mail já cadastrado" }); 
-    }
-});
-
-// Rota para excluir motoboy via Admin
-app.delete('/delete-motoboy/:id', async (req, res) => {
-    try {
-        await Motoboy.findByIdAndDelete(req.params.id);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
-});
-
-// Motoboy altera seu próprio perfil (Reflete no Admin automaticamente)
-app.post('/motoboy/update-perfil', async (req, res) => {
-    if (!req.session.motoboy) return res.status(401).json({ success: false });
-    try {
-        const { nome, email, senha, telefone } = req.body;
-        const atualizado = await Motoboy.findByIdAndUpdate(
-            req.session.motoboy._id, 
-            { nome, email, senha, telefone },
-            { new: true }
-        );
-        req.session.motoboy = atualizado; // Atualiza a sessão
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 // --- CONFIGURAÇÃO DO PIX ---
@@ -292,7 +191,9 @@ app.post('/enviar-pedido', async (req, res) => {
         return res.status(403).json({ success: false, message: "Estamos fechados no momento!" });
     }
     try {
-        const { cliente, endereco, pagamento, itens, total } = req.body;
+        const { cliente, endereco, pagamento, itens, total, observacaoGeral } = req.body;
+        
+        // Garante que os itens (que agora contêm adicionais) sejam processados corretamente
         let itensProcessados = typeof itens === 'string' ? JSON.parse(itens) : itens;
 
         const novoPedido = new Pedido({
@@ -314,11 +215,17 @@ app.post('/enviar-pedido', async (req, res) => {
     }
 });
 
+// ALTERADO: Adicionada garantia de propagação para a lógica de cancelamento
 app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
+        // Atualiza no banco de dados MongoDB
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus });
+        
+        // Emite para TODOS os clientes conectados. 
+        // O index.ejs agora escuta isso para esconder a barra amarela se for 'Cancelado'
         io.emit('statusAtualizado', { id, novoStatus });
+        
         res.json({ success: true });
     } catch (err) { 
         console.error("Erro ao atualizar status:", err);
@@ -326,7 +233,7 @@ app.post('/update-status', async (req, res) => {
     }
 });
 
-// --- CHAT E RASTREIO SOCKET.IO ---
+// --- CHAT SOCKET.IO ---
 
 io.on('connection', (socket) => {
     socket.on('join', async (pedidoId) => {
@@ -352,19 +259,6 @@ io.on('connection', (socket) => {
         try {
             await Mensagem.updateMany({ pedidoId, usuario: { $ne: 'Admin' } }, { lida: true });
         } catch (err) { console.error("Erro ao marcar como lidas:", err); }
-    });
-
-    // CORREÇÃO: Listener para o update de status via socket
-    socket.on('update-status', async (data) => {
-        const { id, novoStatus } = data;
-        await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus });
-        io.emit('statusAtualizado', { id, novoStatus });
-    });
-
-    socket.on('atualizarLocalizacao', async (data) => {
-        const { motoboyId, lat, lng } = data;
-        await Motoboy.findByIdAndUpdate(motoboyId, { localizacao: { lat, lng }, online: true });
-        io.emit('posicaoMotoboy', { motoboyId, lat, lng });
     });
 });
 
