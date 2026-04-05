@@ -74,12 +74,12 @@ const checarAberta = () => {
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
     const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
-    return horaTratada >= 20 && horaTratada < 16 ;
+    return horaTratada >= 20 && horaTratada < 16;
 };
 
 app.use((req, res, next) => {
     // Mantive como true conforme seu código original
-    res.locals.estaAberto = true
+    res.locals.estaAberto = checarAberta();
     next();
 });
 
