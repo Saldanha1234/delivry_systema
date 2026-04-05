@@ -30,8 +30,7 @@ const ProdutoSchema = new mongoose.Schema({
     preco: Number,
     img: String,
     desc: String,
-    categoria: String,
-    tipo: { type: String, default: 'simples' } // 'simples' ou 'montar'
+    categoria: String
 });
 const Produto = mongoose.model('Produto', ProdutoSchema);
 
@@ -40,7 +39,7 @@ const PedidoSchema = new mongoose.Schema({
     cliente: String,
     endereco: String,
     pagamento: String,
-    itens: Array, // Aqui salvamos [{nome, preco, detalhes}]
+    itens: Array,
     total: Number,
     status: { type: String, default: "Pendente" },
     hora: String,
@@ -71,14 +70,11 @@ const checarAberta = () => {
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
     const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
-    // Retorna true se estiver entre 08:00 e 20:00
     return horaTratada >= 8 && horaTratada < 20;
 };
 
 app.use((req, res, next) => {
-    // MODO DESENVOLVEDOR: Forçado como TRUE para você editar o site.
-    // Para voltar ao automático, mude para: res.locals.estaAberto = checarAberta();
-    res.locals.estaAberto = true; 
+    res.locals.estaAberto = true;
     next();
 });
 
@@ -91,20 +87,23 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
+// ADMIN ATUALIZADO: APENAS GESTÃO (SEM LISTA DE PEDIDOS OPERACIONAIS)
 app.get('/admin', async (req, res) => {
     try {
         const produtos = await Produto.find();
-        const todosOsPedidos = await Pedido.find().sort({ createdAt: -1 }); 
+        const todosOsPedidos = await Pedido.find(); // Necessário para o cálculo do Financeiro
         
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
 
         const mensagensNaoLidas = await Mensagem.find({ lida: false, usuario: { $ne: 'Admin' } });
         
+        // Enviamos 'pedidos' apenas para o cálculo financeiro que já existe no seu EJS
         res.render('admin', { pedidos: todosOsPedidos, produtos, mensagensNaoLidas, config });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
+// OPERAÇÃO ATUALIZADA: FOCO TOTAL EM COMANDAS
 app.get('/operacao', async (req, res) => {
     try {
         const pedidosAtivos = await Pedido.find({ status: { $ne: 'Concluído' } }).sort({ createdAt: 1 });
@@ -113,6 +112,7 @@ app.get('/operacao', async (req, res) => {
 
         res.render('operacao', { pedidos: pedidosAtivos, config, produtos });
     } catch (err) {
+        console.error(err);
         res.status(500).send("Erro interno ao carregar painel de operação.");
     }
 });
@@ -171,32 +171,27 @@ app.get('/api/pedido/:id', async (req, res) => {
 });
 
 app.post('/enviar-pedido', async (req, res) => {
-    // Validação de segurança (Opcional: se quiser barrar pedidos via API quando fechado)
-    // if (!checarAberta()) return res.status(403).json({ success: false, message: "Fechado!" });
-
+    if (!checarAberta()) {
+        return res.status(403).json({ success: false, message: "Estamos fechados no momento!" });
+    }
     try {
         const { cliente, endereco, pagamento, itens, total } = req.body;
-        
-        // Garante que os itens (mesmo os com adicionais) sejam processados como Array
-        let itensFinal = Array.isArray(itens) ? itens : JSON.parse(itens);
+        let itensProcessados = typeof itens === 'string' ? JSON.parse(itens) : itens;
 
         const novoPedido = new Pedido({
             id: Math.floor(Math.random() * 9000) + 1000,
             cliente: cliente || "Cliente Anônimo",
-            endereco: endereco || "Retirada",
+            endereco: endereco || "Endereço não informado",
             pagamento: pagamento || "A combinar",
-            itens: itensFinal, 
+            itens: Array.isArray(itensProcessados) ? itensProcessados : [],
             total: parseFloat(total) || 0,
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         });
 
         await novoPedido.save(); 
-        io.emit('novoPedido', novoPedido); // Alerta o painel de Admin/Operação
+        io.emit('novoPedido', novoPedido);
         res.json({ success: true, id: novoPedido.id });
-    } catch (error) { 
-        console.error("Erro ao salvar pedido:", error);
-        res.status(500).json({ success: false }); 
-    }
+    } catch (error) { res.status(500).json({ success: false }); }
 });
 
 app.post('/update-status', async (req, res) => {
