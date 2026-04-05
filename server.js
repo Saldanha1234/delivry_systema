@@ -79,7 +79,7 @@ const checarAberta = () => {
 
 app.use((req, res, next) => {
     // Mantive como true conforme seu código original
-    res.locals.estaAberto = checarAberta();
+    res.locals.estaAberto = true
     next();
 });
 
