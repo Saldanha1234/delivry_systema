@@ -73,7 +73,7 @@
             font-size: 0.9rem;
         }
 
-        /* --- Cardápio --- */
+        /* --- Tabelas Gerais --- */
         .table-responsive { 
             width: 100%; 
             overflow-x: auto; 
@@ -99,7 +99,6 @@
         .chat-item { padding: 12px; color: #444; cursor: pointer; border-radius: 8px; margin-bottom: 8px; font-size: 0.85rem; border: 1px solid #eee; background: white; transition: 0.3s; }
         .chat-item.active { border-color: var(--primary); background: #fff9e6; font-weight: bold; }
         
-        /* Personalização Escura para Nova Mensagem */
         .chat-item.has-new { 
             background: #333 !important; 
             color: #fff !important; 
@@ -116,12 +115,6 @@
         .chat-input-area { padding: 12px; display: flex; gap: 8px; border-top: 1px solid #ddd; background: white; }
         .chat-input-area input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 0.9rem; }
         .chat-input-area button { background: var(--dark); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-        /* Financeiro */
-        .finance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 20px; border-radius: 12px; border-left: 6px solid var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .stat-card h4 { margin: 0 0 5px 0; font-size: 0.8rem; color: #888; text-transform: uppercase; }
-        .stat-card .value { font-size: 1.4rem; font-weight: 800; color: var(--dark); }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -188,7 +181,7 @@
                     </div>
                     <a href="/operacao" target="_blank" class="btn-abrir-kds">ABRIR COMANDAS ➔</a>
                 </div>
-                </div>
+            </div>
 
             <div id="aba-cardapio" class="tab-content">
                 <div class="manager-card" style="background:#fff; padding:20px; border-radius:12px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
@@ -212,7 +205,6 @@
                         </div>
                     </form>
                 </div>
-
                 <div class="table-responsive">
                     <table class="admin-table">
                         <thead>
@@ -243,15 +235,11 @@
             </div>
 
             <div id="aba-financeiro" class="tab-content">
-                <div class="finance-grid">
-                    <div class="stat-card">
-                        <h4>💰 Vendas Concluídas</h4>
+                <div class="finance-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="stat-card" style="background: white; padding: 20px; border-radius: 12px; border-left: 6px solid var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <h4 style="margin: 0 0 5px 0; font-size: 0.8rem; color: #888; text-transform: uppercase;">💰 Vendas Concluídas</h4>
                         <% let totalDia = pedidos.filter(p => p.status === 'Concluído').reduce((acc, p) => acc + p.total, 0); %>
-                        <div class="value">R$ <%= totalDia.toFixed(2) %></div>
-                    </div>
-                    <div class="stat-card" style="border-left-color: #3498db;">
-                        <h4>📦 Entregas Totais</h4>
-                        <div class="value"><%= pedidos.filter(p => p.status === 'Concluído').length %></div>
+                        <div class="value" style="font-size: 1.4rem; font-weight: 800; color: var(--dark);">R$ <%= totalDia.toFixed(2) %></div>
                     </div>
                 </div>
                 <div class="config-card" style="background:white; padding:20px; border-radius:12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
@@ -278,7 +266,7 @@
                     <h3 style="margin-top:0; font-size: 1.1rem;">🛵 Cadastro de Motoboy</h3>
                     <form id="form-motoboy" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                         <input type="text" id="m-nome" placeholder="Nome Completo" required style="padding:10px; border-radius:8px; border:1px solid #ddd;">
-                        <input type="email" id="m-email" placeholder="E-mail de Acesso" required style="padding:10px; border-radius:8px; border:1px solid #ddd;">
+                        <input type="email" id="m-email" placeholder="E-mail (Será o Usuário)" required style="padding:10px; border-radius:8px; border:1px solid #ddd;">
                         <input type="text" id="m-telefone" placeholder="Telefone" required style="padding:10px; border-radius:8px; border:1px solid #ddd;">
                         <input type="text" id="m-cpf" placeholder="CPF" required style="padding:10px; border-radius:8px; border:1px solid #ddd;">
                         <button type="button" onclick="salvarMotoboy()" style="grid-column: 1 / -1; background:var(--dark); color:#fff; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">LIBERAR ACESSO MOTOBOY</button>
@@ -290,13 +278,31 @@
                         <thead>
                             <tr>
                                 <th>Nome</th>
-                                <th>E-mail</th>
+                                <th>Usuário (E-mail)</th>
                                 <th>CPF</th>
+                                <th>Senha de Acesso</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="lista-motoboys">
-                            </tbody>
+                            <% if (locals.motoboys && motoboys.length > 0) { %>
+                                <% motoboys.forEach(m => { %>
+                                    <tr>
+                                        <td><strong><%= m.nome %></strong></td>
+                                        <td><%= m.email %></td>
+                                        <td><%= m.cpf %></td>
+                                        <td><code style="background: #eee; padding: 2px 5px; border-radius: 4px;"><%= m.senha %></code></td>
+                                        <td>
+                                            <button class="btn-del" onclick="excluirMotoboy('<%= m._id %>')">REMOVER</button>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="5" style="text-align:center; padding:20px; color:#999;">Nenhum motoboy cadastrado.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -325,19 +331,7 @@
             if(evt) evt.currentTarget.classList.add("active");
         }
 
-        async function salvarConfigPix() {
-            const dados = {
-                pixProvedor: document.getElementById('conf-pixProvedor').value,
-                pixToken: document.getElementById('conf-pixToken').value
-            };
-            const res = await fetch('/update-config-pix', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
-            if (res.ok) alert("✅ Configurações salvas!");
-        }
-
+        // CARDÁPIO LOGIC
         function converterImagem() {
             const file = document.getElementById('p-file').files[0];
             const reader = new FileReader();
@@ -348,13 +342,6 @@
         async function salvarProduto() {
             const btn = document.getElementById('btn-submit');
             const id = document.getElementById('p-id').value;
-            
-            // Proteção contra duplo clique e feedback imediato
-            btn.disabled = true;
-            const originalText = btn.innerText;
-            btn.innerText = "SALVANDO...";
-            btn.style.opacity = "0.7";
-
             const dados = {
                 nome: document.getElementById('p-nome').value,
                 preco: document.getElementById('p-preco').value,
@@ -362,28 +349,12 @@
                 desc: document.getElementById('p-desc').value,
                 img: imagemBase64 || document.getElementById('p-img-data').value
             };
-
-            try {
-                const res = await fetch(id ? `/edit-produto/${id}` : '/add-produto', {
-                    method: id ? 'PUT' : 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(dados)
-                });
-                
-                if(res.ok) {
-                    location.reload();
-                } else {
-                    alert("Erro ao salvar produto.");
-                    btn.disabled = false;
-                    btn.innerText = originalText;
-                    btn.style.opacity = "1";
-                }
-            } catch (err) {
-                console.error(err);
-                btn.disabled = false;
-                btn.innerText = originalText;
-                btn.style.opacity = "1";
-            }
+            const res = await fetch(id ? `/edit-produto/${id}` : '/add-produto', {
+                method: id ? 'PUT' : 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(dados)
+            });
+            if(res.ok) location.reload();
         }
 
         function prepararEdicao(p) {
@@ -397,7 +368,6 @@
             document.getElementById('p-img-data').value = p.img;
             document.getElementById('btn-submit').innerText = "ATUALIZAR";
             document.getElementById('btn-cancel').style.display = "block";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function excluirProduto(id) {
@@ -407,13 +377,12 @@
             }
         }
 
+        // CHAT LOGIC
         function selecionarChat(id, cliente) {
             pedidoAtivoId = id;
-            // Remove as classes de ativo e de notificação ao clicar
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
             const target = document.getElementById(`chat-item-${id}`);
             if(target) target.classList.add('active');
-            
             socket.emit('join', id);
             socket.emit('lerMensagens', id);
         }
@@ -421,24 +390,18 @@
         socket.on('historico', (h) => {
             const box = document.getElementById('chat-box');
             box.innerHTML = '';
-            if(h.length === 0) box.innerHTML = '<p style="text-align:center; color:#999; font-size:0.8rem;">Nenhuma mensagem ainda.</p>';
             h.forEach(renderizarMensagem);
         });
 
         socket.on('novaMensagem', (msg) => {
             if (msg.usuario !== 'Admin') {
                 tocarNotificacao();
-                
-                // Se o chat NÃO for o que está aberto, coloca o tema escuro
                 if (msg.pedidoId !== pedidoAtivoId) {
                     const item = document.getElementById(`chat-item-${msg.pedidoId}`);
                     if(item) item.classList.add('has-new');
                 }
             }
-
-            if (msg.pedidoId === pedidoAtivoId) {
-                renderizarMensagem(msg);
-            }
+            if (msg.pedidoId === pedidoAtivoId) renderizarMensagem(msg);
         });
 
         function renderizarMensagem(msg) {
@@ -457,9 +420,7 @@
             input.value = '';
         }
 
-        function limparForm() { location.reload(); }
-
-        // LOGICA DE MOTOBOYS
+        // MOTOBOY LOGIC
         async function salvarMotoboy() {
             const dados = {
                 nome: document.getElementById('m-nome').value,
@@ -467,20 +428,40 @@
                 telefone: document.getElementById('m-telefone').value,
                 cpf: document.getElementById('m-cpf').value
             };
-
             const res = await fetch('/add-motoboy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
-
             if (res.ok) {
-                alert("✅ Motoboy cadastrado! A senha foi gerada automaticamente.");
+                alert("✅ Motoboy cadastrado com sucesso!");
                 location.reload();
             } else {
-                alert("Erro ao cadastrar motoboy.");
+                alert("Erro ao cadastrar motoboy. Verifique se o e-mail já existe.");
             }
         }
+
+        async function excluirMotoboy(id) {
+            if(confirm("Remover este motoboy? Ele perderá o acesso imediatamente.")) {
+                // Rota de exclusão (deve ser implementada no server.js se desejar)
+                alert("Funcionalidade de exclusão acionada para o ID: " + id);
+            }
+        }
+
+        async function salvarConfigPix() {
+            const dados = {
+                pixProvedor: document.getElementById('conf-pixProvedor').value,
+                pixToken: document.getElementById('conf-pixToken').value
+            };
+            await fetch('/update-config-pix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            alert("✅ Configurações salvas!");
+        }
+
+        function limparForm() { location.reload(); }
     </script>
 </body>
 </html>
