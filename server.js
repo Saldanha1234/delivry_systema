@@ -5,8 +5,7 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 require('dotenv').config(); 
 
-// Importação da configuração de adicionais (Açaí/Montar)
-// Nota: Certifique-se que o arquivo exporta { ConfigEstrutura }
+// Importação da configuração de adicionais
 const { ConfigEstrutura } = require('./public/js/estrutura-produtos');
 
 const app = express();
@@ -25,7 +24,10 @@ const ConfigSchema = new mongoose.Schema({
     pixProvedor: { type: String, default: 'mercadopago' },
     pixToken: String,
     pixClientId: String,
-    pixClientSecret: String
+    pixClientSecret: String,
+    // Novos campos para controle via Admin
+    manutencao: { type: Boolean, default: false },
+    nomeSite: { type: String, default: 'Meu Delivery' }
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
@@ -43,7 +45,7 @@ const PedidoSchema = new mongoose.Schema({
     cliente: String,
     endereco: String,
     pagamento: String,
-    itens: Array, // Aqui serão salvos os produtos com seus adicionais selecionados
+    itens: Array, 
     total: Number,
     status: { type: String, default: "Pendente" },
     hora: String,
@@ -69,18 +71,33 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// --- LÓGICA DE HORÁRIO ---
-const checarAberta = () => {
+// --- LÓGICA DE HORÁRIO COM BANCO DE DATOS ---
+const checarAberta = async () => {
+    const config = await Config.findOne({ chave: 'global' });
+    
+    // Se o modo manutenção estiver ATIVADO no banco, a loja fica sempre ABERTA
+    if (config && config.manutencao === true) {
+        return true;
+    }
+
+    // Caso contrário, executa a lógica de horário automático
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
     const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
-    return horaTratada >= 20& horaTratada < 16
+    return horaTratada >= 8 && horaTratada < 20;
 };
 
-app.use((req, res, next) => {
-    // Mantive como true conforme seu código original
-    res.locals.estaAberto = checarAberta();
-    next();
+// Middleware para injetar status e config em todas as rotas
+app.use(async (req, res, next) => {
+    try {
+        const config = await Config.findOne({ chave: 'global' });
+        res.locals.estaAberto = await checarAberta();
+        res.locals.nomeSite = config ? config.nomeSite : "Delivery";
+        next();
+    } catch (err) {
+        res.locals.estaAberto = false;
+        next();
+    }
 });
 
 // --- ROTAS PRINCIPAIS ---
@@ -92,10 +109,6 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
-/**
- * Rota para o Front-end obter a estrutura de adicionais/modal.
- * Esta rota é crucial para que o modal de "+" e "-" funcione dinamicamente.
- */
 app.get('/api/config-estrutura', (req, res) => {
     if (ConfigEstrutura) {
         res.json(ConfigEstrutura);
@@ -119,7 +132,7 @@ app.get('/admin', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
-// OPERAÇÃO: FOCO EM COMANDAS
+// OPERAÇÃO
 app.get('/operacao', async (req, res) => {
     try {
         const pedidosAtivos = await Pedido.find({ status: { $ne: 'Concluído' } }).sort({ createdAt: 1 });
@@ -133,7 +146,7 @@ app.get('/operacao', async (req, res) => {
     }
 });
 
-// --- CONFIGURAÇÃO DO PIX ---
+// --- CONFIGURAÇÃO DO SITE E PIX ---
 
 app.post('/update-config-pix', async (req, res) => {
     try {
@@ -141,6 +154,19 @@ app.post('/update-config-pix', async (req, res) => {
         await Config.findOneAndUpdate(
             { chave: 'global' },
             { pixProvedor, pixToken, pixClientId, pixClientSecret },
+            { upsert: true }
+        );
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
+// NOVA ROTA: Atualiza Manutenção e Nome do Site
+app.post('/update-config-site', async (req, res) => {
+    try {
+        const { manutencao, nomeSite } = req.body;
+        await Config.findOneAndUpdate(
+            { chave: 'global' },
+            { manutencao: manutencao === 'true' || manutencao === true, nomeSite },
             { upsert: true }
         );
         res.json({ success: true });
@@ -187,13 +213,12 @@ app.get('/api/pedido/:id', async (req, res) => {
 });
 
 app.post('/enviar-pedido', async (req, res) => {
-    if (!checarAberta()) {
+    const aberta = await checarAberta();
+    if (!aberta) {
         return res.status(403).json({ success: false, message: "Estamos fechados no momento!" });
     }
     try {
-        const { cliente, endereco, pagamento, itens, total, observacaoGeral } = req.body;
-        
-        // Garante que os itens (que agora contêm adicionais) sejam processados corretamente
+        const { cliente, endereco, pagamento, itens, total } = req.body;
         let itensProcessados = typeof itens === 'string' ? JSON.parse(itens) : itens;
 
         const novoPedido = new Pedido({
@@ -215,20 +240,13 @@ app.post('/enviar-pedido', async (req, res) => {
     }
 });
 
-// ALTERADO: Adicionada garantia de propagação para a lógica de cancelamento
 app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
-        // Atualiza no banco de dados MongoDB
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus });
-        
-        // Emite para TODOS os clientes conectados. 
-        // O index.ejs agora escuta isso para esconder a barra amarela se for 'Cancelado'
         io.emit('statusAtualizado', { id, novoStatus });
-        
         res.json({ success: true });
     } catch (err) { 
-        console.error("Erro ao atualizar status:", err);
         res.status(404).json({ success: false }); 
     }
 });

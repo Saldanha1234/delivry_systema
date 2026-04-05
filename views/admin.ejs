@@ -121,6 +121,17 @@
         .stat-card .value { font-size: 1.4rem; font-weight: 800; color: var(--dark); }
         .stat-card .date-label { font-size: 0.7rem; color: var(--info); font-weight: bold; }
 
+        /* Switch Toggle (Configurações) */
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .config-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .config-item:last-child { border-bottom: none; }
+
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -147,6 +158,7 @@
                 <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">📋 Gestão de Pedidos</button>
                 <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">🍔 Cardápio</button>
                 <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Financeiro & Pix</button>
+                <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">⚙️ Configuração</button>
             </div>
 
             <div id="aba-suporte" class="tab-content active">
@@ -155,12 +167,10 @@
                         <div style="padding:12px; font-weight:bold; background:#eee; font-size:0.75rem; color:#666; letter-spacing: 1px;">PEDIDOS EM ABERTO</div>
                         <div class="chat-selector" id="lista-pedidos-chat">
                             <% 
-                               // FILTRO RIGOROSO: Só mostra no chat o que está em produção/entrega. 
-                               // Pedidos que "desistiram" ou foram "excluídos" não entram aqui.
                                let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
                                ativosNoChat.forEach(p => { 
                             %>
-                                <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
+                                 <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
                                     <strong>#<%= p.id %></strong><br>
                                     <small><%= p.cliente %></small>
                                 </div>
@@ -185,35 +195,27 @@
             <div id="aba-financeiro" class="tab-content">
                 <% 
                     const hoje = new Date().toLocaleDateString('pt-BR');
-                    
-                    // Cálculo Total do Mês (Acumulado)
                     let totalMes = pedidos.filter(p => p.status === 'Concluído').reduce((acc, p) => acc + p.total, 0);
                     let entregasMes = pedidos.filter(p => p.status === 'Concluído').length;
-
-                    // Cálculo do Dia (Apenas hoje)
                     let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hoje);
                     let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
                     let entregasDia = pedidosHoje.length;
                 %>
-
                 <div class="finance-grid">
                     <div class="stat-card" style="border-left-color: var(--success);">
                         <h4>💰 Vendas do Dia</h4>
                         <div class="value" id="val-venda-dia">R$ <%= totalDia.toFixed(2) %></div>
                         <span class="date-label">HOJE: <%= hoje %></span>
                     </div>
-
                     <div class="stat-card" style="border-left-color: var(--info);">
                         <h4>📦 Entregas do Dia</h4>
                         <div class="value" id="val-entrega-dia"><%= entregasDia %></div>
                         <span class="date-label">DATA: <%= hoje %></span>
                     </div>
-
                     <div class="stat-card">
                         <h4>📊 Total Acumulado (Mês)</h4>
                         <div class="value">R$ <%= totalMes.toFixed(2) %></div>
                     </div>
-
                     <div class="stat-card" style="border-left-color: #3498db;">
                         <h4>🚚 Entregas Totais</h4>
                         <div class="value"><%= entregasMes %></div>
@@ -236,6 +238,31 @@
                         </div>
                         <button type="button" onclick="salvarConfigPix()" style="background:var(--dark); color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:5px;">ATUALIZAR CHAVES</button>
                     </form>
+                </div>
+            </div>
+
+            <div id="aba-configuracao" class="tab-content">
+                <div class="config-card" style="background:white; padding:20px; border-radius:12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                    <h3 style="margin-top:0; font-size: 1.1rem;">⚙️ Configurações do Site</h3>
+                    
+                    <div class="config-item">
+                        <div>
+                            <strong>🛠️ Modo Manutenção / Teste</strong><br>
+                            <small style="color:#888;">Se ativado, o site ignorará o fechamento automático e ficará sempre aberto.</small>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="conf-manutencao" onchange="salvarConfigSite()" <%= config.manutencao === true ? 'checked' : '' %>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="config-item" style="display: block; padding-top: 20px;">
+                        <label style="font-size:0.8rem; font-weight:bold; color:#555; display: block; margin-bottom: 8px;">🏷️ Nome do Site (Título)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="conf-nomeSite" value="<%= config.nomeSite || 'Premium Delivery' %>" style="flex: 1; padding:10px; border-radius:6px; border:1px solid #ddd;">
+                            <button onclick="salvarConfigSite()" style="background:var(--success); color:white; padding:0 15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">SALVAR</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -309,18 +336,34 @@
         let pedidoAtivoId = null;
         let dataAtualPainel = new Date().toLocaleDateString('pt-BR');
 
-        // LÓGICA DE RESET MEIA-NOITE
+        // NOVA FUNÇÃO: SALVAR CONFIGURAÇÕES DO SITE
+        async function salvarConfigSite() {
+            const dados = {
+                manutencao: document.getElementById('conf-manutencao').checked,
+                nomeSite: document.getElementById('conf-nomeSite').value
+            };
+            
+            const res = await fetch('/update-config-site', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            if (res.ok) {
+                console.log("Configurações salvas com sucesso!");
+                // Não colocamos alert para não atrapalhar o toggle, apenas feedback visual se quiser
+            }
+        }
+
         setInterval(() => {
             const agora = new Date().toLocaleDateString('pt-BR');
             if (agora !== dataAtualPainel) {
-                // Virou o dia! Zera visualmente e atualiza a data
                 dataAtualPainel = agora;
                 document.getElementById('val-venda-dia').innerText = "R$ 0.00";
                 document.getElementById('val-entrega-dia').innerText = "0";
                 document.querySelectorAll('.date-label').forEach(el => el.innerText = "HOJE: " + agora);
-                console.log("Dia virou. Financeiro resetado.");
             }
-        }, 60000); // Checa a cada minuto
+        }, 60000);
 
         function openTab(evt, tabName) {
             const contents = document.getElementsByClassName("tab-content");
@@ -385,7 +428,6 @@
             input.value = '';
         }
 
-        // Funções de Produto (Cardápio) mantidas
         function converterImagem() {
             const file = document.getElementById('p-file').files[0];
             const reader = new FileReader();
