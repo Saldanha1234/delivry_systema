@@ -215,13 +215,22 @@ app.post('/enviar-pedido', async (req, res) => {
     }
 });
 
+// ALTERADO: Adicionada garantia de propagação para a lógica de cancelamento
 app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
+        // Atualiza no banco de dados MongoDB
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus });
+        
+        // Emite para TODOS os clientes conectados. 
+        // O index.ejs agora escuta isso para esconder a barra amarela se for 'Cancelado'
         io.emit('statusAtualizado', { id, novoStatus });
+        
         res.json({ success: true });
-    } catch (err) { res.status(404).json({ success: false }); }
+    } catch (err) { 
+        console.error("Erro ao atualizar status:", err);
+        res.status(404).json({ success: false }); 
+    }
 });
 
 // --- CHAT SOCKET.IO ---

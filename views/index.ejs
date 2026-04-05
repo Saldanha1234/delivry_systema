@@ -417,6 +417,16 @@
         const id = localStorage.getItem('ultimoPedidoId');
         if (id) window.location.href = '/status/' + id;
     }
+
+    // --- NOVA LÓGICA DE CANCELAMENTO ---
+    socket.on('statusAtualizado', (data) => {
+        const idSalvo = localStorage.getItem('ultimoPedidoId');
+        // Se o pedido que sofreu alteração for o do cliente e o status for Cancelado ou Concluído
+        if (data.id == idSalvo && (data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
+            localStorage.removeItem('ultimoPedidoId');
+            document.getElementById('status-alerta').style.display = 'none';
+        }
+    });
 </script>
 </body>
 </html>

@@ -16,6 +16,7 @@
             --entrega: #2ecc71;
             --card-inner: #252525;
             --primary: #FF385C;
+            --cancelar: #555;
         }
 
         body {
@@ -23,7 +24,7 @@
             background-color: var(--bg-body);
             color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             overflow-x: hidden;
         }
 
@@ -31,77 +32,79 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
             border-bottom: 2px solid #333;
         }
 
-        .header-painel h1 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .header-painel h1 { margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
 
         .status-badge {
             background: rgba(46, 204, 113, 0.1);
             color: var(--entrega);
-            padding: 5px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             border: 1px solid var(--entrega);
         }
 
         .btn-voltar {
             background: #333; color: white; text-decoration: none;
-            padding: 10px 20px; border-radius: 8px; font-weight: bold;
-            transition: 0.3s; border: 1px solid #444;
+            padding: 8px 15px; border-radius: 8px; font-weight: bold;
+            transition: 0.3s; border: 1px solid #444; font-size: 0.8rem;
         }
 
         .kanban {
-            display: flex; gap: 20px; overflow-x: auto;
+            display: flex; gap: 15px; overflow-x: auto;
             align-items: flex-start; padding-bottom: 30px;
-            height: calc(100vh - 140px);
+            height: calc(100vh - 120px);
         }
 
         .col {
             background-color: var(--col-bg); border-radius: 12px;
-            min-width: 320px; max-width: 350px; display: flex;
+            min-width: 280px; max-width: 320px; display: flex;
             flex-direction: column; max-height: 100%;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid #333;
         }
 
         .col-header {
-            padding: 15px; text-align: center; font-weight: 800;
+            padding: 12px; text-align: center; font-weight: 800;
             text-transform: uppercase; border-radius: 12px 12px 0 0;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
         }
 
-        .col-pendente { border-top: 6px solid var(--pendente); background: rgba(231, 76, 60, 0.1); color: var(--pendente); }
-        .col-preparando { border-top: 6px solid var(--preparando); background: rgba(52, 152, 219, 0.1); color: var(--preparando); }
-        .col-entrega { border-top: 6px solid var(--entrega); background: rgba(46, 204, 113, 0.1); color: var(--entrega); }
+        .col-pendente { border-top: 5px solid var(--pendente); background: rgba(231, 76, 60, 0.1); color: var(--pendente); }
+        .col-preparando { border-top: 5px solid var(--preparando); background: rgba(52, 152, 219, 0.1); color: var(--preparando); }
+        .col-entrega { border-top: 5px solid var(--entrega); background: rgba(46, 204, 113, 0.1); color: var(--entrega); }
 
         .lista-pedidos {
             padding: 10px; overflow-y: auto; flex-grow: 1;
             display: grid; grid-template-columns: 1fr; gap: 10px;
         }
 
-        /* Mini Card Compacto */
         .mini-card {
             background: var(--card-inner); border-radius: 8px;
-            padding: 12px; border: 1px solid #333;
+            padding: 10px; border: 1px solid #333;
             display: flex; flex-direction: column; gap: 8px;
         }
 
         .mini-card-info { display: flex; justify-content: space-between; align-items: center; }
-        .mini-card-id { font-weight: bold; color: var(--accent); font-size: 0.9rem; }
-        .mini-card-cliente { font-size: 0.85rem; color: #bbb; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+        .mini-card-id { font-weight: bold; color: var(--accent); font-size: 0.8rem; }
+        .mini-card-cliente { font-size: 0.8rem; color: #bbb; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; }
 
-        .btn-group { display: flex; gap: 5px; }
+        /* Estilo dos Botões Pequenos */
+        .btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
         .btn-acao {
-            flex: 1; padding: 8px; border: none; border-radius: 5px;
-            font-size: 0.7rem; font-weight: bold; cursor: pointer;
+            flex: 1; padding: 6px 4px; border: none; border-radius: 4px;
+            font-size: 0.65rem; font-weight: bold; cursor: pointer;
             text-transform: uppercase; transition: 0.2s;
+            min-width: 60px;
         }
         .btn-detalhes { background: #444; color: white; }
         .btn-proximo { background: var(--primary); color: white; }
+        .btn-cancelar { background: #333; color: #e74c3c; border: 1px solid #444; }
+        .btn-cancelar:hover { background: #e74c3c; color: white; }
 
-        /* Modal que preserva o estilo da comanda original */
         .modal {
             display: none; position: fixed; z-index: 999;
             left: 0; top: 0; width: 100%; height: 100%;
@@ -119,12 +122,11 @@
             font-size: 30px; cursor: pointer; background: none; border: none;
         }
 
-        /* Esconde o card original na listagem para manter o painel compacto */
         .original-card-wrapper { display: none; }
 
         @media (max-width: 768px) {
             .kanban { flex-direction: column; height: auto; }
-            .col { min-width: 100%; margin-bottom: 20px; }
+            .col { min-width: 100%; margin-bottom: 15px; }
         }
     </style>
 </head>
@@ -132,9 +134,9 @@
 
     <header class="header-painel">
         <div>
-            <h1>📦 Gerenciamento de Pedidos</h1>
-            <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
-                <span id="socket-status" class="status-badge">● Sistema Online</span>
+            <h1>📦 Operações</h1>
+            <div style="margin-top: 4px; display: flex; align-items: center; gap: 8px;">
+                <span id="socket-status" class="status-badge">● Online</span>
             </div>
         </div>
         <a href="/admin" class="btn-voltar">🏠 Sair</a>
@@ -142,7 +144,7 @@
 
     <div class="kanban">
         <div class="col">
-            <div class="col-header col-pendente">🟡 Novos Pedidos (<span id="count-pendente"><%= pedidos.filter(p => p.status === 'Pendente').length %></span>)</div>
+            <div class="col-header col-pendente">🟡 Novos (<%= pedidos.filter(p => p.status === 'Pendente').length %>)</div>
             <div class="lista-pedidos" id="pendentes">
                 <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
                     <div class="mini-card">
@@ -151,8 +153,9 @@
                             <span class="mini-card-cliente"><%= p.cliente %></span>
                         </div>
                         <div class="btn-group">
-                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Ver</button>
                             <button class="btn-acao btn-proximo" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Iniciar</button>
+                            <button class="btn-acao btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">X</button>
                         </div>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper">
                             <%- include('partials/card-comanda', {p: p}) %>
@@ -163,7 +166,7 @@
         </div>
 
         <div class="col">
-            <div class="col-header col-preparando">🔥 Em Preparação (<span id="count-preparando"><%= pedidos.filter(p => p.status === 'Preparando').length %></span>)</div>
+            <div class="col-header col-preparando">🔥 Preparo (<%= pedidos.filter(p => p.status === 'Preparando').length %>)</div>
             <div class="lista-pedidos" id="preparando">
                 <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
                     <div class="mini-card">
@@ -172,8 +175,9 @@
                             <span class="mini-card-cliente"><%= p.cliente %></span>
                         </div>
                         <div class="btn-group">
-                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Ver</button>
                             <button class="btn-acao btn-proximo" style="background:var(--preparando)" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar</button>
+                            <button class="btn-acao btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">X</button>
                         </div>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper">
                             <%- include('partials/card-comanda', {p: p}) %>
@@ -184,7 +188,7 @@
         </div>
 
         <div class="col">
-            <div class="col-header col-entrega">🛵 Entrega (<span id="count-entrega"><%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %></span>)</div>
+            <div class="col-header col-entrega">🛵 Entrega (<%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %>)</div>
             <div class="lista-pedidos" id="entrega">
                 <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
                     <div class="mini-card">
@@ -193,8 +197,9 @@
                             <span class="mini-card-cliente"><%= p.cliente %></span>
                         </div>
                         <div class="btn-group">
-                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
-                            <button class="btn-acao btn-proximo" style="background:var(--entrega)" onclick="atualizarStatus('<%= p.id %>', 'Concluído')">Concluir</button>
+                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Ver</button>
+                            <button class="btn-acao btn-proximo" style="background:var(--entrega)" onclick="atualizarStatus('<%= p.id %>', 'Concluído')">Fim</button>
+                            <button class="btn-acao btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">X</button>
                         </div>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper">
                             <%- include('partials/card-comanda', {p: p}) %>
@@ -240,8 +245,23 @@
             } catch (err) { console.error("Erro:", err); }
         }
 
+        async function cancelarPedido(id) {
+            if (confirm("Deseja realmente CANCELAR este pedido? Ele não constará no faturamento.")) {
+                try {
+                    // Aqui você pode usar a mesma rota de status mudando para 'Cancelado'
+                    // Ou uma rota específica /cancel-order que você configurou no backend
+                    const response = await fetch('/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id, novoStatus: 'Cancelado' })
+                    });
+                    if (response.ok) { window.location.reload(); }
+                } catch (err) { console.error("Erro ao cancelar:", err); }
+            }
+        }
+
         socket.on('novoPedido', (pedido) => {
-            audio.play().catch(e => console.log("Áudio pendente de interação."));
+            audio.play().catch(e => console.log("Áudio pendente."));
             setTimeout(() => { window.location.reload(); }, 500);
         });
 

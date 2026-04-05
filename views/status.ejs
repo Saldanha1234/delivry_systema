@@ -56,33 +56,39 @@
         <h2 style="color:var(--primary);">Pedido #<%= pedido.id %></h2>
         <p style="margin-bottom: 20px;">Olá <b><%= pedido.cliente %></b>, seu pedido está:</p>
         
-        <div style="background: #f0f0f0; padding: 20px; border-radius: 12px; font-size: 1.5rem; font-weight: 800; color: var(--dark); text-transform: uppercase; margin-bottom: 30px;">
+        <div style="background: <%= pedido.status === 'Cancelado' ? '#feecef' : '#f0f0f0' %>; padding: 20px; border-radius: 12px; font-size: 1.5rem; font-weight: 800; color: <%= pedido.status === 'Cancelado' ? '#ff4757' : 'var(--dark)' %>; text-transform: uppercase; margin-bottom: 30px;">
             <%= pedido.status %>
         </div>
 
-        <div class="status-tracker" style="display:flex; justify-content:space-around; margin: 20px 0; gap: 10px;">
-            <div class="step <%= pedido.status === 'Pendente' ? 'active' : '' %>">
-                <span class="icon">🟡</span> Novo
+        <% if (pedido.status !== 'Cancelado') { %>
+            <div class="status-tracker" style="display:flex; justify-content:space-around; margin: 20px 0; gap: 10px;">
+                <div class="step <%= pedido.status === 'Pendente' ? 'active' : '' %>">
+                    <span class="icon">🟡</span> Novo
+                </div>
+                <div class="step <%= pedido.status === 'Preparando' ? 'active' : '' %>">
+                    <span class="icon">🔥</span> Cozinha
+                </div>
+                <div class="step <%= pedido.status === 'Saiu para Entrega' ? 'active' : '' %>">
+                    <span class="icon">🛵</span> Entrega
+                </div>
+                <div class="step <%= pedido.status === 'Concluído' ? 'active' : '' %>">
+                    <span class="icon">✅</span> Fim
+                </div>
             </div>
-            <div class="step <%= pedido.status === 'Preparando' ? 'active' : '' %>">
-                <span class="icon">🔥</span> Cozinha
+        <% } else { %>
+            <div style="margin: 20px 0; color: #666;">
+                <p>Sentimos muito! Seu pedido foi cancelado pelo estabelecimento.</p>
             </div>
-            <div class="step <%= pedido.status === 'Saiu para Entrega' ? 'active' : '' %>">
-                <span class="icon">🛵</span> Entrega
-            </div>
-            <div class="step <%= pedido.status === 'Concluído' ? 'active' : '' %>">
-                <span class="icon">✅</span> Fim
-            </div>
-        </div>
+        <% } %>
 
         <hr style="border: 0; border-top: 1px solid #EEE; margin: 20px 0;">
         
         <div style="display: flex; flex-direction: column; gap: 10px;">
             <a href="/" style="text-decoration:none; color:var(--primary); font-weight:700;">← Voltar para a Loja</a>
             
-            <% if (pedido.status === 'Concluído') { %>
+            <% if (pedido.status === 'Concluído' || pedido.status === 'Cancelado') { %>
                 <button onclick="finalizarHistorico()" style="background: var(--dark); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700;">
-                    Encerrar e fazer novo pedido
+                    Limpar e voltar ao início
                 </button>
             <% } %>
         </div>
@@ -116,6 +122,11 @@
         // Entrar na sala do pedido ao carregar
         socket.emit('join', pedidoId);
 
+        // Se o status carregado já for final, garante que o ID suma do localStorage
+        if (statusAtual === 'Cancelado' || statusAtual === 'Concluído') {
+            localStorage.removeItem('ultimoPedidoId');
+        }
+
         // FUNÇÃO PARA ABRIR/FECHAR CHAT
         function toggleChat() {
             const wrapper = document.getElementById('chat-wrapper');
@@ -128,6 +139,10 @@
                 const res = await fetch('/api/pedido/' + pedidoId);
                 const data = await res.json();
                 if (data.status && data.status !== statusAtual) {
+                    // Se mudar para cancelado ou concluído, limpa o ID antes de recarregar
+                    if (data.status === 'Cancelado' || data.status === 'Concluído') {
+                        localStorage.removeItem('ultimoPedidoId');
+                    }
                     window.location.reload();
                 }
             } catch (err) {
@@ -155,7 +170,7 @@
             const div = document.createElement('div');
             
             const ehAdmin = msg.usuario === 'Admin';
-            const nomeParaExibir = ehAdmin ? 'Açaí Roxinho' : msg.usuario;
+            const nomeParaExibir = ehAdmin ? 'Suporte' : msg.usuario;
             const horaParaExibir = msg.hora || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             
             div.className = `m-st ${ehAdmin ? 'adm' : 'cli'}`;
