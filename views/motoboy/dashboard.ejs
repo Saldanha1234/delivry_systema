@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.gstatic.com https://*.googleapis.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://*.gstatic.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://*.gstatic.com; connect-src 'self' ws: wss:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.gstatic.com https://*.googleapis.com https://*.tile.openstreetmap.org https://unpkg.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://*.gstatic.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://*.gstatic.com; connect-src 'self' ws: wss: https://router.project-osrm.org;">
     
     <title>Motoboy Dash | Entrega Ativa</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    
     <script src="/socket.io/socket.io.js"></script>
     
     <style>
@@ -17,6 +19,7 @@
             --card: #2d2d2d;
             --text: #ffffff;
             --success: #27ae60;
+            --danger: #ff4444;
         }
 
         body {
@@ -82,9 +85,8 @@
 
         #map {
             width: 100%;
-            height: 300px;
+            height: 350px;
             background: #333;
-            margin-bottom: 10px;
             border-bottom: 3px solid var(--primary);
         }
 
@@ -96,12 +98,6 @@
             padding: 20px;
             margin-bottom: 15px;
             border-left: 5px solid var(--primary);
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .btn-acao {
@@ -118,6 +114,13 @@
 
         .btn-aceitar { background: var(--primary); color: var(--dark); }
         .btn-finalizar { background: var(--success); color: white; }
+        
+        /* Botão desativado */
+        .btn-finalizar:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
 
         .status-badge {
             font-size: 0.8rem;
@@ -133,8 +136,10 @@
             padding-top: 15px;
         }
 
-        /* Input de foto escondido */
         #input-foto { display: none; }
+
+        /* Esconder controles de instrução do mapa para focar na rota */
+        .leaflet-routing-container { display: none; }
     </style>
 </head>
 <body>
@@ -150,7 +155,7 @@
         </div>
         <a href="/motoboy/dashboard">🛵 Entregas Disponíveis</a>
         <a href="/motoboy/perfil">⚙️ Meu Perfil</a>
-        <a href="/logout" style="color: #ff4444;">🚪 Sair</a>
+        <a href="/logout" style="color: var(--danger);">🚪 Sair</a>
     </div>
 
     <header>
@@ -175,7 +180,7 @@
                         <strong>#<%= pedido.id %></strong>
                     </div>
                     <h3><%= pedido.cliente %></h3>
-                    <p>📍 <%= pedido.endereco %></p>
+                    <p id="destino-<%= pedido.id %>">📍 <%= pedido.endereco %></p>
                     
                     <div class="detalhes-entrega">
                         <strong>Itens:</strong>
@@ -184,82 +189,114 @@
                                 <li><%= item.quantidade %>x <%= item.nome %></li>
                             <% }) %>
                         </ul>
-                        <hr style="border: 0.5px solid #444;">
-                        <p><strong>Total: R$ <%= pedido.total.toFixed(2) %></strong></p>
                     </div>
 
                     <% if (pedido.status === 'Pronto para Entrega') { %>
-                        <button class="btn-acao btn-aceitar" onclick="iniciarRota('<%= pedido.id %>')">ACEITAR E INICIAR ROTA</button>
+                        <button class="btn-acao btn-aceitar" onclick="iniciarRota('<%= pedido.id %>', '<%= pedido.endereco %>')">ACEITAR E INICIAR ROTA</button>
                     <% } else if (pedido.status === 'Em Rota') { %>
-                        <button class="btn-acao btn-finalizar" onclick="finalizarEntrega('<%= pedido.id %>')">FINALIZAR ENTREGA</button>
+                        <button class="btn-acao btn-finalizar" id="btn-finish-<%= pedido.id %>" disabled onclick="finalizarEntrega('<%= pedido.id %>')">CHEGUE AO DESTINO PARA FINALIZAR</button>
+                        <p style="font-size: 0.8rem; color: var(--primary); text-align: center; margin-top: 5px;">Aproxime-se do cliente para liberar o botão.</p>
                     <% } %>
                 </div>
             <% }) %>
         <% } else { %>
-            <div class="empty-state">
+            <div style="text-align: center; padding: 40px; color: #666;">
                 <p>Nenhum pedido disponível para entrega no momento.</p>
             </div>
         <% } %>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
     <script>
         let map;
+        let routingControl;
+        let userMarker;
         const socket = io();
 
-        // 1. Lógica de Upload de Foto via AJAX (Sem redirecionar)
+        // 1. ARRUMADO: Upload de Foto via Fetch (Não abre página branca)
         async function uploadFoto(input) {
             if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    const base64Image = e.target.result;
-                    
-                    try {
-                        const response = await fetch('/motoboy/update-perfil', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ foto: base64Image })
-                        });
+                const formData = new FormData();
+                formData.append('foto', input.files[0]);
 
-                        const result = await response.json();
-                        if (result.success) {
-                            // Atualiza todas as fotos na página na hora
-                            document.querySelectorAll('.user-photo-update').forEach(img => {
-                                img.src = base64Image;
-                            });
-                            alert("Foto atualizada com sucesso!");
-                        } else {
-                            alert("Erro ao salvar foto.");
-                        }
-                    } catch (err) {
-                        console.error("Erro no upload:", err);
+                try {
+                    const response = await fetch('/motoboy/update-perfil', {
+                        method: 'POST',
+                        body: formData // Envia como Multipart para o servidor processar o arquivo
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        document.querySelectorAll('.user-photo-update').forEach(img => {
+                            img.src = result.novaFotoUrl || URL.createObjectURL(input.files[0]);
+                        });
                     }
-                };
-                reader.readAsDataURL(input.files[0]);
+                } catch (err) {
+                    console.error("Erro no upload:", err);
+                }
             }
         }
 
-        // 2. Lógica do Mapa
+        // 2. ARRUMADO: Mapa com Rota em Tempo Real e Trava de Botão
         function initMap() {
             map = L.map('map').setView([-23.5505, -46.6333], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            // Tenta iniciar a localização se houver entrega ativa
+            <% if (pedidos.some(p => p.status === 'Em Rota')) { %>
+                const enderecoDestino = "<%= pedidos.find(p => p.status === 'Em Rota')?.endereco %>";
+                const pedidoId = "<%= pedidos.find(p => p.status === 'Em Rota')?.id %>";
+                trazarRota(enderecoDestino, pedidoId);
+            <% } %>
         }
 
-        // 3. Conexão com Sistema de Comanda (Socket.io)
-        socket.on('statusAtualizado', (data) => {
-            // Se um pedido mudou para "Pronto para Entrega", recarrega para mostrar no dashboard
-            if (data.novoStatus === 'Pronto para Entrega' || data.novoStatus === 'Concluído') {
-                location.reload();
-            }
-        });
+        async function trazarRota(endereco, pedidoId) {
+            if (!navigator.geolocation) return alert("GPS não suportado.");
 
-        function iniciarRota(pedidoId) {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    socket.emit('update-status', { id: pedidoId, novoStatus: 'Em Rota' });
-                    location.reload();
-                });
-            }
+            // Pegar coordenadas do endereço via Nominatim (Geocoding)
+            const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}`);
+            const geoData = await geoRes.json();
+            if (!geoData.length) return;
+
+            const destCoords = L.latLng(geoData[0].lat, geoData[0].lon);
+
+            navigator.geolocation.watchPosition(pos => {
+                const userCoords = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                
+                // Atualiza marcador do Motoboy
+                if (!userMarker) {
+                    userMarker = L.marker(userCoords).addTo(map);
+                } else {
+                    userMarker.setLatLng(userCoords);
+                }
+
+                // Cria/Atualiza a linha amarela de rota
+                if (routingControl) map.removeControl(routingControl);
+
+                routingControl = L.Routing.control({
+                    waypoints: [userCoords, destCoords],
+                    lineOptions: { styles: [{ color: '#FFD700', weight: 6 }] }, // LINHA AMARELA
+                    createMarker: function() { return null; }, // Esconde marcadores padrão do routing
+                    routeWhileDragging: false,
+                    addWaypoints: false
+                }).addTo(map);
+
+                // Verifica distância para liberar botão (Menos de 100 metros)
+                const dist = userCoords.distanceTo(destCoords);
+                const btn = document.getElementById(`btn-finish-${pedidoId}`);
+                if (btn && dist < 100) { 
+                    btn.disabled = false;
+                    btn.innerHTML = "FINALIZAR ENTREGA AGORA";
+                    btn.style.background = "#27ae60";
+                }
+            }, err => console.error(err), { enableHighAccuracy: true });
+        }
+
+        async function iniciarRota(pedidoId, endereco) {
+            socket.emit('update-status', { id: pedidoId, novoStatus: 'Em Rota' });
+            setTimeout(() => location.reload(), 500);
         }
 
         function finalizarEntrega(pedidoId) {
