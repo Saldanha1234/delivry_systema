@@ -193,8 +193,7 @@
                         <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
-                        <div id="btn-area-<%= p.id %>">
-                            </div>
+                        <div id="btn-area-<%= p.id %>"></div>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
@@ -212,7 +211,7 @@
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
                         <div id="btn-area-<%= p.id %>">
-                            <button class="btn-main btn-enviar" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar para rota</button>
+                            <button class="btn-main btn-enviar" onclick="atualizarStatus('<%= p.id %>', 'Pronto para Entrega')">Enviar para rota</button>
                         </div>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
@@ -223,11 +222,11 @@
         </div>
 
         <div class="col">
-            <div class="col-header">Em rota <span class="count-badge"><%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %></span></div>
+            <div class="col-header">Em rota <span class="count-badge"><%= pedidos.filter(p => p.status === 'Pronto para Entrega' || p.status === 'Em Rota').length %></span></div>
             <div class="lista-pedidos">
-                <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
+                <% pedidos.filter(p => p.status === 'Pronto para Entrega' || p.status === 'Em Rota').forEach(p => { %>
                     <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
-                        <span class="waiting-text text-warning">🛵 Em rota de entrega</span>
+                        <span class="waiting-text text-warning">🛵 <%= p.status === 'Em Rota' ? 'Em rota de entrega' : 'Aguardando Motoboy' %></span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
@@ -262,9 +261,10 @@
                 
                 const labelTopo = card.querySelector('.label-topo');
                 const btnArea = card.querySelector(`#btn-area-${id}`);
-                const statusCol = card.closest('.col').querySelector('.col-header').innerText;
+                const colWrapper = card.closest('.col');
+                if(!colWrapper) return;
+                const statusCol = colWrapper.querySelector('.col-header').innerText;
 
-                // LOGICA COLUNA ACEITAR
                 if (statusCol.includes("Aceitar")) {
                     if (diffMin >= 5) {
                         labelTopo.innerHTML = `<span class="text-danger">${cliente} aguardando a ${diffMin} min</span>`;
@@ -274,7 +274,6 @@
                     }
                 }
 
-                // LOGICA COLUNA EM PREPARO
                 if (statusCol.includes("Em preparo")) {
                     if (diffMin < 5) {
                         labelTopo.innerHTML = `<span class="text-warning">Em preparo... ${5 - diffMin} min restantes</span>`;
@@ -286,7 +285,6 @@
                     }
                 }
 
-                // LOGICA COLUNA PRONTO (Atraso 15 min)
                 if (statusCol.includes("Pronto")) {
                     if (diffMin >= 15) {
                         labelTopo.innerHTML = `<span class="text-danger">⚠️ Pedido pronto em atraso a ${diffMin} min</span>`;
@@ -300,7 +298,6 @@
         setInterval(updateFarol, 5000);
         updateFarol();
 
-        // BUSCA
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             document.querySelectorAll('.search-item').forEach(item => {

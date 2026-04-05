@@ -28,7 +28,7 @@
             overflow-x: hidden;
         }
 
-        /* Menu Lateral (Drawer) */
+        /* Menu Lateral */
         .sidebar {
             height: 100%;
             width: 0;
@@ -54,7 +54,6 @@
 
         .sidebar a:hover { color: var(--primary); }
 
-        /* Header */
         header {
             background: var(--card);
             padding: 15px;
@@ -97,6 +96,12 @@
             padding: 20px;
             margin-bottom: 15px;
             border-left: 5px solid var(--primary);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .btn-acao {
@@ -112,8 +117,7 @@
         }
 
         .btn-aceitar { background: var(--primary); color: var(--dark); }
-        .btn-finalizar { background: var(--success); color: white; display: none; }
-        .btn-finalizar:disabled { background: #555; cursor: not-allowed; }
+        .btn-finalizar { background: var(--success); color: white; }
 
         .status-badge {
             font-size: 0.8rem;
@@ -129,11 +133,8 @@
             padding-top: 15px;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #888;
-        }
+        /* Input de foto escondido */
+        #input-foto { display: none; }
     </style>
 </head>
 <body>
@@ -141,8 +142,11 @@
     <div id="mySidebar" class="sidebar">
         <a href="javascript:void(0)" onclick="closeNav()" style="font-size: 30px;">&times;</a>
         <div style="text-align: center; padding: 20px;">
-            <img src="<%= motoboy.foto || '/img/default-user.png' %>" class="foto-perfil" style="width: 80px; height: 80px;">
-            <h4><%= motoboy.nome %></h4>
+            <label for="input-foto">
+                <img src="<%= motoboy.foto || '/img/default-user.png' %>" class="foto-perfil user-photo-update" style="width: 80px; height: 80px; cursor: pointer;" title="Clique para mudar a foto">
+            </label>
+            <input type="file" id="input-foto" accept="image/*" onchange="uploadFoto(this)">
+            <h4 id="display-nome"><%= motoboy.nome %></h4>
         </div>
         <a href="/motoboy/dashboard">🛵 Entregas Disponíveis</a>
         <a href="/motoboy/perfil">⚙️ Meu Perfil</a>
@@ -151,12 +155,12 @@
 
     <header>
         <div onclick="openNav()" style="font-size: 24px; cursor: pointer;">&#9776;</div>
-        <div class="perfil-topo" onclick="window.location.href='/motoboy/perfil'">
+        <div class="perfil-topo" onclick="openNav()">
             <div style="text-align: right;">
                 <div style="font-weight: bold; font-size: 0.9rem;"><%= motoboy.nome %></div>
                 <div style="font-size: 0.7rem; color: var(--success);">Online</div>
             </div>
-            <img src="<%= motoboy.foto || '/img/default-user.png' %>" class="foto-perfil">
+            <img src="<%= motoboy.foto || '/img/default-user.png' %>" class="foto-perfil user-photo-update">
         </div>
     </header>
 
@@ -187,7 +191,7 @@
                     <% if (pedido.status === 'Pronto para Entrega') { %>
                         <button class="btn-acao btn-aceitar" onclick="iniciarRota('<%= pedido.id %>')">ACEITAR E INICIAR ROTA</button>
                     <% } else if (pedido.status === 'Em Rota') { %>
-                        <button class="btn-acao btn-finalizar" style="display: block;" onclick="finalizarEntrega('<%= pedido.id %>')">FINALIZAR ENTREGA</button>
+                        <button class="btn-acao btn-finalizar" onclick="finalizarEntrega('<%= pedido.id %>')">FINALIZAR ENTREGA</button>
                     <% } %>
                 </div>
             <% }) %>
@@ -200,33 +204,59 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let map, markerMotoboy, markerDestino;
+        let map;
         const socket = io();
 
+        // 1. Lógica de Upload de Foto via AJAX (Sem redirecionar)
+        async function uploadFoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const base64Image = e.target.result;
+                    
+                    try {
+                        const response = await fetch('/motoboy/update-perfil', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ foto: base64Image })
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            // Atualiza todas as fotos na página na hora
+                            document.querySelectorAll('.user-photo-update').forEach(img => {
+                                img.src = base64Image;
+                            });
+                            alert("Foto atualizada com sucesso!");
+                        } else {
+                            alert("Erro ao salvar foto.");
+                        }
+                    } catch (err) {
+                        console.error("Erro no upload:", err);
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 2. Lógica do Mapa
         function initMap() {
-            // Inicia o mapa centralizado no Brasil caso não haja posição
             map = L.map('map').setView([-23.5505, -46.6333], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         }
 
+        // 3. Conexão com Sistema de Comanda (Socket.io)
+        socket.on('statusAtualizado', (data) => {
+            // Se um pedido mudou para "Pronto para Entrega", recarrega para mostrar no dashboard
+            if (data.novoStatus === 'Pronto para Entrega' || data.novoStatus === 'Concluído') {
+                location.reload();
+            }
+        });
+
         function iniciarRota(pedidoId) {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
-                    const { latitude, longitude } = position.coords;
-                    
                     socket.emit('update-status', { id: pedidoId, novoStatus: 'Em Rota' });
-                    
-                    // Envia localização em tempo real
-                    setInterval(() => {
-                        navigator.geolocation.getCurrentPosition(pos => {
-                            socket.emit('atualizarLocalizacao', {
-                                motoboyId: '<%= motoboy._id %>',
-                                lat: pos.coords.latitude,
-                                lng: pos.coords.longitude
-                            });
-                        });
-                    }, 5000);
-
                     location.reload();
                 });
             }
@@ -235,7 +265,6 @@
         function finalizarEntrega(pedidoId) {
             if(confirm("Deseja finalizar esta entrega?")) {
                 socket.emit('update-status', { id: pedidoId, novoStatus: 'Concluído' });
-                alert("Entrega finalizada com sucesso!");
                 location.reload();
             }
         }
