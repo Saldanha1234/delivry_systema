@@ -31,7 +31,7 @@ const ProdutoSchema = new mongoose.Schema({
     img: String,
     desc: String,
     categoria: String,
-    tipo: { type: String, default: 'simples' } // ADICIONADO: Identifica se é simples ou de montar
+    tipo: { type: String, default: 'simples' } // 'simples' ou 'montar'
 });
 const Produto = mongoose.model('Produto', ProdutoSchema);
 
@@ -40,7 +40,7 @@ const PedidoSchema = new mongoose.Schema({
     cliente: String,
     endereco: String,
     pagamento: String,
-    itens: Array,
+    itens: Array, // Aqui salvamos [{nome, preco, detalhes}]
     total: Number,
     status: { type: String, default: "Pendente" },
     hora: String,
@@ -71,11 +71,14 @@ const checarAberta = () => {
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
     const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
+    // Retorna true se estiver entre 08:00 e 20:00
     return horaTratada >= 8 && horaTratada < 20;
 };
 
 app.use((req, res, next) => {
-    res.locals.estaAberto = true;
+    // MODO DESENVOLVEDOR: Forçado como TRUE para você editar o site.
+    // Para voltar ao automático, mude para: res.locals.estaAberto = checarAberta();
+    res.locals.estaAberto = true; 
     next();
 });
 
@@ -91,7 +94,7 @@ app.get('/', async (req, res) => {
 app.get('/admin', async (req, res) => {
     try {
         const produtos = await Produto.find();
-        const todosOsPedidos = await Pedido.find(); 
+        const todosOsPedidos = await Pedido.find().sort({ createdAt: -1 }); 
         
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
@@ -110,7 +113,6 @@ app.get('/operacao', async (req, res) => {
 
         res.render('operacao', { pedidos: pedidosAtivos, config, produtos });
     } catch (err) {
-        console.error(err);
         res.status(500).send("Erro interno ao carregar painel de operação.");
     }
 });
@@ -133,7 +135,6 @@ app.post('/update-config-pix', async (req, res) => {
 
 app.post('/add-produto', async (req, res) => {
     try {
-        // Agora aceita req.body contendo o 'tipo'
         const novoProduto = new Produto(req.body);
         await novoProduto.save();
         res.json({ success: true });
@@ -170,27 +171,32 @@ app.get('/api/pedido/:id', async (req, res) => {
 });
 
 app.post('/enviar-pedido', async (req, res) => {
-    if (!checarAberta()) {
-        return res.status(403).json({ success: false, message: "Estamos fechados no momento!" });
-    }
+    // Validação de segurança (Opcional: se quiser barrar pedidos via API quando fechado)
+    // if (!checarAberta()) return res.status(403).json({ success: false, message: "Fechado!" });
+
     try {
         const { cliente, endereco, pagamento, itens, total } = req.body;
-        let itensProcessados = typeof itens === 'string' ? JSON.parse(itens) : itens;
+        
+        // Garante que os itens (mesmo os com adicionais) sejam processados como Array
+        let itensFinal = Array.isArray(itens) ? itens : JSON.parse(itens);
 
         const novoPedido = new Pedido({
             id: Math.floor(Math.random() * 9000) + 1000,
             cliente: cliente || "Cliente Anônimo",
-            endereco: endereco || "Endereço não informado",
+            endereco: endereco || "Retirada",
             pagamento: pagamento || "A combinar",
-            itens: Array.isArray(itensProcessados) ? itensProcessados : [], // Salva inclusive os 'detalhes' da montagem
+            itens: itensFinal, 
             total: parseFloat(total) || 0,
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         });
 
         await novoPedido.save(); 
-        io.emit('novoPedido', novoPedido);
+        io.emit('novoPedido', novoPedido); // Alerta o painel de Admin/Operação
         res.json({ success: true, id: novoPedido.id });
-    } catch (error) { res.status(500).json({ success: false }); }
+    } catch (error) { 
+        console.error("Erro ao salvar pedido:", error);
+        res.status(500).json({ success: false }); 
+    }
 });
 
 app.post('/update-status', async (req, res) => {
