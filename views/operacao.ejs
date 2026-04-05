@@ -3,160 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Operações | Comandas</title>
+    <title>Farol da Operação | Painel</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
-            --bg-body: #121212;
-            --col-bg: #1e1e1e;
-            --text-main: #ffffff;
-            --accent: #f1c40f;
-            --pendente: #e74c3c;
-            --preparando: #3498db;
-            --entrega: #2ecc71;
-            --card-inner: #252525;
-            --primary: #FF385C;
-            --cancelar: #555;
+            --bg-page: #f4f7f9;
+            --bg-col: #ebedef;
+            --card-bg: #ffffff;
+            --text-dark: #333;
+            --text-light: #666;
+            --primary: #e61e1e; /* Vermelho iFood Style */
+            --warning: #f39c12;
+            --success: #27ae60;
+            --info: #2980b9;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-dark);
             margin: 0;
-            padding: 10px;
-            overflow-x: hidden;
+            padding: 20px;
         }
 
+        /* Header Estilizado */
         .header-painel {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #333;
+            margin-bottom: 25px;
         }
 
-        .header-painel h1 { margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
-
-        .status-badge {
-            background: rgba(46, 204, 113, 0.1);
-            color: var(--entrega);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            border: 1px solid var(--entrega);
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 5px 20px;
+            border-radius: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        .btn-voltar {
-            background: #333; color: white; text-decoration: none;
-            padding: 8px 15px; border-radius: 8px; font-weight: bold;
-            transition: 0.3s; border: 1px solid #444; font-size: 0.8rem;
-        }
-
+        /* Kanban Layout */
         .kanban {
-            display: flex; gap: 15px; overflow-x: auto;
-            align-items: flex-start; padding-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            align-items: flex-start;
             height: calc(100vh - 120px);
         }
 
         .col {
-            background-color: var(--col-bg); border-radius: 12px;
-            min-width: 280px; max-width: 320px; display: flex;
-            flex-direction: column; max-height: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid #333;
+            background-color: var(--bg-col);
+            border-radius: 15px;
+            min-width: 300px;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
         }
 
         .col-header {
-            padding: 12px; text-align: center; font-weight: 800;
-            text-transform: uppercase; border-radius: 12px 12px 0 0;
-            font-size: 0.75rem;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #555;
         }
 
-        .col-pendente { border-top: 5px solid var(--pendente); background: rgba(231, 76, 60, 0.1); color: var(--pendente); }
-        .col-preparando { border-top: 5px solid var(--preparando); background: rgba(52, 152, 219, 0.1); color: var(--preparando); }
-        .col-entrega { border-top: 5px solid var(--entrega); background: rgba(46, 204, 113, 0.1); color: var(--entrega); }
+        .count-badge {
+            background: #ccc;
+            color: #fff;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+        }
 
         .lista-pedidos {
-            padding: 10px; overflow-y: auto; flex-grow: 1;
-            display: grid; grid-template-columns: 1fr; gap: 10px;
+            padding: 10px;
+            overflow-y: auto;
+            flex-grow: 1;
         }
 
+        /* Cards Estilo Imagem */
         .mini-card {
-            background: var(--card-inner); border-radius: 8px;
-            padding: 10px; border: 1px solid #333;
-            display: flex; flex-direction: column; gap: 8px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            border: 1px solid #eee;
+            position: relative;
         }
 
-        .mini-card-info { display: flex; justify-content: space-between; align-items: center; }
-        .mini-card-id { font-weight: bold; color: var(--accent); font-size: 0.8rem; }
-        .mini-card-cliente { font-size: 0.8rem; color: #bbb; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; }
+        /* Tags de Tempo/Status */
+        .status-tag {
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .tag-atraso { color: var(--primary); }
+        .tag-alerta { color: var(--warning); }
+        .tag-sucesso { color: var(--success); }
 
-        /* Estilo dos Botões Pequenos */
-        .btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
-        .btn-acao {
-            flex: 1; padding: 6px 4px; border: none; border-radius: 4px;
-            font-size: 0.65rem; font-weight: bold; cursor: pointer;
-            text-transform: uppercase; transition: 0.2s;
-            min-width: 60px;
-        }
-        .btn-detalhes { background: #444; color: white; }
-        .btn-proximo { background: var(--primary); color: white; }
-        .btn-cancelar { background: #333; color: #e74c3c; border: 1px solid #444; }
-        .btn-cancelar:hover { background: #e74c3c; color: white; }
+        .mini-card-id { font-size: 1.4rem; font-weight: 800; margin: 5px 0; display: block; }
+        .mini-card-cliente { font-size: 0.9rem; color: var(--text-light); margin-bottom: 15px; display: block; }
 
-        .modal {
-            display: none; position: fixed; z-index: 999;
-            left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
-            justify-content: center; align-items: center;
+        /* Botões Estilizados */
+        .btn-main {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 5px;
         }
-        .modal-content {
-            width: 95%; max-width: 400px; position: relative;
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        
-        .close-modal-btn { 
-            position: absolute; top: -35px; right: 0; color: white; 
-            font-size: 30px; cursor: pointer; background: none; border: none;
-        }
+
+        .btn-aceitar { background: var(--primary); color: white; }
+        .btn-preparar { background: var(--warning); color: white; }
+        .btn-detalhe { background: #eee; color: #555; }
+        .btn-cancelar { background: #fdf2f2; color: var(--primary); border: 1px solid #fee2e2; }
+        .btn-enviar { background: var(--success); color: white; }
 
         .original-card-wrapper { display: none; }
 
-        @media (max-width: 768px) {
-            .kanban { flex-direction: column; height: auto; }
-            .col { min-width: 100%; margin-bottom: 15px; }
+        /* Modal */
+        .modal {
+            display: none; position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); justify-content: center; align-items: center;
         }
+        .modal-content { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; }
     </style>
 </head>
 <body>
 
     <header class="header-painel">
-        <div>
-            <h1>📦 Operações</h1>
-            <div style="margin-top: 4px; display: flex; align-items: center; gap: 8px;">
-                <span id="socket-status" class="status-badge">● Online</span>
-            </div>
+        <div class="header-title">
+            <span style="color:var(--success)">●</span> 
+            <strong>Farol da Operação</strong>
         </div>
-        <a href="/admin" class="btn-voltar">🏠 Sair</a>
+        <a href="/admin" style="text-decoration: none; color: #666; font-weight: bold;">Sair</a>
     </header>
 
     <div class="kanban">
         <div class="col">
-            <div class="col-header col-pendente">🟡 Novos (<%= pedidos.filter(p => p.status === 'Pendente').length %>)</div>
+            <div class="col-header">Aceitar <span class="count-badge"><%= pedidos.filter(p => p.status === 'Pendente').length %></span></div>
             <div class="lista-pedidos" id="pendentes">
                 <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                    <div class="mini-card">
-                        <div class="mini-card-info">
-                            <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
-                            <span class="mini-card-cliente"><%= p.cliente %></span>
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Ver</button>
-                            <button class="btn-acao btn-proximo" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Iniciar</button>
-                            <button class="btn-acao btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">X</button>
-                        </div>
+                    <div class="mini-card" data-id="<%= p.id %>" data-time="<%= p.createdAt %>">
+                        <span class="status-tag timer-label" id="timer-<%= p.id %>">Carregando...</span>
+                        <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
+                        <span class="mini-card-cliente"><%= p.cliente %></span>
+                        
+                        <button class="btn-main btn-aceitar" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceite em até 5min</button>
+                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                        <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
+
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper">
                             <%- include('partials/card-comanda', {p: p}) %>
                         </div>
@@ -166,44 +178,52 @@
         </div>
 
         <div class="col">
-            <div class="col-header col-preparando">🔥 Preparo (<%= pedidos.filter(p => p.status === 'Preparando').length %>)</div>
-            <div class="lista-pedidos" id="preparando">
+            <div class="col-header">Em preparo <span class="count-badge"><%= pedidos.filter(p => p.status === 'Preparando').length %></span></div>
+            <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                    <div class="mini-card">
-                        <div class="mini-card-info">
-                            <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
-                            <span class="mini-card-cliente"><%= p.cliente %></span>
+                    <div class="mini-card" data-id="<%= p.id %>" data-time="<%= p.updatedAt %>">
+                        <span class="status-tag timer-label" id="timer-preparo-<%= p.id %>">Preparar em até 5min</span>
+                        <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
+                        <span class="mini-card-cliente"><%= p.cliente %></span>
+                        
+                        <div id="ctrl-preparo-<%= p.id %>">
+                            <button class="btn-main btn-preparar" onclick="iniciarCronometroPreparo('<%= p.id %>')">Iniciar Preparo</button>
                         </div>
-                        <div class="btn-group">
-                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Ver</button>
-                            <button class="btn-acao btn-proximo" style="background:var(--preparando)" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar</button>
-                            <button class="btn-acao btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">X</button>
-                        </div>
-                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper">
-                            <%- include('partials/card-comanda', {p: p}) %>
-                        </div>
+                        
+                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                        <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
                     </div>
                 <% }) %>
             </div>
         </div>
 
         <div class="col">
-            <div class="col-header col-entrega">🛵 Entrega (<%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %>)</div>
-            <div class="lista-pedidos" id="entrega">
+            <div class="col-header">Pronto <span class="count-badge"><%= pedidos.filter(p => p.status === 'Pronto').length %></span></div>
+            <div class="lista-pedidos">
+                <% pedidos.filter(p => p.status === 'Pronto').forEach(p => { %>
+                    <div class="mini-card">
+                        <span class="status-tag tag-sucesso">Pronto para entrega</span>
+                        <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
+                        <span class="mini-card-cliente"><%= p.cliente %></span>
+                        
+                        <button class="btn-main btn-enviar" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar Entrega</button>
+                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                        <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="col-header">Em rota <span class="count-badge"><%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %></span></div>
+            <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
                     <div class="mini-card">
-                        <div class="mini-card-info">
-                            <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
-                            <span class="mini-card-cliente"><%= p.cliente %></span>
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn-acao btn-detalhes" onclick="abrirDetalhes('<%= p.id %>')">Ver</button>
-                            <button class="btn-acao btn-proximo" style="background:var(--entrega)" onclick="atualizarStatus('<%= p.id %>', 'Concluído')">Fim</button>
-                            <button class="btn-acao btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">X</button>
-                        </div>
-                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper">
-                            <%- include('partials/card-comanda', {p: p}) %>
-                        </div>
+                        <span class="status-tag tag-alerta">🛵 Chega em até 15min</span>
+                        <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
+                        <span class="mini-card-cliente"><%= p.cliente %></span>
+                        
+                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                     </div>
                 <% }) %>
             </div>
@@ -212,8 +232,8 @@
 
     <div id="modalDetalhes" class="modal">
         <div class="modal-content">
-            <button class="close-modal-btn" onclick="fecharModal()">&times;</button>
             <div id="comanda-interna"></div>
+            <button class="btn-main" onclick="fecharModal()">Fechar</button>
         </div>
     </div>
 
@@ -221,19 +241,52 @@
 
     <script>
         const socket = io();
-        const audio = document.getElementById('audioNotificacao');
 
-        function abrirDetalhes(id) {
-            const originalCardHtml = document.getElementById(`wrapper-${id}`).innerHTML;
-            document.getElementById('comanda-interna').innerHTML = originalCardHtml;
-            document.getElementById('modalDetalhes').style.display = "flex";
+        // 1. Lógica de Tempo Real para Atrasos (Colunas Iniciais)
+        function checkTimers() {
+            const cards = document.querySelectorAll('.mini-card[data-time]');
+            cards.forEach(card => {
+                const createdAt = new Date(card.getAttribute('data-time'));
+                const now = new Date();
+                const diffMs = now - createdAt;
+                const diffMin = Math.floor(diffMs / 60000);
+                const timerEl = card.querySelector('.timer-label');
+
+                if (diffMin >= 5) {
+                    timerEl.innerHTML = `⚠️ Pedido em atraso há ${diffMin} min`;
+                    timerEl.className = "status-tag tag-atraso";
+                } else {
+                    timerEl.innerHTML = `Aguardando há ${diffMin} min`;
+                    timerEl.className = "status-tag";
+                }
+            });
+        }
+        setInterval(checkTimers, 10000);
+        checkTimers();
+
+        // 2. Lógica Específica do Preparo (5 minutos fixos)
+        function iniciarCronometroPreparo(id) {
+            const container = document.getElementById(`ctrl-preparo-${id}`);
+            const label = document.getElementById(`timer-preparo-${id}`);
+            
+            let tempoRestante = 5; // minutos
+            container.innerHTML = `<p style="text-align:center; font-weight:bold; color:var(--warning)">Cozinhando... </p>`;
+            
+            const interval = setInterval(() => {
+                tempoRestante--;
+                label.innerHTML = `Pronto em ${tempoRestante} min`;
+                label.className = "status-tag tag-alerta";
+
+                if (tempoRestante <= 0) {
+                    clearInterval(interval);
+                    atualizarStatus(id, 'Pronto');
+                }
+            }, 60000); // Roda a cada 1 minuto
+
+            label.innerHTML = `Pronto em 5 min`;
         }
 
-        function fecharModal() {
-            document.getElementById('modalDetalhes').style.display = "none";
-            document.getElementById('comanda-interna').innerHTML = "";
-        }
-
+        // 3. Funções de Status
         async function atualizarStatus(id, novoStatus) {
             try {
                 const response = await fetch('/update-status', {
@@ -242,35 +295,30 @@
                     body: JSON.stringify({ id, novoStatus })
                 });
                 if (response.ok) { window.location.reload(); }
-            } catch (err) { console.error("Erro:", err); }
+            } catch (err) { console.error(err); }
         }
 
         async function cancelarPedido(id) {
-            if (confirm("Deseja realmente CANCELAR este pedido? Ele não constará no faturamento.")) {
-                try {
-                    // Aqui você pode usar a mesma rota de status mudando para 'Cancelado'
-                    // Ou uma rota específica /cancel-order que você configurou no backend
-                    const response = await fetch('/update-status', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id, novoStatus: 'Cancelado' })
-                    });
-                    if (response.ok) { window.location.reload(); }
-                } catch (err) { console.error("Erro ao cancelar:", err); }
+            if (confirm("Cancelar este pedido?")) {
+                atualizarStatus(id, 'Cancelado');
             }
         }
 
-        socket.on('novoPedido', (pedido) => {
-            audio.play().catch(e => console.log("Áudio pendente."));
-            setTimeout(() => { window.location.reload(); }, 500);
-        });
-
-        socket.on('statusAtualizado', () => { window.location.reload(); });
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('modalDetalhes');
-            if (event.target == modal) fecharModal();
+        // Modal e Socket (Mantidos da sua lógica original)
+        function abrirDetalhes(id) {
+            const wrapper = document.getElementById(`wrapper-${id}`);
+            if(wrapper) {
+                document.getElementById('comanda-interna').innerHTML = wrapper.innerHTML;
+                document.getElementById('modalDetalhes').style.display = "flex";
+            }
         }
+        function fecharModal() { document.getElementById('modalDetalhes').style.display = "none"; }
+
+        socket.on('novoPedido', () => { 
+            document.getElementById('audioNotificacao').play();
+            setTimeout(() => window.location.reload(), 1000); 
+        });
+        socket.on('statusAtualizado', () => window.location.reload());
     </script>
 </body>
 </html>
