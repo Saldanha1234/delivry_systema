@@ -174,11 +174,15 @@ app.post('/motoboy/login', async (req, res) => {
 app.get('/motoboy/dashboard', async (req, res) => {
     try {
         if (!req.session.motoboy) return res.redirect('/motoboy/login');
+        
+        // CORREÇÃO: Busca apenas pedidos que não foram concluídos e estão disponíveis para entrega
         const pedidosParaEntrega = await Pedido.find({ 
             status: { $in: ['Pronto para Entrega', 'Em Rota'] } 
-        });
+        }).sort({ createdAt: -1 });
+
         res.render('motoboy/dashboard', { pedidos: pedidosParaEntrega });
     } catch (err) {
+        console.error("Erro no Dashboard Motoboy:", err);
         res.status(500).send("Erro ao carregar dashboard.");
     }
 });
@@ -348,6 +352,13 @@ io.on('connection', (socket) => {
         try {
             await Mensagem.updateMany({ pedidoId, usuario: { $ne: 'Admin' } }, { lida: true });
         } catch (err) { console.error("Erro ao marcar como lidas:", err); }
+    });
+
+    // CORREÇÃO: Listener para o update de status via socket
+    socket.on('update-status', async (data) => {
+        const { id, novoStatus } = data;
+        await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus });
+        io.emit('statusAtualizado', { id, novoStatus });
     });
 
     socket.on('atualizarLocalizacao', async (data) => {
