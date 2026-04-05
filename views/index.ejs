@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Premium Delivery</title>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/estrutura-produtos.js"></script> 
     <style>
         /* --- ESTILOS DE CATEGORIAS E FILTROS --- */
         .category-nav {
@@ -88,6 +89,19 @@
             opacity: 0.6;
         }
 
+        /* ESTILO OPÇÕES DE MONTAGEM NO MODAL */
+        .opcao-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        .opcao-item input { width: 18px; height: 18px; }
+
         /* AJUSTE DE ENQUADRAMENTO MOBILE */
         @media (max-width: 600px) {
             .event-card { min-width: 240px; padding: 15px; }
@@ -149,6 +163,7 @@
                     <button class="btn-add" 
                             data-nome="<%= p.nome %>" 
                             data-preco="<%= p.preco %>" 
+                            data-tipo="<%= p.tipo || 'simples' %>"
                             onclick="adicionar(this)">
                         Adicionar
                     </button>
@@ -177,8 +192,20 @@
         <a href="https://wa.link/3s32fj" target="_blank" class="social-icon"><i class="fa-brands fa-whatsapp"></i></a>
     </div>
     <a href="https://maps.app.goo.gl/hNBNsimWJpZDuJ7j8" target="_blank" class="btn-location"><i class="fa-solid fa-location-dot"></i> Ver localização</a>
-    <span style="display:block; margin-top:20px; font-size:0.7rem; color:#bbb;">&copy; 2026 Premium Delivery</span>
+    <span style="display:block; margin-top:20px; font-size:0.7rem; color:#bbb;">© 2026 Premium Delivery</span>
 </footer>
+
+<div id="modal-montar" class="modal" style="display:none; z-index: 1500;">
+    <div class="modal-content" style="max-width: 500px; width: 95%;">
+        <h2 id="montar-titulo">Personalizar</h2>
+        <div id="montar-opcoes" style="text-align: left; max-height: 60vh; overflow-y: auto; padding: 10px 0;">
+            </div>
+        <div style="border-top: 1px solid #eee; padding-top: 15px; margin-top: 10px;">
+            <button class="btn-confirm" onclick="confirmarPersonalizacao()">Confirmar e Adicionar</button>
+            <button class="btn-close" onclick="fecharModalMontar()">Cancelar</button>
+        </div>
+    </div>
+</div>
 
 <div id="cart-modal" class="modal">
     <div class="modal-content">
@@ -211,6 +238,7 @@
 <script>
     const socket = io();
     let carrinho = [];
+    let itemEmMontagem = null;
 
     // Lógica de categorias
     function filtrarCategoria(categoria) {
@@ -245,20 +273,101 @@
         if (id) window.location.href = '/status/' + id;
     }
 
+    // NOVA LÓGICA DE ADICIONAR
     function adicionar(btn) {
-        const item = { nome: btn.getAttribute('data-nome'), preco: parseFloat(btn.getAttribute('data-preco')) };
-        carrinho.push(item);
+        const nome = btn.getAttribute('data-nome');
+        const preco = parseFloat(btn.getAttribute('data-preco'));
+        const tipo = btn.getAttribute('data-tipo');
+
+        if (tipo === 'montar') {
+            abrirModalMontar(nome, preco);
+        } else {
+            const item = { nome: nome, preco: preco, detalhes: "Simples" };
+            carrinho.push(item);
+            atualizarUI();
+            btn.innerText = "✓";
+            setTimeout(() => btn.innerText = "Adicionar", 1000);
+        }
+    }
+
+    function abrirModalMontar(nome, preco) {
+        itemEmMontagem = { nome, preco };
+        document.getElementById('montar-titulo').innerText = "Montar " + nome;
+        const container = document.getElementById('montar-opcoes');
+        
+        // Renderiza baseado no arquivo estrutura-produtos.js
+        container.innerHTML = ConfigEstrutura.categorias.map(cat => `
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin-bottom: 8px; color: var(--dark); border-bottom: 1px solid #eee; padding-bottom: 3px;">
+                    ${cat.nome} <small style="color: #888; font-weight: normal;">(Escolha até ${cat.limite})</small>
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                    ${cat.opcoes.map(opt => `
+                        <label class="opcao-item">
+                            <input type="checkbox" name="${cat.id}" value="${opt}" onchange="validarLimite(this, ${cat.limite})">
+                            <span>${opt}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+
+        document.getElementById('modal-montar').style.display = 'flex';
+    }
+
+    function validarLimite(input, limite) {
+        const selecionados = document.querySelectorAll(`input[name="${input.name}"]:checked`);
+        if (selecionados.length > limite) {
+            input.checked = false;
+            alert(`Você só pode escolher até ${limite} opções de ${input.name}.`);
+        }
+    }
+
+    function fecharModalMontar() {
+        document.getElementById('modal-montar').style.display = 'none';
+        itemEmMontagem = null;
+    }
+
+    function confirmarPersonalizacao() {
+        const escolhidos = [];
+        document.querySelectorAll('#montar-opcoes input:checked').forEach(el => {
+            escolhidos.push(el.value);
+        });
+
+        const detalhes = escolhidos.length > 0 ? "Adicionais: " + escolhidos.join(', ') : "Sem adicionais";
+        
+        carrinho.push({
+            nome: itemEmMontagem.nome,
+            preco: itemEmMontagem.preco,
+            detalhes: detalhes
+        });
+
         atualizarUI();
-        btn.innerText = "✓";
-        setTimeout(() => btn.innerText = "Adicionar", 1000);
+        fecharModalMontar();
     }
 
     function atualizarUI() {
         document.getElementById('cart-count').innerText = carrinho.length;
         const lista = document.getElementById('cart-items');
-        lista.innerHTML = carrinho.map(i => `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${i.nome}</span><b>R$ ${i.preco.toFixed(2)}</b></div>`).join('');
+        
+        lista.innerHTML = carrinho.map((i, index) => `
+            <div style="border-bottom: 1px solid #eee; padding: 8px 0;">
+                <div style="display:flex; justify-content:space-between; font-weight: bold;">
+                    <span>${i.nome}</span>
+                    <b>R$ ${i.preco.toFixed(2)}</b>
+                </div>
+                <div style="font-size: 0.75rem; color: #777;">${i.detalhes}</div>
+                <button onclick="removerItem(${index})" style="background:none; border:none; color:red; font-size:0.7rem; padding:0; cursor:pointer;">Remover</button>
+            </div>
+        `).join('');
+
         const total = carrinho.reduce((acc, i) => acc + i.preco, 0);
         document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
+    }
+
+    function removerItem(index) {
+        carrinho.splice(index, 1);
+        atualizarUI();
     }
 
     function toggleCart() {

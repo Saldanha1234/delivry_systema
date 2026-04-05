@@ -30,7 +30,8 @@ const ProdutoSchema = new mongoose.Schema({
     preco: Number,
     img: String,
     desc: String,
-    categoria: String
+    categoria: String,
+    tipo: { type: String, default: 'simples' } // ADICIONADO: Identifica se é simples ou de montar
 });
 const Produto = mongoose.model('Produto', ProdutoSchema);
 
@@ -87,23 +88,20 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
-// ADMIN ATUALIZADO: APENAS GESTÃO (SEM LISTA DE PEDIDOS OPERACIONAIS)
 app.get('/admin', async (req, res) => {
     try {
         const produtos = await Produto.find();
-        const todosOsPedidos = await Pedido.find(); // Necessário para o cálculo do Financeiro
+        const todosOsPedidos = await Pedido.find(); 
         
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
 
         const mensagensNaoLidas = await Mensagem.find({ lida: false, usuario: { $ne: 'Admin' } });
         
-        // Enviamos 'pedidos' apenas para o cálculo financeiro que já existe no seu EJS
         res.render('admin', { pedidos: todosOsPedidos, produtos, mensagensNaoLidas, config });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
-// OPERAÇÃO ATUALIZADA: FOCO TOTAL EM COMANDAS
 app.get('/operacao', async (req, res) => {
     try {
         const pedidosAtivos = await Pedido.find({ status: { $ne: 'Concluído' } }).sort({ createdAt: 1 });
@@ -135,6 +133,7 @@ app.post('/update-config-pix', async (req, res) => {
 
 app.post('/add-produto', async (req, res) => {
     try {
+        // Agora aceita req.body contendo o 'tipo'
         const novoProduto = new Produto(req.body);
         await novoProduto.save();
         res.json({ success: true });
@@ -183,7 +182,7 @@ app.post('/enviar-pedido', async (req, res) => {
             cliente: cliente || "Cliente Anônimo",
             endereco: endereco || "Endereço não informado",
             pagamento: pagamento || "A combinar",
-            itens: Array.isArray(itensProcessados) ? itensProcessados : [],
+            itens: Array.isArray(itensProcessados) ? itensProcessados : [], // Salva inclusive os 'detalhes' da montagem
             total: parseFloat(total) || 0,
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         });

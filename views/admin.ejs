@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="/style.css">
     <title>Admin | Gestão Total</title>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/estrutura-produtos.js"></script>
+    <script src="/estrutura-produtos.js"></script>
     <style>
         :root { --primary: #ffca2c; --dark: #181818; --bg: #f0f2f5; --success: #2ecc71; --danger: #ff4757; --info: #1e90ff; }
         
@@ -34,7 +34,7 @@
             text-decoration: none; font-weight: 900; font-size: 1.1rem; transition: 0.3s; box-shadow: 0 4px 0 #d1a31d;
         }
 
-        /* Novas Estilizações para o Tipo de Produto */
+        /* Estilizações para o Tipo de Produto */
         .tipo-selector {
             grid-column: 1 / -1;
             background: #f8f9fa;
@@ -51,12 +51,17 @@
             padding: 15px;
             border-radius: 8px;
             display: none;
+            color: #856404;
         }
 
-        /* Tabelas e Afins */
+        /* Tabelas */
         .admin-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-top: 15px; }
+        .admin-table th { background: #eee; padding: 12px; text-align: left; font-size: 0.85rem; }
         .admin-table td { padding: 15px; border-bottom: 1px solid #eee; }
         .img-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
+
+        .btn-edit { background: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+        .btn-del { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
 
         /* CHAT SIDEBAR */
         .admin-chat-sidebar { width: 350px; background: var(--dark); display: flex; flex-direction: column; border-left: 1px solid #333; }
@@ -113,22 +118,28 @@
 
                         <input type="text" id="p-nome" placeholder="Nome do Produto" required style="padding:12px; border-radius:8px; border:1px solid #ddd;">
                         <input type="number" id="p-preco" placeholder="Preço" step="0.01" required style="padding:12px; border-radius:8px; border:1px solid #ddd;">
+                        
                         <select id="p-cat" style="padding:12px; border-radius:8px; border:1px solid #ddd;">
                             <option value="Açaí">Açaí</option>
                             <option value="Lanches">Lanches</option>
                             <option value="Promoção">Promoção</option>
                             <option value="Bebidas">Bebidas</option>
                         </select>
-                        <input type="file" id="p-file" onchange="converterImagem()">
+
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <label style="font-size: 0.75rem; color: #666;">Foto do Produto:</label>
+                            <input type="file" id="p-file" onchange="converterImagem()">
+                        </div>
+                        
                         <input type="hidden" id="p-img-data">
                         
                         <div id="preview-montar" class="preview-montar">
                             <strong>✨ Modo Personalização Ativado:</strong>
-                            <p style="font-size: 0.85rem; margin: 5px 0;">Este produto incluirá automaticamente as opções de 
-                            <span id="txt-categorias"></span> carregadas do arquivo de estrutura.</p>
+                            <p style="font-size: 0.85rem; margin: 5px 0;">Ao comprar este item, o cliente poderá escolher: 
+                            <span id="txt-categorias" style="font-weight: bold;"></span>.</p>
                         </div>
 
-                        <textarea id="p-desc" placeholder="Descrição" style="grid-column: 1 / -1; padding:12px; border:1px solid #ddd; height: 80px;"></textarea>
+                        <textarea id="p-desc" placeholder="Descrição curta (ingredientes, tamanho, etc)" style="grid-column: 1 / -1; padding:12px; border:1px solid #ddd; height: 80px; border-radius:8px;"></textarea>
                         
                         <div style="grid-column: 1 / -1; display:flex; gap:10px;">
                             <button type="button" onclick="salvarProduto()" id="btn-submit" style="flex:1; background:var(--success); color:#fff; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">SALVAR PRODUTO</button>
@@ -145,7 +156,11 @@
                                 <tr>
                                     <td><img src="<%= p.img %>" class="img-thumb"></td>
                                     <td><strong><%= p.nome %></strong><br><small><%= p.categoria %></small></td>
-                                    <td><span style="background:#eee; padding:3px 8px; border-radius:4px; font-size:10px;"><%= p.tipo === 'montar' ? '🛠️ MONTÁVEL' : '📦 SIMPLES' %></span></td>
+                                    <td>
+                                        <span style="background:#eee; padding:4px 10px; border-radius:20px; font-size:10px; font-weight:bold;">
+                                            <%= p.tipo === 'montar' ? '🛠️ MONTÁVEL' : '📦 SIMPLES' %>
+                                        </span>
+                                    </td>
                                     <td>R$ <%= p.preco.toFixed(2) %></td>
                                     <td>
                                         <button class="btn-edit" onclick='prepararEdicao(<%- JSON.stringify(p) %>)'>EDITAR</button>
@@ -159,7 +174,8 @@
             </div>
 
             <div id="aba-financeiro" class="tab-content">
-                </div>
+                <p>Módulo financeiro e configuração de PIX.</p>
+            </div>
 
         </div>
 
@@ -195,7 +211,7 @@
             if(evt) evt.currentTarget.classList.add("active");
         }
 
-        // --- NOVA LÓGICA: Alternar Tipo de Produto ---
+        // ALTERNAR TIPO DE PRODUTO (UI)
         function toggleTipoEstrutura() {
             const tipo = document.getElementById('p-tipo').value;
             const areaPreview = document.getElementById('preview-montar');
@@ -203,8 +219,12 @@
 
             if(tipo === 'montar') {
                 areaPreview.style.display = 'block';
-                // Puxa os nomes das categorias do arquivo estrutura-produtos.js
-                txtCat.innerText = ConfigEstrutura.categorias.map(c => c.nome).join(', ');
+                // Puxa os nomes das categorias do arquivo estrutura-produtos.js injetado no head
+                if (typeof ConfigEstrutura !== 'undefined') {
+                    txtCat.innerText = ConfigEstrutura.categorias.map(c => c.nome).join(', ');
+                } else {
+                    txtCat.innerText = "Configurações de montagem";
+                }
             } else {
                 areaPreview.style.display = 'none';
             }
@@ -226,13 +246,12 @@
                 nome: document.getElementById('p-nome').value,
                 preco: parseFloat(document.getElementById('p-preco').value),
                 categoria: document.getElementById('p-cat').value,
-                tipo: document.getElementById('p-tipo').value, // SALVANDO O TIPO
+                tipo: document.getElementById('p-tipo').value, 
                 desc: document.getElementById('p-desc').value,
                 img: imagemBase64 || document.getElementById('p-img-data').value
             };
 
-            // Validação simples
-            if(!dados.nome || !dados.preco) return alert("Preencha os campos obrigatórios");
+            if(!dados.nome || isNaN(dados.preco)) return alert("Preencha Nome e Preço corretamente!");
 
             const res = await fetch(id ? `/edit-produto/${id}` : '/add-produto', {
                 method: id ? 'PUT' : 'POST',
@@ -240,8 +259,12 @@
                 body: JSON.stringify(dados)
             });
 
-            if(res.ok) location.reload();
-            else alert("Erro ao salvar produto");
+            if(res.ok) {
+                alert("Produto salvo com sucesso!");
+                location.reload();
+            } else {
+                alert("Erro ao salvar produto no servidor.");
+            }
         }
 
         function prepararEdicao(p) {
@@ -251,28 +274,32 @@
             document.getElementById('p-nome').value = p.nome;
             document.getElementById('p-preco').value = p.preco;
             document.getElementById('p-cat').value = p.categoria;
-            document.getElementById('p-tipo').value = p.tipo || 'simples'; // Carrega o tipo
+            document.getElementById('p-tipo').value = p.tipo || 'simples'; 
             document.getElementById('p-desc').value = p.desc || "";
             document.getElementById('p-img-data').value = p.img;
             
-            toggleTipoEstrutura(); // Atualiza o preview visual
+            toggleTipoEstrutura(); 
 
             document.getElementById('btn-submit').innerText = "ATUALIZAR PRODUTO";
+            document.getElementById('btn-submit').style.background = "#3498db";
             document.getElementById('btn-cancel').style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function excluirProduto(id) {
             if(confirm("Deseja realmente excluir este item?")) {
-                await fetch(`/delete-produto/${id}`, { method: 'DELETE' });
-                location.reload();
+                const res = await fetch(`/delete-produto/${id}`, { method: 'DELETE' });
+                if(res.ok) location.reload();
             }
         }
 
-        // Funções de Chat (permanecem as mesmas do seu arquivo original)
+        // LÓGICA DE CHAT
         function selecionarChat(id, cliente) {
             pedidoAtivoId = id;
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`chat-item-${id}`).classList.add('active');
+            const item = document.getElementById(`chat-item-${id}`);
+            if(item) item.classList.add('active');
+            
             socket.emit('join', id);
             socket.emit('lerMensagens', id);
         }
@@ -304,6 +331,11 @@
         }
 
         function limparForm() { location.reload(); }
+        
+        // Listener para tecla Enter no chat
+        document.getElementById('admin-msg').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') enviarParaCliente();
+        });
     </script>
 </body>
 </html>
