@@ -12,7 +12,7 @@
             --card-bg: #ffffff;
             --text-dark: #333;
             --text-light: #666;
-            --primary: #e61e1e; /* Vermelho iFood Style */
+            --primary: #e61e1e; 
             --warning: #f39c12;
             --success: #27ae60;
             --info: #2980b9;
@@ -24,33 +24,50 @@
             color: var(--text-dark);
             margin: 0;
             padding: 20px;
+            overflow: hidden;
         }
 
-        /* Header Estilizado */
         .header-painel {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+            gap: 20px;
         }
+
+        .header-left { display: flex; align-items: center; gap: 15px; }
 
         .header-title {
             display: flex;
             align-items: center;
             gap: 10px;
             background: white;
-            padding: 5px 20px;
+            padding: 8px 20px;
             border-radius: 30px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        /* Kanban Layout */
+        /* Barra de Pesquisa */
+        .search-container {
+            flex-grow: 1;
+            max-width: 400px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
         .kanban {
             display: flex;
             gap: 20px;
             overflow-x: auto;
             align-items: flex-start;
-            height: calc(100vh - 120px);
+            height: calc(100vh - 110px);
+            padding-bottom: 20px;
         }
 
         .col {
@@ -91,7 +108,6 @@
             flex-grow: 1;
         }
 
-        /* Cards Estilo Imagem */
         .mini-card {
             background: var(--card-bg);
             border-radius: 12px;
@@ -99,24 +115,21 @@
             margin-bottom: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
             border: 1px solid #eee;
-            position: relative;
         }
 
-        /* Tags de Tempo/Status */
-        .status-tag {
+        /* Texto superior de espera (Igual na foto) */
+        .waiting-text {
             font-size: 0.75rem;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             display: block;
         }
-        .tag-atraso { color: var(--primary); }
-        .tag-alerta { color: var(--warning); }
-        .tag-sucesso { color: var(--success); }
+        .text-danger { color: var(--primary); }
+        .text-warning { color: var(--warning); }
 
-        .mini-card-id { font-size: 1.4rem; font-weight: 800; margin: 5px 0; display: block; }
-        .mini-card-cliente { font-size: 0.9rem; color: var(--text-light); margin-bottom: 15px; display: block; }
+        .mini-card-id { font-size: 1.4rem; font-weight: 800; margin: 2px 0; display: block; }
+        .mini-card-cliente { font-size: 0.9rem; color: var(--text-light); margin-bottom: 12px; display: block; }
 
-        /* Botões Estilizados */
         .btn-main {
             width: 100%;
             padding: 10px;
@@ -126,31 +139,36 @@
             cursor: pointer;
             transition: 0.2s;
             margin-bottom: 5px;
+            font-size: 0.85rem;
         }
 
         .btn-aceitar { background: var(--primary); color: white; }
-        .btn-preparar { background: var(--warning); color: white; }
+        .btn-pronto { background: var(--success); color: white; }
+        .btn-enviar { background: var(--info); color: white; }
+        .btn-atrasado { background: #333; color: white; pointer-events: none; }
         .btn-detalhe { background: #eee; color: #555; }
-        .btn-cancelar { background: #fdf2f2; color: var(--primary); border: 1px solid #fee2e2; }
-        .btn-enviar { background: var(--success); color: white; }
+        .btn-cancelar { background: #fdf2f2; color: var(--primary); font-size: 0.75rem; }
 
-        .original-card-wrapper { display: none; }
-
-        /* Modal */
         .modal {
             display: none; position: fixed; z-index: 1000;
             left: 0; top: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); justify-content: center; align-items: center;
         }
         .modal-content { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; }
+        .original-card-wrapper { display: none; }
     </style>
 </head>
 <body>
 
     <header class="header-painel">
-        <div class="header-title">
-            <span style="color:var(--success)">●</span> 
-            <strong>Farol da Operação</strong>
+        <div class="header-left">
+            <div class="header-title">
+                <span style="color:var(--success)">●</span> 
+                <strong>Farol da Operação</strong>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nome ou pedido...">
+            </div>
         </div>
         <a href="/admin" style="text-decoration: none; color: #666; font-weight: bold;">Sair</a>
     </header>
@@ -160,18 +178,18 @@
             <div class="col-header">Aceitar <span class="count-badge"><%= pedidos.filter(p => p.status === 'Pendente').length %></span></div>
             <div class="lista-pedidos" id="pendentes">
                 <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                    <div class="mini-card" data-id="<%= p.id %>" data-time="<%= p.createdAt %>">
-                        <span class="status-tag timer-label" id="timer-<%= p.id %>">Carregando...</span>
+                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.createdAt %>">
+                        <span class="waiting-text label-espera" id="label-aceitar-<%= p.id %>"></span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
                         
-                        <button class="btn-main btn-aceitar" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceite em até 5min</button>
+                        <div id="btn-area-aceitar-<%= p.id %>">
+                            <button class="btn-main btn-aceitar" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceitar em até 5min</button>
+                        </div>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
 
-                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper">
-                            <%- include('partials/card-comanda', {p: p}) %>
-                        </div>
+                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
                 <% }) %>
             </div>
@@ -181,15 +199,13 @@
             <div class="col-header">Em preparo <span class="count-badge"><%= pedidos.filter(p => p.status === 'Preparando').length %></span></div>
             <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                    <div class="mini-card" data-id="<%= p.id %>" data-time="<%= p.updatedAt %>">
-                        <span class="status-tag timer-label" id="timer-preparo-<%= p.id %>">Preparar em até 5min</span>
+                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
+                        <span class="waiting-text label-espera" id="label-preparo-<%= p.id %>"></span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
                         
-                        <div id="ctrl-preparo-<%= p.id %>">
-                            <button class="btn-main btn-preparar" onclick="iniciarCronometroPreparo('<%= p.id %>')">Iniciar Preparo</button>
-                        </div>
-                        
+                        <div id="btn-area-preparo-<%= p.id %>">
+                            </div>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
                     </div>
@@ -201,12 +217,14 @@
             <div class="col-header">Pronto <span class="count-badge"><%= pedidos.filter(p => p.status === 'Pronto').length %></span></div>
             <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Pronto').forEach(p => { %>
-                    <div class="mini-card">
-                        <span class="status-tag tag-sucesso">Pronto para entrega</span>
+                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
+                        <span class="waiting-text label-espera" id="label-pronto-<%= p.id %>"></span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
                         
-                        <button class="btn-main btn-enviar" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar Entrega</button>
+                        <div id="btn-area-pronto-<%= p.id %>">
+                            <button class="btn-main btn-pronto" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar para entrega</button>
+                        </div>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
                     </div>
@@ -218,11 +236,10 @@
             <div class="col-header">Em rota <span class="count-badge"><%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %></span></div>
             <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
-                    <div class="mini-card">
-                        <span class="status-tag tag-alerta">🛵 Chega em até 15min</span>
+                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
+                        <span class="waiting-text text-warning">🛵 Chega em até 15min</span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
-                        
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                     </div>
                 <% }) %>
@@ -242,69 +259,95 @@
     <script>
         const socket = io();
 
-        // 1. Lógica de Tempo Real para Atrasos (Colunas Iniciais)
-        function checkTimers() {
+        // --- LÓGICA DE TEMPO E BOTÕES ---
+        function updateFarol() {
+            const now = new Date();
             const cards = document.querySelectorAll('.mini-card[data-time]');
-            cards.forEach(card => {
-                const createdAt = new Date(card.getAttribute('data-time'));
-                const now = new Date();
-                const diffMs = now - createdAt;
-                const diffMin = Math.floor(diffMs / 60000);
-                const timerEl = card.querySelector('.timer-label');
 
-                if (diffMin >= 5) {
-                    timerEl.innerHTML = `⚠️ Pedido em atraso há ${diffMin} min`;
-                    timerEl.className = "status-tag tag-atraso";
-                } else {
-                    timerEl.innerHTML = `Aguardando há ${diffMin} min`;
-                    timerEl.className = "status-tag";
+            cards.forEach(card => {
+                const id = card.getAttribute('data-id');
+                const cliente = card.querySelector('.mini-card-cliente').innerText;
+                const startTime = new Date(card.getAttribute('data-time'));
+                const diffMin = Math.floor((now - startTime) / 60000);
+                
+                // Pegar elementos do card
+                const label = card.querySelector('.label-espera');
+                const btnArea = card.querySelector('[id^="btn-area-"]');
+                const statusCard = card.closest('.col').querySelector('.col-header').innerText;
+
+                // 1. Lógica para coluna ACEITAR
+                if (statusCard.includes("Aceitar")) {
+                    if (diffMin >= 5) {
+                        label.innerHTML = `<span class="text-danger">⚠️ ${cliente} aguardando há ${diffMin} min</span>`;
+                        btnArea.innerHTML = `<button class="btn-main btn-atrasado">Pedido em atraso há ${diffMin} min</button>`;
+                    } else {
+                        label.innerHTML = `Novo pedido agora`;
+                    }
+                }
+
+                // 2. Lógica para coluna EM PREPARO
+                if (statusCard.includes("Em preparo")) {
+                    if (diffMin < 5) {
+                        label.innerHTML = `<span class="text-warning">Cozinhando... Pronto em ${5 - diffMin} min</span>`;
+                        btnArea.innerHTML = ""; // Esconde o botão enquanto prepara
+                    } else {
+                        const atrasoPreparo = diffMin - 5;
+                        if (atrasoPreparo > 0) {
+                            label.innerHTML = `<span class="text-danger">⚠️ ${cliente} aguardando há ${atrasoPreparo} min</span>`;
+                            btnArea.innerHTML = `<button class="btn-main btn-pronto" onclick="atualizarStatus('${id}', 'Pronto')">Pronto (Atrasado ${atrasoPreparo} min)</button>`;
+                        } else {
+                            label.innerHTML = `<span class="text-success">Pedido pronto!</span>`;
+                            btnArea.innerHTML = `<button class="btn-main btn-pronto" onclick="atualizarStatus('${id}', 'Pronto')">Marcar como Pronto</button>`;
+                        }
+                    }
+                }
+
+                // 3. Lógica para coluna PRONTO
+                if (statusCard.includes("Pronto")) {
+                    if (diffMin >= 10) {
+                        label.innerHTML = `<span class="text-danger">⚠️ Atraso na entrega: ${diffMin} min</span>`;
+                    } else {
+                        label.innerHTML = `<span class="text-success">Pronto há ${diffMin} min</span>`;
+                    }
                 }
             });
         }
-        setInterval(checkTimers, 10000);
-        checkTimers();
 
-        // 2. Lógica Específica do Preparo (5 minutos fixos)
-        function iniciarCronometroPreparo(id) {
-            const container = document.getElementById(`ctrl-preparo-${id}`);
-            const label = document.getElementById(`timer-preparo-${id}`);
-            
-            let tempoRestante = 5; // minutos
-            container.innerHTML = `<p style="text-align:center; font-weight:bold; color:var(--warning)">Cozinhando... </p>`;
-            
-            const interval = setInterval(() => {
-                tempoRestante--;
-                label.innerHTML = `Pronto em ${tempoRestante} min`;
-                label.className = "status-tag tag-alerta";
+        setInterval(updateFarol, 10000); // Atualiza a cada 10 seg
+        updateFarol();
 
-                if (tempoRestante <= 0) {
-                    clearInterval(interval);
-                    atualizarStatus(id, 'Pronto');
+        // --- BARRA DE PESQUISA ---
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            const items = document.querySelectorAll('.search-item');
+
+            items.forEach(item => {
+                const cliente = item.getAttribute('data-cliente');
+                const id = item.getAttribute('data-id').toLowerCase();
+                if (cliente.includes(term) || id.includes(term)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
                 }
-            }, 60000); // Roda a cada 1 minuto
+            });
+        });
 
-            label.innerHTML = `Pronto em 5 min`;
-        }
-
-        // 3. Funções de Status
+        // --- FUNÇÕES DE COMUNICAÇÃO ---
         async function atualizarStatus(id, novoStatus) {
             try {
-                const response = await fetch('/update-status', {
+                const res = await fetch('/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, novoStatus })
                 });
-                if (response.ok) { window.location.reload(); }
+                if (res.ok) window.location.reload();
             } catch (err) { console.error(err); }
         }
 
         async function cancelarPedido(id) {
-            if (confirm("Cancelar este pedido?")) {
-                atualizarStatus(id, 'Cancelado');
-            }
+            if (confirm("Deseja cancelar?")) atualizarStatus(id, 'Cancelado');
         }
 
-        // Modal e Socket (Mantidos da sua lógica original)
         function abrirDetalhes(id) {
             const wrapper = document.getElementById(`wrapper-${id}`);
             if(wrapper) {
