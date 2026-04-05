@@ -41,7 +41,7 @@ const Produto = mongoose.model('Produto', ProdutoSchema);
 const MotoboySchema = new mongoose.Schema({
     nome: String,
     email: { type: String, unique: true },
-    senha: { type: String, default: '123456' }, // Senha padrão inicial
+    senha: { type: String }, 
     telefone: String,
     cpf: String,
     foto: { type: String, default: '' },
@@ -123,12 +123,12 @@ app.get('/api/config-estrutura', (req, res) => {
     }
 });
 
-// ADMIN: GESTÃO (Atualizado para carregar motoboys)
+// ADMIN: GESTÃO
 app.get('/admin', async (req, res) => {
     try {
         const produtos = await Produto.find();
         const todosOsPedidos = await Pedido.find(); 
-        const motoboys = await Motoboy.find();
+        const motoboys = await Motoboy.find(); // Busca todos os motoboys para a tabela
         
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
@@ -136,7 +136,10 @@ app.get('/admin', async (req, res) => {
         const mensagensNaoLidas = await Mensagem.find({ lida: false, usuario: { $ne: 'Admin' } });
         
         res.render('admin', { pedidos: todosOsPedidos, produtos, mensagensNaoLidas, config, motoboys });
-    } catch (err) { res.status(500).send("Erro ao carregar admin."); }
+    } catch (err) { 
+        console.error(err);
+        res.status(500).send("Erro ao carregar admin."); 
+    }
 });
 
 // OPERAÇÃO: FOCO EM COMANDAS
@@ -153,7 +156,7 @@ app.get('/operacao', async (req, res) => {
     }
 });
 
-// --- SISTEMA DO MOTOBOY (IMPLEMENTAÇÃO) ---
+// --- SISTEMA DO MOTOBOY ---
 
 app.get('/motoboy/login', (req, res) => res.render('motoboy/login'));
 
@@ -182,11 +185,43 @@ app.get('/motoboy/perfil', async (req, res) => {
     res.render('motoboy/perfil', { motoboy });
 });
 
-// Rota para o Admin cadastrar motoboy
+// Admin cadastra motoboy - Senha automática baseada no CPF
 app.post('/add-motoboy', async (req, res) => {
     try {
-        const novo = new Motoboy(req.body);
+        const dados = req.body;
+        // Se não houver senha, gera uma automática com os 4 últimos dígitos do CPF
+        if (!dados.senha) {
+            const cpfLimpo = dados.cpf.replace(/\D/g, "");
+            dados.senha = cpfLimpo.slice(-4) || "123456";
+        }
+        const novo = new Motoboy(dados);
         await novo.save();
+        res.json({ success: true });
+    } catch (err) { 
+        console.error(err);
+        res.status(500).json({ success: false, message: "Erro ou E-mail já cadastrado" }); 
+    }
+});
+
+// Rota para excluir motoboy via Admin
+app.delete('/delete-motoboy/:id', async (req, res) => {
+    try {
+        await Motoboy.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
+// Motoboy altera seu próprio perfil (Reflete no Admin automaticamente)
+app.post('/motoboy/update-perfil', async (req, res) => {
+    if (!req.session.motoboy) return res.status(401).json({ success: false });
+    try {
+        const { nome, email, senha, telefone } = req.body;
+        const atualizado = await Motoboy.findByIdAndUpdate(
+            req.session.motoboy._id, 
+            { nome, email, senha, telefone },
+            { new: true }
+        );
+        req.session.motoboy = atualizado; // Atualiza a sessão
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
 });
@@ -286,7 +321,6 @@ app.post('/update-status', async (req, res) => {
 // --- CHAT E RASTREIO SOCKET.IO ---
 
 io.on('connection', (socket) => {
-    // Chat original
     socket.on('join', async (pedidoId) => {
         socket.join(pedidoId);
         const historico = await Mensagem.find({ pedidoId }).sort({ createdAt: 1 });
@@ -312,7 +346,6 @@ io.on('connection', (socket) => {
         } catch (err) { console.error("Erro ao marcar como lidas:", err); }
     });
 
-    // Lógica de Rastreio (Novo)
     socket.on('atualizarLocalizacao', async (data) => {
         const { motoboyId, lat, lng } = data;
         await Motoboy.findByIdAndUpdate(motoboyId, { localizacao: { lat, lng }, online: true });
