@@ -213,11 +213,19 @@
     carregarEstrutura();
 
     function abrirModalMontagem(nome, preco, desc, img) {
+        // Bloqueio por status da loja
         if ("<%= estaAberto %>" === "false") return alert("Estamos fechados no momento!");
+        
+        // --- BLOQUEIO SE JÁ TIVER PEDIDO EM ABERTO ---
+        const idAtivo = localStorage.getItem('ultimoPedidoId');
+        if (idAtivo) {
+            alert("Você já possui um pedido em andamento! Finalize-o ou aguarde a conclusão para fazer um novo.");
+            irParaStatus();
+            return;
+        }
         
         produtoAtual = { nome, precoBase: parseFloat(preco), desc, img };
         
-        // Resetar quantidades das opções para o novo produto
         if(configLocal) {
             configLocal.categorias.forEach(cat => cat.opcoes.forEach(opt => opt.qtd = 0));
         }
@@ -272,7 +280,6 @@
     function alterarQtd(catId, optId, delta) {
         const categoria = configLocal.categorias.find(c => c.id === catId);
         const opcao = categoria.opcoes.find(o => o.id === optId);
-        
         const totalNaCategoria = categoria.opcoes.reduce((acc, curr) => acc + curr.qtd, 0);
 
         if (delta > 0 && totalNaCategoria >= categoria.limite) {
@@ -313,7 +320,6 @@
         });
 
         const obs = document.getElementById('m-obs').value;
-        
         carrinho.push({
             id_temp: Date.now(),
             nome: produtoAtual.nome,
@@ -332,7 +338,11 @@
     }
 
     function atualizarUI() {
-        document.getElementById('cart-count').innerText = carrinho.length;
+        const cartCount = document.getElementById('cart-count');
+        const btnFinalizar = document.getElementById('btn-finalizar');
+        const idAtivo = localStorage.getItem('ultimoPedidoId');
+
+        cartCount.innerText = carrinho.length;
         const lista = document.getElementById('cart-items');
         
         if(carrinho.length === 0) {
@@ -359,6 +369,13 @@
         
         const total = carrinho.reduce((acc, i) => acc + i.preco, 0);
         document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
+
+        // Bloqueia botão se houver pedido pendente
+        if (idAtivo && btnFinalizar) {
+            btnFinalizar.disabled = true;
+            btnFinalizar.innerText = "Você tem um pedido ativo";
+            btnFinalizar.classList.add('btn-disabled');
+        }
     }
 
     function filtrarCategoria(categoria) {
@@ -376,6 +393,7 @@
     function toggleCart() {
         const m = document.getElementById('cart-modal');
         m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+        if (m.style.display === 'flex') atualizarUI();
     }
 
     async function finalizar() {
@@ -384,10 +402,14 @@
         const pagto = document.getElementById('cliente-pagto').value;
         const btnFinalizar = document.getElementById('btn-finalizar');
         
+        // Verificação extra de segurança
+        if (localStorage.getItem('ultimoPedidoId')) {
+            return alert("Ação bloqueada: Você já possui um pedido ativo.");
+        }
+
         if(!nome || !endereco) return alert("Por favor, informe seu nome e endereço!");
         if(carrinho.length === 0) return alert("Seu carrinho está vazio!");
 
-        // --- PREVENÇÃO DE CLIQUE DUPLO ---
         btnFinalizar.disabled = true;
         btnFinalizar.innerText = "Processando...";
         btnFinalizar.classList.add('btn-disabled');
@@ -411,7 +433,6 @@
                 location.href = '/status/' + data.id;
             } else {
                 alert("Ocorreu um erro ao processar seu pedido.");
-                // Se der erro, reabilita o botão para o usuário tentar de novo
                 btnFinalizar.disabled = false;
                 btnFinalizar.innerText = "Finalizar Pedido";
                 btnFinalizar.classList.remove('btn-disabled');
@@ -429,6 +450,7 @@
         if (idSalvo) {
             document.getElementById('status-alerta').style.display = 'block';
             socket.emit('join', idSalvo);
+            atualizarUI();
         }
     }
 
@@ -437,13 +459,19 @@
         if (id) window.location.href = '/status/' + id;
     }
 
-    // --- NOVA LÓGICA DE CANCELAMENTO ---
     socket.on('statusAtualizado', (data) => {
         const idSalvo = localStorage.getItem('ultimoPedidoId');
-        // Se o pedido que sofreu alteração for o do cliente e o status for Cancelado ou Concluído
         if (data.id == idSalvo && (data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
             localStorage.removeItem('ultimoPedidoId');
             document.getElementById('status-alerta').style.display = 'none';
+            
+            // Reabilita o botão se o carrinho estiver aberto
+            const btnFinalizar = document.getElementById('btn-finalizar');
+            if(btnFinalizar) {
+                btnFinalizar.disabled = false;
+                btnFinalizar.innerText = "Finalizar Pedido";
+                btnFinalizar.classList.remove('btn-disabled');
+            }
         }
     });
 </script>
