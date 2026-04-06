@@ -16,6 +16,7 @@
             --warning: #f39c12;
             --success: #27ae60;
             --info: #2980b9;
+            --finalizado: #95a5a6;
         }
 
         body {
@@ -59,7 +60,7 @@
 
         .kanban {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             overflow-x: auto;
             align-items: flex-start;
             height: calc(100vh - 110px);
@@ -69,8 +70,8 @@
         .col {
             background-color: var(--bg-col);
             border-radius: 15px;
-            min-width: 300px;
-            max-width: 300px;
+            min-width: 280px;
+            max-width: 280px;
             display: flex;
             flex-direction: column;
             max-height: 100%;
@@ -118,6 +119,7 @@
         .text-danger { color: var(--primary); }
         .text-warning { color: var(--warning); }
         .text-success { color: var(--success); }
+        .text-muted { color: var(--finalizado); }
 
         .mini-card-id { font-size: 1.4rem; font-weight: 800; margin: 2px 0; display: block; }
         .mini-card-cliente { font-size: 0.9rem; color: var(--text-light); margin-bottom: 12px; display: block; }
@@ -138,6 +140,7 @@
         .btn-preparando { background: #ddd; color: #777; cursor: not-allowed; }
         .btn-pronto { background: var(--success); color: white; }
         .btn-enviar { background: var(--info); color: white; }
+        .btn-finalizar { background: var(--finalizado); color: white; }
         .btn-detalhe { background: #eee; color: #555; }
         .btn-cancelar { background: #fdf2f2; color: var(--primary); font-size: 0.75rem; }
 
@@ -193,8 +196,7 @@
                         <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
-                        <div id="btn-area-<%= p.id %>">
-                            </div>
+                        <div id="btn-area-<%= p.id %>"></div>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
@@ -230,7 +232,23 @@
                         <span class="waiting-text text-warning">🛵 Em rota de entrega</span>
                         <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
+                        <button class="btn-main btn-finalizar" onclick="atualizarStatus('<%= p.id %>', 'Finalizado')">Finalizar Pedido</button>
                         <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                        <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="col-header">Finalizados <span class="count-badge"><%= pedidos.filter(p => p.status === 'Finalizado').length %></span></div>
+            <div class="lista-pedidos">
+                <% pedidos.filter(p => p.status === 'Finalizado').forEach(p => { %>
+                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
+                        <span class="waiting-text text-muted">✅ Pedido Concluído</span>
+                        <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
+                        <span class="mini-card-cliente"><%= p.cliente %></span>
+                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Ver Detalhes</button>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
                 <% }) %>
@@ -262,7 +280,10 @@
                 
                 const labelTopo = card.querySelector('.label-topo');
                 const btnArea = card.querySelector(`#btn-area-${id}`);
-                const statusCol = card.closest('.col').querySelector('.col-header').innerText;
+                const statusColElement = card.closest('.col').querySelector('.col-header');
+                if(!statusColElement) return;
+
+                const statusCol = statusColElement.innerText;
 
                 // LOGICA COLUNA ACEITAR
                 if (statusCol.includes("Aceitar")) {

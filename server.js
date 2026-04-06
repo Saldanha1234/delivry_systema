@@ -25,7 +25,6 @@ const ConfigSchema = new mongoose.Schema({
     pixToken: String,
     pixClientId: String,
     pixClientSecret: String,
-    // Novos campos para controle via Admin
     manutencao: { type: Boolean, default: false },
     nomeSite: { type: String, default: 'Meu Delivery' }
 });
@@ -49,7 +48,8 @@ const PedidoSchema = new mongoose.Schema({
     total: Number,
     status: { type: String, default: "Pendente" },
     hora: String,
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now } // Adicionado para controle de tempo no Kanban
 });
 const Pedido = mongoose.model('Pedido', PedidoSchema);
 
@@ -63,6 +63,28 @@ const MensagemSchema = new mongoose.Schema({
 });
 const Mensagem = mongoose.model('Mensagem', MensagemSchema);
 
+// --- SISTEMA DE LIMPEZA AUTOMÁTICA (VIRADA DO DIA) ---
+// Verifica a cada 1 hora se já é meia-noite para limpar os finalizados
+setInterval(async () => {
+    const agora = new Date();
+    const horaBrasilia = agora.getUTCHours() - 3;
+    const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
+
+    // Se for entre 00:00 e 00:59, executa a limpeza dos finalizados e cancelados
+    if (horaTratada === 0) {
+        try {
+            const resultado = await Pedido.deleteMany({ 
+                status: { $in: ['Finalizado', 'Cancelado'] } 
+            });
+            if (resultado.deletedCount > 0) {
+                console.log(`♻️ Limpeza Diária: ${resultado.deletedCount} pedidos antigos removidos.`);
+            }
+        } catch (err) {
+            console.error("❌ Erro na limpeza automática:", err);
+        }
+    }
+}, 3600000); // 1 hora em milissegundos
+
 // --- CONFIGURAÇÕES DO EXPRESS ---
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -71,23 +93,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// --- LÓGICA DE HORÁRIO COM BANCO DE DATOS ---
+// --- LÓGICA DE HORÁRIO ---
 const checarAberta = async () => {
     const config = await Config.findOne({ chave: 'global' });
-    
-    // Se o modo manutenção estiver ATIVADO no banco, a loja fica sempre ABERTA
-    if (config && config.manutencao === true) {
-        return true;
-    }
+    if (config && config.manutencao === true) return true;
 
-    // Caso contrário, executa a lógica de horário automático
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
     const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
-    return horaTratada >= 8 && horaTratada < 20;
+    return horaTratada >= 8 && horaTratada < 23; // Ajustado para fechar as 23h
 };
 
-// Middleware para injetar status e config em todas as rotas
 app.use(async (req, res, next) => {
     try {
         const config = await Config.findOne({ chave: 'global' });
@@ -109,107 +125,38 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
-app.get('/api/config-estrutura', (req, res) => {
-    if (ConfigEstrutura) {
-        res.json(ConfigEstrutura);
-    } else {
-        res.status(404).json({ error: "Configuração de adicionais não encontrada." });
-    }
-});
-
-// ADMIN: GESTÃO
-app.get('/admin', async (req, res) => {
-    try {
-        const produtos = await Produto.find();
-        const todosOsPedidos = await Pedido.find(); 
-        
-        let config = await Config.findOne({ chave: 'global' });
-        if (!config) config = await Config.create({ chave: 'global' });
-
-        const mensagensNaoLidas = await Mensagem.find({ lida: false, usuario: { $ne: 'Admin' } });
-        
-        res.render('admin', { pedidos: todosOsPedidos, produtos, mensagensNaoLidas, config });
-    } catch (err) { res.status(500).send("Erro ao carregar admin."); }
-});
-
-// OPERAÇÃO
+// OPERAÇÃO (PAINEL KANBAN)
 app.get('/operacao', async (req, res) => {
     try {
-        const pedidosAtivos = await Pedido.find({ status: { $ne: 'Concluído' } }).sort({ createdAt: 1 });
+        // Busca pedidos que NÃO estão cancelados (exibe Pendentes até Finalizados)
+        const pedidosExibidos = await Pedido.find({ 
+            status: { $ne: 'Cancelado' } 
+        }).sort({ createdAt: 1 });
+        
         let config = await Config.findOne({ chave: 'global' });
         const produtos = await Produto.find();
 
-        res.render('operacao', { pedidos: pedidosAtivos, config, produtos });
+        res.render('operacao', { pedidos: pedidosExibidos, config, produtos });
     } catch (err) {
         console.error(err);
         res.status(500).send("Erro interno ao carregar painel de operação.");
     }
 });
 
-// --- CONFIGURAÇÃO DO SITE E PIX ---
-
-app.post('/update-config-pix', async (req, res) => {
-    try {
-        const { pixProvedor, pixToken, pixClientId, pixClientSecret } = req.body;
-        await Config.findOneAndUpdate(
-            { chave: 'global' },
-            { pixProvedor, pixToken, pixClientId, pixClientSecret },
-            { upsert: true }
-        );
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
-});
-
-// NOVA ROTA: Atualiza Manutenção e Nome do Site
-app.post('/update-config-site', async (req, res) => {
-    try {
-        const { manutencao, nomeSite } = req.body;
-        await Config.findOneAndUpdate(
-            { chave: 'global' },
-            { manutencao: manutencao === 'true' || manutencao === true, nomeSite },
-            { upsert: true }
-        );
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
-});
-
-// --- GERENCIAMENTO DE PRODUTOS ---
-
-app.post('/add-produto', async (req, res) => {
-    try {
-        const novoProduto = new Produto(req.body);
-        await novoProduto.save();
-        res.json({ success: true });
-    } catch (err) { res.json({ success: false }); }
-});
-
-app.put('/edit-produto/:id', async (req, res) => {
-    try {
-        await Produto.findByIdAndUpdate(req.params.id, req.body);
-        res.json({ success: true });
-    } catch (err) { res.status(404).json({ success: false }); }
-});
-
-app.delete('/delete-produto/:id', async (req, res) => {
-    try {
-        await Produto.findByIdAndDelete(req.params.id);
-        res.json({ success: true });
-    } catch (err) { res.json({ success: false }); }
-});
-
 // --- STATUS E PEDIDOS ---
 
-app.get('/status/:id', async (req, res) => {
+app.post('/update-status', async (req, res) => {
+    const { id, novoStatus } = req.body;
     try {
-        const pedido = await Pedido.findOne({ id: req.params.id });
-        if (pedido) res.render('status', { pedido });
-        else res.status(404).send("Pedido não encontrado");
-    } catch (err) { res.status(500).send("Erro ao buscar status."); }
-});
-
-app.get('/api/pedido/:id', async (req, res) => {
-    const pedido = await Pedido.findOne({ id: req.params.id });
-    res.json(pedido || { error: "Não encontrado" });
+        await Pedido.findOneAndUpdate(
+            { id: id }, 
+            { status: novoStatus, updatedAt: Date.now() } // Atualiza updatedAt para o timer do Kanban
+        );
+        io.emit('statusAtualizado', { id, novoStatus });
+        res.json({ success: true });
+    } catch (err) { 
+        res.status(404).json({ success: false }); 
+    }
 });
 
 app.post('/enviar-pedido', async (req, res) => {
@@ -235,20 +182,74 @@ app.post('/enviar-pedido', async (req, res) => {
         io.emit('novoPedido', novoPedido);
         res.json({ success: true, id: novoPedido.id });
     } catch (error) { 
-        console.error("Erro ao salvar pedido:", error);
         res.status(500).json({ success: false }); 
     }
 });
 
-app.post('/update-status', async (req, res) => {
-    const { id, novoStatus } = req.body;
+// --- DEMAIS ROTAS (PRODUTOS / CONFIG) ---
+
+app.get('/api/config-estrutura', (req, res) => {
+    res.json(ConfigEstrutura || {});
+});
+
+app.get('/admin', async (req, res) => {
     try {
-        await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus });
-        io.emit('statusAtualizado', { id, novoStatus });
+        const produtos = await Produto.find();
+        const todosOsPedidos = await Pedido.find(); 
+        let config = await Config.findOne({ chave: 'global' });
+        if (!config) config = await Config.create({ chave: 'global' });
+        const mensagensNaoLidas = await Mensagem.find({ lida: false, usuario: { $ne: 'Admin' } });
+        res.render('admin', { pedidos: todosOsPedidos, produtos, mensagensNaoLidas, config });
+    } catch (err) { res.status(500).send("Erro ao carregar admin."); }
+});
+
+app.post('/update-config-pix', async (req, res) => {
+    try {
+        await Config.findOneAndUpdate({ chave: 'global' }, req.body, { upsert: true });
         res.json({ success: true });
-    } catch (err) { 
-        res.status(404).json({ success: false }); 
-    }
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
+app.post('/update-config-site', async (req, res) => {
+    try {
+        const { manutencao, nomeSite } = req.body;
+        await Config.findOneAndUpdate(
+            { chave: 'global' },
+            { manutencao: manutencao === 'true' || manutencao === true, nomeSite },
+            { upsert: true }
+        );
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
+app.post('/add-produto', async (req, res) => {
+    try {
+        const novoProduto = new Produto(req.body);
+        await novoProduto.save();
+        res.json({ success: true });
+    } catch (err) { res.json({ success: false }); }
+});
+
+app.put('/edit-produto/:id', async (req, res) => {
+    try {
+        await Produto.findByIdAndUpdate(req.params.id, req.body);
+        res.json({ success: true });
+    } catch (err) { res.status(404).json({ success: false }); }
+});
+
+app.delete('/delete-produto/:id', async (req, res) => {
+    try {
+        await Produto.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.json({ success: false }); }
+});
+
+app.get('/status/:id', async (req, res) => {
+    try {
+        const pedido = await Pedido.findOne({ id: req.params.id });
+        if (pedido) res.render('status', { pedido });
+        else res.status(404).send("Pedido não encontrado");
+    } catch (err) { res.status(500).send("Erro ao buscar status."); }
 });
 
 // --- CHAT SOCKET.IO ---
@@ -266,7 +267,7 @@ io.on('connection', (socket) => {
             usuario: data.usuario, 
             texto: data.texto,
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-            lida: data.usuario === 'Admin' ? true : false
+            lida: data.usuario === 'Admin'
         });
         await msg.save();
         io.to(data.pedidoId).emit('novaMensagem', msg);
@@ -283,4 +284,5 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`\n🚀 SISTEMA ONLINE NA PORTA ${PORT}`);
+    console.log(`🧹 Limpeza automática de pedidos finalizados configurada para as 00:00.`);
 });
