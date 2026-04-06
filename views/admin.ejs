@@ -389,7 +389,7 @@
 
     <script>
         const socket = io();
-        let imagemBase64 = "";
+        let imagemBase64 = ""; // Será usada pelo arquivo externo
         let pedidoAtivoId = null;
         let dataAtualPainel = new Date().toLocaleDateString('pt-BR');
 
@@ -521,51 +521,9 @@
             socket.emit('enviarMensagem', { usuario: 'Admin', texto: input.value, pedidoId: pedidoAtivoId });
             input.value = '';
         }
-
-        function converterImagem() {
-            const file = document.getElementById('p-file').files[0];
-            const reader = new FileReader();
-            reader.onloadend = () => { imagemBase64 = reader.result; document.getElementById('p-img-data').value = reader.result; }
-            if (file) reader.readAsDataURL(file);
-        }
-
-        async function salvarProduto() {
-            const id = document.getElementById('p-id').value;
-            const dados = {
-                nome: document.getElementById('p-nome').value,
-                preco: document.getElementById('p-preco').value,
-                categoria: document.getElementById('p-cat').value,
-                desc: document.getElementById('p-desc').value,
-                img: imagemBase64 || document.getElementById('p-img-data').value
-            };
-            const res = await fetch(id ? `/edit-produto/${id}` : '/add-produto', {
-                method: id ? 'PUT' : 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(dados)
-            });
-            if(res.ok) location.reload();
-        }
-
-        function prepararEdicao(p) {
-            document.getElementById('form-title').innerText = "📝 Editando: " + p.nome;
-            document.getElementById('p-id').value = p._id;
-            document.getElementById('p-nome').value = p.nome;
-            document.getElementById('p-preco').value = p.preco;
-            document.getElementById('p-cat').value = p.categoria;
-            document.getElementById('p-desc').value = p.desc || "";
-            document.getElementById('p-img-data').value = p.img;
-            document.getElementById('btn-submit').innerText = "ATUALIZAR";
-            document.getElementById('btn-cancel').style.display = "block";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        async function excluirProduto(id) {
-            if(confirm("Excluir item?")) {
-                await fetch(`/delete-produto/${id}`, { method: 'DELETE' });
-                location.reload();
-            }
-        }
-        function limparForm() { location.reload(); }
     </script>
+
+    <script src="/js/gerenciar-produtos.js"></script>
+
 </body>
 </html>
