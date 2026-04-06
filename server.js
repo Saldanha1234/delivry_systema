@@ -26,7 +26,11 @@ const ConfigSchema = new mongoose.Schema({
     manutencao: { type: Boolean, default: false },
     nomeSite: { type: String, default: 'Meu Delivery' },
     fusoHorario: { type: String, default: 'America/Sao_Paulo' },
-    agenda: { type: Array, default: [] } 
+    agenda: { type: Array, default: [] },
+    // Novos campos adicionados
+    whatsapp: { type: String, default: '' },
+    taxaEntrega: { type: Number, default: 0 },
+    tempoEntrega: { type: String, default: '30-50' }
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
@@ -159,10 +163,16 @@ app.delete('/delete-produto/:id', async (req, res) => {
 
 app.post('/update-config-site', async (req, res) => {
     try {
-        const { manutencao, nomeSite } = req.body;
+        const { manutencao, nomeSite, whatsapp, taxaEntrega, tempoEntrega } = req.body;
         await Config.findOneAndUpdate(
             { chave: 'global' },
-            { manutencao: (manutencao === true || manutencao === 'true'), nomeSite },
+            { 
+                manutencao: (manutencao === true || manutencao === 'true'), 
+                nomeSite,
+                whatsapp,
+                taxaEntrega: parseFloat(taxaEntrega) || 0,
+                tempoEntrega
+            },
             { upsert: true }
         );
         res.json({ success: true });
@@ -195,7 +205,7 @@ app.get('/', async (req, res) => {
         const produtos = await Produto.find();
         let config = await Config.findOne({ chave: 'global' });
         if (!config) {
-            config = { nomeSite: 'Meu Delivery', agenda: [] };
+            config = { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
         }
         res.render('index', { produtos, config, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { 
@@ -243,7 +253,7 @@ app.post('/enviar-pedido', async (req, res) => {
 app.get('/api/pedido/:id', async (req, res) => {
     try {
         const pedido = await Pedido.findOne({ id: req.params.id });
-        if (!pedido) return res.json({ status: null }); // Retorna 200 com null para não dar erro 404 no console
+        if (!pedido) return res.json({ status: null }); 
         res.json({ status: pedido.status });
     } catch (err) { res.json({ status: null }); }
 });
@@ -253,10 +263,9 @@ app.post('/update-status', async (req, res) => {
     try {
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus, updatedAt: Date.now() });
         
-        // CUIDADO: Esta lógica libera o cliente imediatamente sem deletar do histórico da operação
         if (novoStatus === 'Finalizado' || novoStatus === 'Cancelado' || novoStatus === 'Concluído') {
             await Mensagem.deleteMany({ pedidoId: id.toString() });
-            io.emit('pedidoEncerrado', { id }); // Emite evento para o cliente limpar o localStorage e liberar novo pedido
+            io.emit('pedidoEncerrado', { id }); 
         }
         
         io.emit('statusAtualizado', { id, novoStatus });

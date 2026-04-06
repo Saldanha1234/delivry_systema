@@ -107,8 +107,13 @@
     <button class="cat-btn active" onclick="filtrarCategoria('todos')">Todos</button>
     <button class="cat-btn" onclick="filtrarCategoria('Promoção')">Promoções</button>
     <button class="cat-btn" onclick="filtrarCategoria('Destaques')">Mais Vendidos</button>
-    <button class="cat-btn" onclick="filtrarCategoria('Lanches')">Lanches</button>
-    <button class="cat-btn" onclick="filtrarCategoria('Bebidas')">Bebidas</button>
+    
+    <% /* AS CATEGORIAS AGORA SÃO GERADAS DINAMICAMENTE */ %>
+    <% if (locals.categorias) { %>
+        <% categorias.forEach(cat => { %>
+            <button class="cat-btn" onclick="filtrarCategoria('<%= cat.nome %>')"><%= cat.nome %></button>
+        <% }) %>
+    <% } %>
 </div>
 
 <div class="container" id="produtos-container">
@@ -476,7 +481,6 @@
                 const res = await fetch('/api/pedido/' + idSalvo);
                 const data = await res.json();
                 
-                // CORREÇÃO: Adicionado 'Finalizado' para liberar o dispositivo
                 if (!data.status || data.status === 'Finalizado' || data.status === 'Concluído' || data.status === 'Cancelado') {
                     localStorage.removeItem('ultimoPedidoId');
                     atualizarUI();
@@ -497,7 +501,6 @@
 
     socket.on('statusAtualizado', (data) => {
         const idSalvo = localStorage.getItem('ultimoPedidoId');
-        // CORREÇÃO: Escuta o evento 'Finalizado' via Socket para liberar na hora
         if (data.id == idSalvo && (data.novoStatus === 'Finalizado' || data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
             localStorage.removeItem('ultimoPedidoId');
             atualizarUI();
