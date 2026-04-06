@@ -474,9 +474,16 @@
         if (idSalvo) {
             try {
                 const res = await fetch('/api/pedido/' + idSalvo);
-                if (!res.ok) throw new Error();
+                // Caso o pedido não seja encontrado (foi excluído do banco)
+                if (res.status === 404) {
+                    localStorage.removeItem('ultimoPedidoId');
+                    atualizarUI();
+                    return;
+                }
+                
                 const data = await res.json();
                 
+                // Se o pedido estiver concluído ou cancelado, libera o carrinho
                 if (data.status === 'Concluído' || data.status === 'Cancelado' || !data.status) {
                     localStorage.removeItem('ultimoPedidoId');
                     atualizarUI();
@@ -485,9 +492,8 @@
                     socket.emit('join', idSalvo);
                 }
             } catch (e) {
-                // Se o pedido não existir mais no banco, limpa por segurança
-                localStorage.removeItem('ultimoPedidoId');
-                atualizarUI();
+                // Em caso de erro na rede, não removemos para não perder o tracking do usuário
+                console.log("Erro ao verificar status do pedido ativo.");
             }
         }
     }

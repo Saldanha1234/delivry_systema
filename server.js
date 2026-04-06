@@ -243,7 +243,7 @@ app.post('/enviar-pedido', async (req, res) => {
 app.get('/api/pedido/:id', async (req, res) => {
     try {
         const pedido = await Pedido.findOne({ id: req.params.id });
-        if (!pedido) return res.json({ status: null });
+        if (!pedido) return res.status(404).json({ status: null });
         res.json({ status: pedido.status });
     } catch (err) { res.status(500).json({ status: null }); }
 });
