@@ -194,7 +194,6 @@
             <% 
             const diasNomes = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
             diasNomes.forEach((dia, i) => { 
-                // CORREÇÃO: Verificando se locals.config existe antes de acessar
                 const cfg = locals.config || {};
                 const agendaDia = (cfg.agenda && cfg.agenda[i]) ? cfg.agenda[i] : { aberto: false, inicio: '--:--', fim: '--:--' };
             %>
@@ -234,23 +233,14 @@
 <script>
     const socket = io();
     let carrinho = [];
-    let configLocal = null;
     let produtoAtual = null;
 
-    // Carregar configurações do servidor ao iniciar
-    async function carregarEstrutura() {
-        try {
-            const res = await fetch('/api/config-estrutura');
-            configLocal = await res.json();
-        } catch (e) { console.error("Erro ao carregar adicionais", e); }
-    }
-    carregarEstrutura();
+    // CORREÇÃO: Recebe os dados injetados pelo servidor (Automático)
+    let configLocal = <%- JSON.stringify(estruturaAdicionais) %>;
 
     function abrirModalMontagem(nome, preco, desc, img) {
-        // Bloqueio por status da loja
         if ("<%= locals.estaAberto %>" === "false") return alert("Estamos fechados no momento!");
         
-        // --- BLOQUEIO SE JÁ TIVER PEDIDO EM ABERTO ---
         const idAtivo = localStorage.getItem('ultimoPedidoId');
         if (idAtivo) {
             alert("Você já possui um pedido em andamento! Finalize-o ou aguarde a conclusão para fazer um novo.");
@@ -404,7 +394,6 @@
         const total = carrinho.reduce((acc, i) => acc + i.preco, 0);
         document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
 
-        // Bloqueia botão se houver pedido pendente
         if (idAtivo && btnFinalizar) {
             btnFinalizar.disabled = true;
             btnFinalizar.innerText = "Você tem um pedido ativo";
@@ -436,11 +425,7 @@
         const pagto = document.getElementById('cliente-pagto').value;
         const btnFinalizar = document.getElementById('btn-finalizar');
         
-        // Verificação extra de segurança
-        if (localStorage.getItem('ultimoPedidoId')) {
-            return alert("Ação bloqueada: Você já possui um pedido ativo.");
-        }
-
+        if (localStorage.getItem('ultimoPedidoId')) return alert("Ação bloqueada: Você já possui um pedido ativo.");
         if(!nome || !endereco) return alert("Por favor, informe seu nome e endereço!");
         if(carrinho.length === 0) return alert("Seu carrinho está vazio!");
 
@@ -498,8 +483,6 @@
         if (data.id == idSalvo && (data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
             localStorage.removeItem('ultimoPedidoId');
             document.getElementById('status-alerta').style.display = 'none';
-            
-            // Reabilita o botão se o carrinho estiver aberto
             const btnFinalizar = document.getElementById('btn-finalizar');
             if(btnFinalizar) {
                 btnFinalizar.disabled = false;

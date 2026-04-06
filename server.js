@@ -193,12 +193,12 @@ app.post('/update-config-pix', async (req, res) => {
 app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
-        // BUSCA ROBUSTA: Se não houver config, envia um objeto padrão para o EJS não quebrar
         let config = await Config.findOne({ chave: 'global' });
         if (!config) {
             config = { nomeSite: 'Meu Delivery', agenda: [] };
         }
-        res.render('index', { produtos, config });
+        // CORREÇÃO: Enviando a ConfigEstrutura para o index.ejs carregar os adicionais
+        res.render('index', { produtos, config, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { 
         console.error(err);
         res.status(500).send("Erro interno ao carregar a página principal."); 

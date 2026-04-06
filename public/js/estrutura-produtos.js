@@ -81,10 +81,9 @@ const ConfigEstrutura = {
 };
 
 /**
- * FUNÇÕES DE UTILIDADE
+ * FUNÇÕES DE UTILIDADE - MANTIDAS INTEGRALMENTE
  */
 
-// Adicionar +1 a um item específico respeitando o limite da categoria
 function adicionarQtd(categoriaId, opcaoId) {
     const categoria = ConfigEstrutura.categorias.find(c => c.id === categoriaId);
     if (!categoria) return false;
@@ -96,10 +95,9 @@ function adicionarQtd(categoriaId, opcaoId) {
         opcao.qtd++;
         return true;
     }
-    return false; // Limite atingido ou opção não encontrada
+    return false;
 }
 
-// Remover -1 de um item específico
 function removerQtd(categoriaId, opcaoId) {
     const categoria = ConfigEstrutura.categorias.find(c => c.id === categoriaId);
     if (!categoria) return false;
@@ -112,14 +110,12 @@ function removerQtd(categoriaId, opcaoId) {
     return false;
 }
 
-// Resetar todas as quantidades (usar ao fechar o modal ou trocar de produto)
 function resetarMontagem() {
     ConfigEstrutura.categorias.forEach(cat => {
         cat.opcoes.forEach(opt => opt.qtd = 0);
     });
 }
 
-// Obter todos os itens selecionados para enviar ao carrinho
 function obterItensSelecionados() {
     let selecionados = [];
     ConfigEstrutura.categorias.forEach(cat => {
@@ -140,7 +136,7 @@ function obterItensSelecionados() {
     return selecionados;
 }
 
-// Exportação para Node.js (Backend) e compatibilidade com Navegador (Frontend)
+// Exportação universal corrigida
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { 
         ConfigEstrutura, 
@@ -150,12 +146,9 @@ if (typeof module !== 'undefined' && module.exports) {
         obterItensSelecionados 
     };
 } else {
-    // Para uso no front-end sem módulos
-    window.ConfigEstruturaUtils = { 
-        ConfigEstrutura, 
-        adicionarQtd, 
-        removerQtd, 
-        resetarMontagem, 
-        obterItensSelecionados 
-    };
+    window.ConfigEstrutura = ConfigEstrutura;
+    window.adicionarQtd = adicionarQtd;
+    window.removerQtd = removerQtd;
+    window.resetarMontagem = resetarMontagem;
+    window.obterItensSelecionados = obterItensSelecionados;
 }
