@@ -243,9 +243,9 @@ app.post('/enviar-pedido', async (req, res) => {
 app.get('/api/pedido/:id', async (req, res) => {
     try {
         const pedido = await Pedido.findOne({ id: req.params.id });
-        if (!pedido) return res.status(404).json({ status: null });
+        if (!pedido) return res.json({ status: null }); // Retorna 200 com null para não dar erro 404 no console
         res.json({ status: pedido.status });
-    } catch (err) { res.status(500).json({ status: null }); }
+    } catch (err) { res.json({ status: null }); }
 });
 
 app.post('/update-status', async (req, res) => {
@@ -253,10 +253,10 @@ app.post('/update-status', async (req, res) => {
     try {
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus, updatedAt: Date.now() });
         
-        // Logica para encerrar visualmente no cliente se for Finalizado, Cancelado ou Concluído
+        // CUIDADO: Esta lógica libera o cliente imediatamente sem deletar do histórico da operação
         if (novoStatus === 'Finalizado' || novoStatus === 'Cancelado' || novoStatus === 'Concluído') {
             await Mensagem.deleteMany({ pedidoId: id.toString() });
-            io.emit('pedidoEncerrado', { id }); // Força a remoção do ID no navegador do cliente
+            io.emit('pedidoEncerrado', { id }); // Emite evento para o cliente limpar o localStorage e liberar novo pedido
         }
         
         io.emit('statusAtualizado', { id, novoStatus });
