@@ -104,10 +104,9 @@
 </section>
 
 <div class="category-nav">
-    <% /* AS CATEGORIAS AGORA SÃO 100% DINÂMICAS E GERADAS PELO BANCO/JS */ %>
     <% if (locals.categorias) { %>
         <% categorias.forEach((cat, index) => { %>
-            <button class="cat-btn <%= index === 0 ? 'active' : '' %>" onclick="filtrarCategoria('<%= cat.nome %>')">
+            <button class="cat-btn <%= cat.nome === 'Todos' ? 'active' : '' %>" onclick="filtrarCategoria('<%= cat.nome %>')">
                 <%= cat.nome %>
             </button>
         <% }) %>
@@ -116,7 +115,7 @@
 
 <div class="container" id="produtos-container">
     <% produtos.forEach(p => { %>
-        <div class="card" data-categoria="<%= p.categoria || 'Todos' %>" 
+        <div class="card" data-categoria="<%= p.categoria %>" 
              onclick="abrirModalMontagem('<%= p.nome %>', '<%= p.preco %>', '<%= p.desc %>', '<%= p.img %>')">
             <img src="<%= p.img %>" alt="<%= p.nome %>">
             <div class="card-content">
@@ -416,7 +415,6 @@
         });
         document.querySelectorAll('.card').forEach(card => {
             const catProduto = card.getAttribute('data-categoria');
-            // Se for 'Todos', mostra tudo. Senão, filtra exato.
             if (categoria === 'Todos' || catProduto === categoria) card.classList.remove('hidden');
             else card.classList.add('hidden');
         });
@@ -509,6 +507,8 @@
     window.onload = function() {
         forcarLimpezaTravados();
         atualizarUI();
+        // GARANTE QUE O 'TODOS' SEJA EXIBIDO AO CARREGAR
+        filtrarCategoria('Todos');
     };
 </script>
 </body>
