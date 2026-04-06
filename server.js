@@ -196,7 +196,9 @@ app.post('/update-config-pix', async (req, res) => {
 app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
-        res.render('index', { produtos });
+        // CORREÇÃO: Agora buscando o config para o modal de horários funcionar
+        const config = await Config.findOne({ chave: 'global' });
+        res.render('index', { produtos, config });
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
