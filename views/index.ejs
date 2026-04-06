@@ -398,6 +398,10 @@
             btnFinalizar.disabled = true;
             btnFinalizar.innerText = "Você tem um pedido ativo";
             btnFinalizar.classList.add('btn-disabled');
+        } else if (btnFinalizar) {
+            btnFinalizar.disabled = false;
+            btnFinalizar.innerText = "Finalizar Pedido";
+            btnFinalizar.classList.remove('btn-disabled');
         }
     }
 
@@ -464,11 +468,25 @@
         }
     }
 
-    window.onload = function() {
+    window.onload = async function() {
         const idSalvo = localStorage.getItem('ultimoPedidoId');
         if (idSalvo) {
-            document.getElementById('status-alerta').style.display = 'block';
-            socket.emit('join', idSalvo);
+            try {
+                // Verifica o status real antes de mostrar o alerta
+                const res = await fetch('/api/pedido/' + idSalvo);
+                const data = await res.json();
+                
+                if (data.status === 'Cancelado' || data.status === 'Concluído') {
+                    localStorage.removeItem('ultimoPedidoId');
+                    document.getElementById('status-alerta').style.display = 'none';
+                } else {
+                    document.getElementById('status-alerta').style.display = 'block';
+                    socket.emit('join', idSalvo);
+                }
+            } catch (e) {
+                document.getElementById('status-alerta').style.display = 'block';
+                socket.emit('join', idSalvo);
+            }
             atualizarUI();
         }
     }
@@ -483,12 +501,7 @@
         if (data.id == idSalvo && (data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
             localStorage.removeItem('ultimoPedidoId');
             document.getElementById('status-alerta').style.display = 'none';
-            const btnFinalizar = document.getElementById('btn-finalizar');
-            if(btnFinalizar) {
-                btnFinalizar.disabled = false;
-                btnFinalizar.innerText = "Finalizar Pedido";
-                btnFinalizar.classList.remove('btn-disabled');
-            }
+            atualizarUI();
         }
     });
 </script>
