@@ -474,17 +474,10 @@
         if (idSalvo) {
             try {
                 const res = await fetch('/api/pedido/' + idSalvo);
-                // Caso o pedido não seja encontrado (foi excluído do banco)
-                if (res.status === 404) {
-                    localStorage.removeItem('ultimoPedidoId');
-                    atualizarUI();
-                    return;
-                }
-                
                 const data = await res.json();
                 
-                // Se o pedido estiver concluído ou cancelado, libera o carrinho
-                if (data.status === 'Concluído' || data.status === 'Cancelado' || !data.status) {
+                // CORREÇÃO: Adicionado 'Finalizado' para liberar o dispositivo
+                if (!data.status || data.status === 'Finalizado' || data.status === 'Concluído' || data.status === 'Cancelado') {
                     localStorage.removeItem('ultimoPedidoId');
                     atualizarUI();
                 } else {
@@ -492,8 +485,7 @@
                     socket.emit('join', idSalvo);
                 }
             } catch (e) {
-                // Em caso de erro na rede, não removemos para não perder o tracking do usuário
-                console.log("Erro ao verificar status do pedido ativo.");
+                console.log("Erro ao verificar status.");
             }
         }
     }
@@ -505,7 +497,8 @@
 
     socket.on('statusAtualizado', (data) => {
         const idSalvo = localStorage.getItem('ultimoPedidoId');
-        if (data.id == idSalvo && (data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
+        // CORREÇÃO: Escuta o evento 'Finalizado' via Socket para liberar na hora
+        if (data.id == idSalvo && (data.novoStatus === 'Finalizado' || data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
             localStorage.removeItem('ultimoPedidoId');
             atualizarUI();
         }
