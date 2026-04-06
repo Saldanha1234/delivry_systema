@@ -134,19 +134,25 @@ async function carregarCategorias() {
     try {
         const res = await fetch('/get-categorias');
         
-        // Verifica se a resposta é JSON antes de processar
         const contentType = res.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
             console.warn("Aguardando o servidor processar as rotas de categoria...");
             return;
         }
 
-        let categorias = await res.json();
+        let categoriasDoBanco = await res.json();
 
-        // 1. Atualiza a lista de gerenciamento no Admin
+        // --- LÓGICA DE CATEGORIAS FIXAS (PROMOÇÃO E DESTAQUES/MAIS VENDIDOS) ---
+        // Definimos as categorias que devem aparecer no menu do Admin automaticamente
+        const categoriasFixas = [
+            { nome: "Promoção" },
+            { nome: "Destaques" } // Equivale ao "Mais Vendidos" do seu sistema
+        ];
+
+        // 1. Atualiza a lista de gerenciamento no Admin (Apenas as criadas pelo usuário)
         const lista = document.getElementById('lista-categorias');
         if (lista) {
-            lista.innerHTML = categorias.map(c => `
+            lista.innerHTML = categoriasDoBanco.map(c => `
                 <div class="item-categoria-linha" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
                     <span><strong>${c.nome}</strong></span>
                     <div>
@@ -157,14 +163,22 @@ async function carregarCategorias() {
             `).join('');
         }
 
-        // 2. Atualiza o <select> no formulário de produtos
+        // 2. Atualiza o <select> no formulário de produtos com Fixas + Dinâmicas
         const selectProduto = document.getElementById('p-cat');
         if (selectProduto) {
             const valorAtual = selectProduto.value;
             selectProduto.innerHTML = '<option value="">Selecione uma Categoria</option>';
-            categorias.forEach(c => {
+            
+            // Injetar Categorias Fixas primeiro
+            categoriasFixas.forEach(f => {
+                selectProduto.innerHTML += `<option value="${f.nome}">${f.nome}</option>`;
+            });
+
+            // Injetar Categorias do Banco depois
+            categoriasDoBanco.forEach(c => {
                 selectProduto.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
             });
+
             if (valorAtual) selectProduto.value = valorAtual;
         }
     } catch (error) {
