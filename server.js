@@ -252,9 +252,13 @@ app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus, updatedAt: Date.now() });
+        
+        // Logica para encerrar visualmente no cliente se for Finalizado, Cancelado ou Concluído
         if (novoStatus === 'Finalizado' || novoStatus === 'Cancelado' || novoStatus === 'Concluído') {
             await Mensagem.deleteMany({ pedidoId: id.toString() });
+            io.emit('pedidoEncerrado', { id }); // Força a remoção do ID no navegador do cliente
         }
+        
         io.emit('statusAtualizado', { id, novoStatus });
         res.json({ success: true });
     } catch (err) { res.status(404).json({ success: false }); }
