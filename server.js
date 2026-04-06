@@ -241,7 +241,12 @@ app.post('/update-config-pix', async (req, res) => {
 app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
-        const categorias = await Categoria.find();
+        const categoriasDoBanco = await Categoria.find();
+        
+        // Unir categorias do banco com as fixas (Promoção e Destaques) para o index
+        const categoriasFixas = [{ nome: 'Promoção' }, { nome: 'Destaques' }];
+        const categorias = [...categoriasFixas, ...categoriasDoBanco];
+
         let config = await Config.findOne({ chave: 'global' });
         if (!config) {
             config = { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
@@ -257,9 +262,10 @@ app.get('/admin', async (req, res) => {
     try {
         const produtos = await Produto.find();
         const pedidos = await Pedido.find().sort({ createdAt: -1 }); 
+        const categorias = await Categoria.find(); // Adicionado para o admin reconhecer categorias
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
-        res.render('admin', { pedidos, produtos, config });
+        res.render('admin', { pedidos, produtos, config, categorias });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
