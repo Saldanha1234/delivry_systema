@@ -178,7 +178,7 @@
             <span id="cart-total" style="font-weight: 800; color: var(--primary);">R$ 0,00</span>
         </div>
         
-        <% if (estaAberto) { %>
+        <% if (locals.estaAberto) { %>
             <button id="btn-finalizar" class="btn-confirm" onclick="finalizar()">Finalizar Pedido</button>
         <% } else { %>
             <button class="btn-confirm btn-disabled" disabled>Loja Fechada</button>
@@ -194,7 +194,9 @@
             <% 
             const diasNomes = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
             diasNomes.forEach((dia, i) => { 
-                const agendaDia = (config && config.agenda && config.agenda[i]) ? config.agenda[i] : { aberto: false, inicio: '--:--', fim: '--:--' };
+                // CORREÇÃO: Verificando se locals.config existe antes de acessar
+                const cfg = locals.config || {};
+                const agendaDia = (cfg.agenda && cfg.agenda[i]) ? cfg.agenda[i] : { aberto: false, inicio: '--:--', fim: '--:--' };
             %>
             <div class="item-horario">
                 <span class="dia-nome"><%= dia %>:</span>
@@ -210,7 +212,7 @@
 
 <footer class="social-footer">
     <div class="status-container">
-        <% if (estaAberto) { %>
+        <% if (locals.estaAberto) { %>
             <div class="status-badge status-aberto">● Aberto Agora</div>
         <% } else { %>
             <div class="status-badge status-fechado">● Fechado no Momento</div>
@@ -246,7 +248,7 @@
 
     function abrirModalMontagem(nome, preco, desc, img) {
         // Bloqueio por status da loja
-        if ("<%= estaAberto %>" === "false") return alert("Estamos fechados no momento!");
+        if ("<%= locals.estaAberto %>" === "false") return alert("Estamos fechados no momento!");
         
         // --- BLOQUEIO SE JÁ TIVER PEDIDO EM ABERTO ---
         const idAtivo = localStorage.getItem('ultimoPedidoId');
