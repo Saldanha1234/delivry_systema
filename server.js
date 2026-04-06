@@ -91,45 +91,42 @@ app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // --- LÓGICA DE HORÁRIO REFEITA ---
 const checarAberta = async () => {
-    const config = await Config.findOne({ chave: 'global' });
-    if (!config) return false;
+    try {
+        const config = await Config.findOne({ chave: 'global' });
+        if (!config) return false;
+        if (config.manutencao === true) return false; 
 
-    // SE MANUTENÇÃO ESTIVER ATIVA, O SITE FECHA INDEPENDENTE DO HORÁRIO
-    if (config.manutencao === true) return false; 
+        const fuso = config.fusoHorario || 'America/Sao_Paulo';
+        const agora = new Date();
+        const dataLocal = new Date(agora.toLocaleString("en-US", { timeZone: fuso }));
+        
+        const diaSemana = dataLocal.getDay(); 
+        const horaAtual = dataLocal.getHours().toString().padStart(2, '0') + ':' + 
+                          dataLocal.getMinutes().toString().padStart(2, '0');
 
-    const fuso = config.fusoHorario || 'America/Sao_Paulo';
-    const agora = new Date();
-    const dataLocal = new Date(agora.toLocaleString("en-US", { timeZone: fuso }));
-    
-    const diaSemana = dataLocal.getDay(); // 0 (Dom) a 6 (Sab)
-    const horaAtual = dataLocal.getHours().toString().padStart(2, '0') + ':' + 
-                      dataLocal.getMinutes().toString().padStart(2, '0');
+        const agendaHoje = config.agenda && config.agenda[diaSemana];
 
-    const agendaHoje = config.agenda && config.agenda[diaSemana];
-
-    // Verifica se existe configuração para hoje e se está marcado como aberto
-    if (agendaHoje && agendaHoje.aberto === true) {
-        const { inicio, fim } = agendaHoje;
-
-        // Lógica para horários que atravessam a meia-noite (ex: 18:00 às 02:00)
-        if (fim < inicio) {
-            if (horaAtual >= inicio || horaAtual < fim) return true;
-        } else {
-            if (horaAtual >= inicio && horaAtual < fim) return true;
+        if (agendaHoje && agendaHoje.aberto === true) {
+            const { inicio, fim } = agendaHoje;
+            if (fim < inicio) {
+                if (horaAtual >= inicio || horaAtual < fim) return true;
+            } else {
+                if (horaAtual >= inicio && horaAtual < fim) return true;
+            }
         }
-    }
-
-    return false; // Se não cair em nenhuma regra de abertura, retorna fechado
+    } catch (e) { return false; }
+    return false; 
 };
 
 app.use(async (req, res, next) => {
     try {
         const config = await Config.findOne({ chave: 'global' });
         res.locals.estaAberto = await checarAberta();
-        res.locals.nomeSite = config ? config.nomeSite : "Delivery";
+        res.locals.nomeSite = config ? config.nomeSite : "Meu Delivery";
         next();
     } catch (err) {
         res.locals.estaAberto = false;
+        res.locals.nomeSite = "Meu Delivery";
         next();
     }
 });
@@ -196,10 +193,16 @@ app.post('/update-config-pix', async (req, res) => {
 app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
-        // CORREÇÃO: Agora buscando o config para o modal de horários funcionar
-        const config = await Config.findOne({ chave: 'global' });
+        // BUSCA ROBUSTA: Se não houver config, envia um objeto padrão para o EJS não quebrar
+        let config = await Config.findOne({ chave: 'global' });
+        if (!config) {
+            config = { nomeSite: 'Meu Delivery', agenda: [] };
+        }
         res.render('index', { produtos, config });
-    } catch (err) { res.status(500).send("Erro ao carregar loja."); }
+    } catch (err) { 
+        console.error(err);
+        res.status(500).send("Erro interno ao carregar a página principal."); 
+    }
 });
 
 app.get('/admin', async (req, res) => {
