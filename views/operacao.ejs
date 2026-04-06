@@ -24,31 +24,45 @@
             background-color: var(--bg-page);
             color: var(--text-dark);
             margin: 0;
-            padding: 20px;
-            overflow: hidden;
+            padding: 15px;
+            overflow-x: hidden; /* Evita rolagem horizontal no body */
         }
 
+        /* HEADER REESTRUTURADO */
         .header-painel {
             display: flex;
+            flex-wrap: wrap; /* Permite quebrar linha no mobile */
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            gap: 20px;
+            gap: 15px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
-        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-left { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            flex: 1;
+            min-width: 250px;
+        }
 
         .header-title {
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: white;
-            padding: 8px 20px;
-            border-radius: 30px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            gap: 8px;
+            white-space: nowrap;
+            font-size: 1.1rem;
         }
 
-        .search-container { flex-grow: 1; max-width: 400px; }
+        .search-container { 
+            flex-grow: 1; 
+            max-width: 400px; 
+        }
+
         .search-input {
             width: 100%;
             padding: 10px 15px;
@@ -56,15 +70,33 @@
             border: 1px solid #ddd;
             outline: none;
             font-size: 0.9rem;
+            box-sizing: border-box;
         }
 
+        .btn-sair {
+            text-decoration: none; 
+            color: #fff; 
+            background: var(--text-light);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: 0.3s;
+        }
+
+        .btn-sair:hover {
+            background: var(--primary);
+        }
+
+        /* KANBAN */
         .kanban {
             display: flex;
             gap: 15px;
-            overflow-x: auto;
+            overflow-x: auto; /* Rolagem horizontal necessária aqui */
             align-items: flex-start;
-            height: calc(100vh - 110px);
-            padding-bottom: 20px;
+            height: calc(100vh - 160px);
+            padding-bottom: 15px;
+            scrollbar-width: thin;
         }
 
         .col {
@@ -75,6 +107,7 @@
             display: flex;
             flex-direction: column;
             max-height: 100%;
+            flex-shrink: 0; /* Impede as colunas de esmagarem no mobile */
         }
 
         .col-header {
@@ -85,21 +118,26 @@
             justify-content: space-between;
             align-items: center;
             color: #555;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
         }
 
         .count-badge {
-            background: #ccc;
+            background: #999;
             color: #fff;
             border-radius: 50%;
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
         }
 
-        .lista-pedidos { padding: 10px; overflow-y: auto; flex-grow: 1; }
+        .lista-pedidos { 
+            padding: 10px; 
+            overflow-y: auto; 
+            flex-grow: 1; 
+        }
 
         .mini-card {
             background: var(--card-bg);
@@ -113,26 +151,22 @@
         .waiting-text {
             font-size: 0.75rem;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             display: block;
         }
-        .text-danger { color: var(--primary); }
-        .text-warning { color: var(--warning); }
-        .text-success { color: var(--success); }
-        .text-muted { color: var(--finalizado); }
 
         .mini-card-id { font-size: 1.4rem; font-weight: 800; margin: 2px 0; display: block; }
         .mini-card-cliente { font-size: 0.9rem; color: var(--text-light); margin-bottom: 12px; display: block; }
 
         .btn-main {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: none;
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-size: 0.85rem;
         }
 
@@ -141,16 +175,59 @@
         .btn-pronto { background: var(--success); color: white; }
         .btn-enviar { background: var(--info); color: white; }
         .btn-finalizar { background: var(--finalizado); color: white; }
-        .btn-detalhe { background: #eee; color: #555; }
-        .btn-cancelar { background: #fdf2f2; color: var(--primary); font-size: 0.75rem; }
+        .btn-detalhe { background: #f0f0f0; color: #555; }
+        .btn-cancelar { background: #fdf2f2; color: var(--primary); font-size: 0.75rem; border: 1px solid #fee2e2; }
 
+        /* MODAL */
         .modal {
             display: none; position: fixed; z-index: 1000;
             left: 0; top: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.6); justify-content: center; align-items: center;
+            backdrop-filter: blur(3px);
         }
-        .modal-content { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; }
+        .modal-content { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 15px; 
+            width: 95%; 
+            max-width: 450px; 
+            max-height: 90vh;
+            overflow-y: auto;
+        }
         .original-card-wrapper { display: none; }
+
+        /* RESPONSIVIDADE ESPECÍFICA */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .header-painel {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 12px;
+            }
+            .header-left {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .header-title {
+                justify-content: center;
+                margin-bottom: 5px;
+            }
+            .search-container {
+                max-width: 100%;
+            }
+            .btn-sair {
+                text-align: center;
+            }
+            .kanban {
+                height: calc(100vh - 220px);
+            }
+        }
+
+        /* Cores de Texto */
+        .text-danger { color: var(--primary); }
+        .text-warning { color: var(--warning); }
+        .text-success { color: var(--success); }
+        .text-muted { color: var(--finalizado); }
     </style>
 </head>
 <body>
@@ -162,10 +239,10 @@
                 <strong>Farol da Operação</strong>
             </div>
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nome ou pedido...">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar cliente ou pedido...">
             </div>
         </div>
-        <a href="/admin" style="text-decoration: none; color: #666; font-weight: bold;">Sair</a>
+        <a href="/admin" class="btn-sair">Sair</a>
     </header>
 
     <div class="kanban">
@@ -259,7 +336,7 @@
     <div id="modalDetalhes" class="modal">
         <div class="modal-content">
             <div id="comanda-interna"></div>
-            <button class="btn-main" onclick="fecharModal()">Fechar</button>
+            <button class="btn-main btn-detalhe" onclick="fecharModal()" style="margin-top:15px; background: #333; color: #fff;">Fechar</button>
         </div>
     </div>
 
@@ -285,34 +362,30 @@
 
                 const statusCol = statusColElement.innerText;
 
-                // LOGICA COLUNA ACEITAR
                 if (statusCol.includes("Aceitar")) {
                     if (diffMin >= 5) {
-                        labelTopo.innerHTML = `<span class="text-danger">${cliente} aguardando a ${diffMin} min</span>`;
-                        btnArea.innerHTML = `<button class="btn-main btn-aceitar" onclick="atualizarStatus('${id}', 'Preparando')">Pedido em atraso a ${diffMin} min</button>`;
+                        labelTopo.innerHTML = `<span class="text-danger">⚠️ Atraso: ${diffMin} min</span>`;
+                        btnArea.innerHTML = `<button class="btn-main btn-aceitar" onclick="atualizarStatus('${id}', 'Preparando')">Aceitar (Atrasado)</button>`;
                     } else {
-                        labelTopo.innerHTML = `<span class="text-light">Novo pedido</span>`;
+                        labelTopo.innerHTML = `<span class="text-light">Novo pedido há ${diffMin} min</span>`;
                     }
                 }
 
-                // LOGICA COLUNA EM PREPARO
                 if (statusCol.includes("Em preparo")) {
                     if (diffMin < 5) {
-                        labelTopo.innerHTML = `<span class="text-warning">Em preparo... ${5 - diffMin} min restantes</span>`;
+                        labelTopo.innerHTML = `<span class="text-warning">Cozinhando... ${5 - diffMin} min rest.</span>`;
                         btnArea.innerHTML = `<button class="btn-main btn-preparando">Em preparo</button>`;
                     } else {
-                        const atraso = diffMin - 5;
-                        labelTopo.innerHTML = atraso > 0 ? `<span class="text-danger">⚠️ ${cliente} aguardando a ${diffMin} min</span>` : `<span class="text-success">Pronto para finalizar</span>`;
-                        btnArea.innerHTML = `<button class="btn-main btn-pronto" onclick="atualizarStatus('${id}', 'Pronto')">Pronto</button>`;
+                        labelTopo.innerHTML = `<span class="text-success">Pronto para finalizar</span>`;
+                        btnArea.innerHTML = `<button class="btn-main btn-pronto" onclick="atualizarStatus('${id}', 'Pronto')">Marcar como Pronto</button>`;
                     }
                 }
 
-                // LOGICA COLUNA PRONTO (Atraso 15 min)
                 if (statusCol.includes("Pronto")) {
                     if (diffMin >= 15) {
-                        labelTopo.innerHTML = `<span class="text-danger">⚠️ Pedido pronto em atraso a ${diffMin} min</span>`;
+                        labelTopo.innerHTML = `<span class="text-danger">⚠️ Parado há ${diffMin} min</span>`;
                     } else {
-                        labelTopo.innerHTML = `<span class="text-success">Pedido pronto há ${diffMin} min</span>`;
+                        labelTopo.innerHTML = `<span class="text-success">Aguardando entrega (${diffMin} min)</span>`;
                     }
                 }
             });
@@ -321,7 +394,6 @@
         setInterval(updateFarol, 5000);
         updateFarol();
 
-        // BUSCA
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             document.querySelectorAll('.search-item').forEach(item => {
@@ -342,7 +414,7 @@
         }
 
         async function cancelarPedido(id) {
-            if (confirm("Cancelar pedido?")) atualizarStatus(id, 'Cancelado');
+            if (confirm("Deseja realmente CANCELAR este pedido?")) atualizarStatus(id, 'Cancelado');
         }
 
         function abrirDetalhes(id) {
