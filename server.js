@@ -248,18 +248,33 @@ app.post('/update-config-pix', async (req, res) => {
 app.post('/update-config-site', async (req, res) => {
     try {
         const { manutencao, nomeSite, horarios } = req.body;
-        // Agora salva também o objeto de horários vindo do admin
         await Config.findOneAndUpdate(
             { chave: 'global' },
             { 
                 manutencao: manutencao === 'true' || manutencao === true, 
                 nomeSite,
-                horarios: horarios // Campo adicionado para respeitar a configuração do admin
+                horarios: horarios 
             },
             { upsert: true }
         );
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
+});
+
+// NOVA ROTA PARA RESOLVER O ERRO 404 DO ADMIN
+app.post('/update-horarios', async (req, res) => {
+    try {
+        const { horarios } = req.body;
+        await Config.findOneAndUpdate(
+            { chave: 'global' },
+            { horarios: horarios },
+            { upsert: true }
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Erro ao atualizar horários:", err);
+        res.status(500).json({ success: false });
+    }
 });
 
 app.post('/add-produto', async (req, res) => {
@@ -297,7 +312,6 @@ app.get('/status/:id', async (req, res) => {
 io.on('connection', (socket) => {
     socket.on('join', async (pedidoId) => {
         socket.join(pedidoId);
-        // Busca o histórico do banco de dados para garantir persistência ao atualizar página
         const historico = await Mensagem.find({ pedidoId: pedidoId.toString() }).sort({ createdAt: 1 });
         socket.emit('historico', historico);
     });
@@ -310,7 +324,6 @@ io.on('connection', (socket) => {
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
             lida: data.usuario === 'Admin'
         });
-        // Salva a mensagem no banco para o cliente não perdê-la
         await msg.save();
         io.to(data.pedidoId.toString()).emit('novaMensagem', msg);
         if(data.usuario !== 'Admin') io.emit('alertaAdmin', msg);
