@@ -49,7 +49,7 @@ const PedidoSchema = new mongoose.Schema({
     status: { type: String, default: "Pendente" },
     hora: String,
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now } // Adicionado para controle de tempo no Kanban
+    updatedAt: { type: Date, default: Date.now }
 });
 const Pedido = mongoose.model('Pedido', PedidoSchema);
 
@@ -64,26 +64,29 @@ const MensagemSchema = new mongoose.Schema({
 const Mensagem = mongoose.model('Mensagem', MensagemSchema);
 
 // --- SISTEMA DE LIMPEZA AUTOMÁTICA (VIRADA DO DIA) ---
-// Verifica a cada 1 hora se já é meia-noite para limpar os finalizados
 setInterval(async () => {
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
     const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
 
-    // Se for entre 00:00 e 00:59, executa a limpeza dos finalizados e cancelados
     if (horaTratada === 0) {
         try {
-            const resultado = await Pedido.deleteMany({ 
+            // Limpa Pedidos antigos
+            await Pedido.deleteMany({ 
                 status: { $in: ['Finalizado', 'Cancelado'] } 
             });
-            if (resultado.deletedCount > 0) {
-                console.log(`♻️ Limpeza Diária: ${resultado.deletedCount} pedidos antigos removidos.`);
-            }
+
+            // Limpeza de segurança: Remove mensagens de pedidos que não existem mais
+            const pedidosAtivos = await Pedido.find().distinct('id');
+            const stringIdsAtivos = pedidosAtivos.map(id => id.toString());
+            await Mensagem.deleteMany({ pedidoId: { $nin: stringIdsAtivos } });
+
+            console.log(`♻️ Faxina de Meia-Noite: Pedidos finalizados e mensagens órfãs removidas.`);
         } catch (err) {
             console.error("❌ Erro na limpeza automática:", err);
         }
     }
-}, 3600000); // 1 hora em milissegundos
+}, 3600000); // 1 hora
 
 // --- CONFIGURAÇÕES DO EXPRESS ---
 app.set('views', path.join(__dirname, 'views'));
@@ -101,7 +104,7 @@ const checarAberta = async () => {
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
     const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
-    return horaTratada >= 8 && horaTratada < 23; // Ajustado para fechar as 23h
+    return horaTratada >= 8 && horaTratada < 23;
 };
 
 app.use(async (req, res, next) => {
@@ -125,10 +128,8 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao carregar loja."); }
 });
 
-// OPERAÇÃO (PAINEL KANBAN)
 app.get('/operacao', async (req, res) => {
     try {
-        // Busca pedidos que NÃO estão cancelados (exibe Pendentes até Finalizados)
         const pedidosExibidos = await Pedido.find({ 
             status: { $ne: 'Cancelado' } 
         }).sort({ createdAt: 1 });
@@ -143,15 +144,23 @@ app.get('/operacao', async (req, res) => {
     }
 });
 
-// --- STATUS E PEDIDOS ---
+// --- STATUS E PEDIDOS (COM LIMPEZA DE CHAT) ---
 
 app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
+        // Atualiza o pedido
         await Pedido.findOneAndUpdate(
             { id: id }, 
-            { status: novoStatus, updatedAt: Date.now() } // Atualiza updatedAt para o timer do Kanban
+            { status: novoStatus, updatedAt: Date.now() }
         );
+
+        // LIMPEZA DO CHAT: Se o pedido for encerrado, apaga as mensagens dele AGORA
+        if (novoStatus === 'Finalizado' || novoStatus === 'Cancelado') {
+            await Mensagem.deleteMany({ pedidoId: id.toString() });
+            console.log(`🧹 Mensagens do pedido ${id} foram limpas do banco.`);
+        }
+
         io.emit('statusAtualizado', { id, novoStatus });
         res.json({ success: true });
     } catch (err) { 
@@ -186,7 +195,7 @@ app.post('/enviar-pedido', async (req, res) => {
     }
 });
 
-// --- DEMAIS ROTAS (PRODUTOS / CONFIG) ---
+// --- DEMAIS ROTAS ---
 
 app.get('/api/config-estrutura', (req, res) => {
     res.json(ConfigEstrutura || {});
@@ -252,31 +261,33 @@ app.get('/status/:id', async (req, res) => {
     } catch (err) { res.status(500).send("Erro ao buscar status."); }
 });
 
-// --- CHAT SOCKET.IO ---
+// --- CHAT SOCKET.IO (COM HISTÓRICO PERSISTENTE) ---
 
 io.on('connection', (socket) => {
     socket.on('join', async (pedidoId) => {
         socket.join(pedidoId);
-        const historico = await Mensagem.find({ pedidoId }).sort({ createdAt: 1 });
+        // Busca o histórico do banco de dados para garantir persistência ao atualizar página
+        const historico = await Mensagem.find({ pedidoId: pedidoId.toString() }).sort({ createdAt: 1 });
         socket.emit('historico', historico);
     });
 
     socket.on('enviarMensagem', async (data) => {
         const msg = new Mensagem({
-            pedidoId: data.pedidoId,
+            pedidoId: data.pedidoId.toString(),
             usuario: data.usuario, 
             texto: data.texto,
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
             lida: data.usuario === 'Admin'
         });
+        // Salva a mensagem no banco para o cliente não perdê-la
         await msg.save();
-        io.to(data.pedidoId).emit('novaMensagem', msg);
+        io.to(data.pedidoId.toString()).emit('novaMensagem', msg);
         if(data.usuario !== 'Admin') io.emit('alertaAdmin', msg);
     });
 
     socket.on('lerMensagens', async (pedidoId) => {
         try {
-            await Mensagem.updateMany({ pedidoId, usuario: { $ne: 'Admin' } }, { lida: true });
+            await Mensagem.updateMany({ pedidoId: pedidoId.toString(), usuario: { $ne: 'Admin' } }, { lida: true });
         } catch (err) { console.error("Erro ao marcar como lidas:", err); }
     });
 });
@@ -284,5 +295,5 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`\n🚀 SISTEMA ONLINE NA PORTA ${PORT}`);
-    console.log(`🧹 Limpeza automática de pedidos finalizados configurada para as 00:00.`);
+    console.log(`🧹 Limpeza automática configurada para Meia-Noite.`);
 });
