@@ -71,7 +71,7 @@ setInterval(async () => {
 
     if (horaTratada === 0) {
         try {
-            await Pedido.deleteMany({ status: { $in: ['Finalizado', 'Cancelado'] } });
+            await Pedido.deleteMany({ status: { $in: ['Finalizado', 'Cancelado', 'Concluído'] } });
             const pedidosAtivos = await Pedido.find().distinct('id');
             const stringIdsAtivos = pedidosAtivos.map(id => id.toString());
             await Mensagem.deleteMany({ pedidoId: { $nin: stringIdsAtivos } });
@@ -197,7 +197,6 @@ app.get('/', async (req, res) => {
         if (!config) {
             config = { nomeSite: 'Meu Delivery', agenda: [] };
         }
-        // CORREÇÃO: Enviando a ConfigEstrutura para o index.ejs carregar os adicionais
         res.render('index', { produtos, config, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { 
         console.error(err);
@@ -240,11 +239,20 @@ app.post('/enviar-pedido', async (req, res) => {
     } catch (error) { res.status(500).json({ success: false }); }
 });
 
+// --- ROTA DE CONSULTA (ESSENCIAL PARA DESTRAVAR DISPOSITIVOS) ---
+app.get('/api/pedido/:id', async (req, res) => {
+    try {
+        const pedido = await Pedido.findOne({ id: req.params.id });
+        if (!pedido) return res.json({ status: null });
+        res.json({ status: pedido.status });
+    } catch (err) { res.status(500).json({ status: null }); }
+});
+
 app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus, updatedAt: Date.now() });
-        if (novoStatus === 'Finalizado' || novoStatus === 'Cancelado') {
+        if (novoStatus === 'Finalizado' || novoStatus === 'Cancelado' || novoStatus === 'Concluído') {
             await Mensagem.deleteMany({ pedidoId: id.toString() });
         }
         io.emit('statusAtualizado', { id, novoStatus });
