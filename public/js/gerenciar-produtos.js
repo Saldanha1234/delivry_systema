@@ -5,7 +5,7 @@
 
 let imagemBase64 = ""; // Variável global para armazenar a imagem
 
-// --- LÓGICA DE PRODUTOS (MANTIDA ORIGINAL) ---
+// --- LÓGICA DE PRODUTOS (MANTIDA ORIGINAL COM AJUSTES DE ROTA) ---
 
 function converterImagem() {
     const file = document.getElementById('p-file').files[0];
@@ -30,16 +30,20 @@ async function salvarProduto() {
     const url = id ? `/edit-produto/${id}` : '/add-produto';
     const method = id ? 'PUT' : 'POST';
 
-    const res = await fetch(url, {
-        method: method,
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(dados)
-    });
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(dados)
+        });
 
-    if(res.ok) {
-        location.reload();
-    } else {
-        alert("Erro ao salvar produto.");
+        if(res.ok) {
+            location.reload();
+        } else {
+            alert("Erro ao salvar produto.");
+        }
+    } catch (err) {
+        console.error("Erro na requisição:", err);
     }
 }
 
@@ -76,7 +80,6 @@ function limparForm() {
 
 /**
  * Injeta o HTML do Painel de Criação de Categorias no Admin.
- * O admin.js deve chamar esta função passando o ID do container onde o painel deve aparecer.
  */
 function renderizarPainelCategorias(containerId) {
     const container = document.getElementById(containerId);
@@ -106,36 +109,49 @@ async function salvarCategoria() {
     const url = id ? `/edit-categoria/${id}` : '/add-categoria';
     const method = id ? 'PUT' : 'POST';
 
-    const res = await fetch(url, {
-        method: method,
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ nome })
-    });
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nome })
+        });
 
-    if (res.ok) {
-        document.getElementById('cat-id').value = "";
-        document.getElementById('cat-nome').value = "";
-        document.getElementById('btn-salvar-cat').innerText = "CRIAR CATEGORIA";
-        carregarCategorias(); 
-    } else {
-        alert("Erro ao salvar categoria.");
+        if (res.ok) {
+            document.getElementById('cat-id').value = "";
+            document.getElementById('cat-nome').value = "";
+            const btn = document.getElementById('btn-salvar-cat');
+            if(btn) btn.innerText = "CRIAR CATEGORIA";
+            carregarCategorias(); 
+        } else {
+            alert("Erro ao salvar categoria.");
+        }
+    } catch (err) {
+        console.error("Erro ao salvar categoria:", err);
     }
 }
 
 async function carregarCategorias() {
     try {
         const res = await fetch('/get-categorias');
+        
+        // Verifica se a resposta é JSON antes de processar
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.warn("Aguardando o servidor processar as rotas de categoria...");
+            return;
+        }
+
         let categorias = await res.json();
 
         // 1. Atualiza a lista de gerenciamento no Admin
         const lista = document.getElementById('lista-categorias');
         if (lista) {
             lista.innerHTML = categorias.map(c => `
-                <div class="item-categoria-linha" style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd;">
+                <div class="item-categoria-linha" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
                     <span><strong>${c.nome}</strong></span>
                     <div>
-                        <button class="btn-edit" onclick="prepararEdicaoCategoria('${c._id}', '${c.nome}')">editar</button>
-                        <button class="btn-delete" onclick="excluirCategoria('${c._id}')">excluir</button>
+                        <button class="btn-edit" style="padding: 4px 8px; font-size: 10px;" onclick="prepararEdicaoCategoria('${c._id}', '${c.nome}')">EDITAR</button>
+                        <button class="btn-del" style="padding: 4px 8px; font-size: 10px;" onclick="excluirCategoria('${c._id}')">EXCLUIR</button>
                     </div>
                 </div>
             `).join('');
@@ -157,20 +173,30 @@ async function carregarCategorias() {
 }
 
 function prepararEdicaoCategoria(id, nome) {
-    document.getElementById('cat-id').value = id;
-    document.getElementById('cat-nome').value = nome;
-    document.getElementById('btn-salvar-cat').innerText = "ATUALIZAR CATEGORIA";
-    document.getElementById('cat-nome').focus();
+    const inputId = document.getElementById('cat-id');
+    const inputNome = document.getElementById('cat-nome');
+    const btn = document.getElementById('btn-salvar-cat');
+
+    if(inputId && inputNome && btn) {
+        inputId.value = id;
+        inputNome.value = nome;
+        btn.innerText = "ATUALIZAR CATEGORIA";
+        inputNome.focus();
+    }
 }
 
 async function excluirCategoria(id) {
     if (confirm("Ao excluir a categoria, os produtos vinculados a ela podem ficar sem categoria. Continuar?")) {
-        const res = await fetch(`/delete-categoria/${id}`, { method: 'DELETE' });
-        if (res.ok) carregarCategorias();
+        try {
+            const res = await fetch(`/delete-categoria/${id}`, { method: 'DELETE' });
+            if (res.ok) carregarCategorias();
+        } catch (err) {
+            console.error("Erro ao excluir:", err);
+        }
     }
 }
 
-// Inicializa ao carregar
+// Inicializa ao carregar a página
 document.addEventListener('DOMContentLoaded', () => {
     carregarCategorias();
 });

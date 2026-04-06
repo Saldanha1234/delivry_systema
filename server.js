@@ -141,7 +141,7 @@ app.use(async (req, res, next) => {
     }
 });
 
-// --- ROTAS DE CATEGORIAS (ADICIONADAS COM CUIDADO) ---
+// --- ROTAS DE CATEGORIAS ---
 
 app.get('/get-categorias', async (req, res) => {
     try {
@@ -154,6 +154,14 @@ app.post('/add-categoria', async (req, res) => {
     try {
         const novaCat = new Categoria(req.body);
         await novaCat.save();
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
+// ADICIONADA: Rota para editar categoria
+app.put('/edit-categoria/:id', async (req, res) => {
+    try {
+        await Categoria.findByIdAndUpdate(req.params.id, req.body);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
 });
@@ -233,7 +241,7 @@ app.post('/update-config-pix', async (req, res) => {
 app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
-        const categorias = await Categoria.find(); // Busca categorias para o index
+        const categorias = await Categoria.find();
         let config = await Config.findOne({ chave: 'global' });
         if (!config) {
             config = { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
@@ -280,7 +288,6 @@ app.post('/enviar-pedido', async (req, res) => {
     } catch (error) { res.status(500).json({ success: false }); }
 });
 
-// --- ROTA DE CONSULTA (ESSENCIAL PARA DESTRAVAR DISPOSITIVOS) ---
 app.get('/api/pedido/:id', async (req, res) => {
     try {
         const pedido = await Pedido.findOne({ id: req.params.id });
