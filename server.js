@@ -34,6 +34,12 @@ const ConfigSchema = new mongoose.Schema({
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
+// NOVO SCHEMA: CATEGORIA
+const CategoriaSchema = new mongoose.Schema({
+    nome: { type: String, required: true }
+});
+const Categoria = mongoose.model('Categoria', CategoriaSchema);
+
 const ProdutoSchema = new mongoose.Schema({
     nome: String,
     preco: Number,
@@ -135,6 +141,30 @@ app.use(async (req, res, next) => {
     }
 });
 
+// --- ROTAS DE CATEGORIAS (ADICIONADAS COM CUIDADO) ---
+
+app.get('/get-categorias', async (req, res) => {
+    try {
+        const categorias = await Categoria.find();
+        res.json(categorias);
+    } catch (err) { res.status(500).json([]); }
+});
+
+app.post('/add-categoria', async (req, res) => {
+    try {
+        const novaCat = new Categoria(req.body);
+        await novaCat.save();
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
+app.delete('/delete-categoria/:id', async (req, res) => {
+    try {
+        await Categoria.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
 // --- ROTAS DE PRODUTOS ---
 
 app.post('/add-produto', async (req, res) => {
@@ -203,11 +233,12 @@ app.post('/update-config-pix', async (req, res) => {
 app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
+        const categorias = await Categoria.find(); // Busca categorias para o index
         let config = await Config.findOne({ chave: 'global' });
         if (!config) {
             config = { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
         }
-        res.render('index', { produtos, config, estruturaAdicionais: ConfigEstrutura });
+        res.render('index', { produtos, categorias, config, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { 
         console.error(err);
         res.status(500).send("Erro interno ao carregar a página principal."); 
@@ -285,12 +316,14 @@ app.get('/status/:id', async (req, res) => {
 
 io.on('connection', (socket) => {
     socket.on('join', async (pedidoId) => {
-        socket.join(pedidoId);
+        if(!pedidoId) return;
+        socket.join(pedidoId.toString());
         const historico = await Mensagem.find({ pedidoId: pedidoId.toString() }).sort({ createdAt: 1 });
         socket.emit('historico', historico);
     });
 
     socket.on('enviarMensagem', async (data) => {
+        if(!data.pedidoId) return;
         const msg = new Mensagem({
             pedidoId: data.pedidoId.toString(),
             usuario: data.usuario, 
@@ -304,6 +337,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('lerMensagens', async (pedidoId) => {
+        if(!pedidoId) return;
         await Mensagem.updateMany({ pedidoId: pedidoId.toString(), usuario: { $ne: 'Admin' } }, { lida: true });
     });
 });
