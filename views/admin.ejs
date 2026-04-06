@@ -132,6 +132,13 @@
         .config-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
         .config-item:last-child { border-bottom: none; }
 
+        /* MODAL CSS */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+        .modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border-radius: 15px; width: 90%; max-width: 500px; box-shadow: 0 5px 30px rgba(0,0,0,0.3); }
+        .dia-config { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f0f0f0; }
+        .horarios-inputs { display: flex; gap: 10px; align-items: center; }
+        .horarios-inputs input { padding: 5px; border: 1px solid #ddd; border-radius: 5px; }
+
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -248,12 +255,20 @@
                     <div class="config-item">
                         <div>
                             <strong>🛠️ Modo Manutenção / Aberto</strong><br>
-                            <small style="color:#888;">Se caso quiser exceder o tempo de abertura, basta ativar a opção que o site volta para o aberto.
+                            <small style="color:#888;">Se caso quiser exceder o tempo de abertura, basta ativar a opção que o site volta para o aberto.</small>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="conf-manutencao" onchange="salvarConfigSite()" <%= config.manutencao === true ? 'checked' : '' %>>
                             <span class="slider"></span>
                         </label>
+                    </div>
+
+                    <div class="config-item">
+                        <div>
+                            <strong>🕒 Horários de Funcionamento</strong><br>
+                            <small style="color:#888;">Defina os dias e horários que sua loja abre e fecha automaticamente.</small>
+                        </div>
+                        <button onclick="abrirModalHorarios()" style="background:var(--info); color:white; padding:10px 15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">DEFINIR HORÁRIOS</button>
                     </div>
 
                     <div class="config-item" style="display: block; padding-top: 20px;">
@@ -263,6 +278,48 @@
                             <button onclick="salvarConfigSite()" style="background:var(--success); color:white; padding:0 15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">SALVAR</button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div id="modalHorarios" class="modal">
+                <div class="modal-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin:0; font-size: 1.2rem;">Defina meus horários</h2>
+                        <span onclick="fecharModalHorarios()" style="cursor:pointer; font-size: 1.5rem; font-weight: bold;">&times;</span>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-size: 0.8rem; font-weight: bold; color: #555;">Fuso horário</label>
+                        <select id="conf-fusoHorario" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-top: 5px;">
+                            <option value="America/Sao_Paulo" <%= config.fusoHorario === 'America/Sao_Paulo' ? 'selected' : '' %>>America/Sao_Paulo</option>
+                            <option value="America/Manaus" <%= config.fusoHorario === 'America/Manaus' ? 'selected' : '' %>>America/Manaus</option>
+                            <option value="America/Fortaleza" <%= config.fusoHorario === 'America/Fortaleza' ? 'selected' : '' %>>America/Fortaleza</option>
+                            <option value="America/Belem" <%= config.fusoHorario === 'America/Belem' ? 'selected' : '' %>>America/Belem</option>
+                        </select>
+                    </div>
+
+                    <div id="lista-dias-funcionamento">
+                        <% 
+                        const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+                        diasSemana.forEach((dia, i) => { 
+                            const agendaDia = (config.agenda && config.agenda[i]) || { aberto: false, inicio: '00:00', fim: '23:59' };
+                        %>
+                            <div class="dia-config">
+                                <span style="font-weight: bold; width: 100px;"><%= dia %></span>
+                                <div class="horarios-inputs" id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>;">
+                                    <input type="time" class="input-inicio" value="<%= agendaDia.inicio %>">
+                                    <span>-</span>
+                                    <input type="time" class="input-fim" value="<%= agendaDia.fim %>">
+                                </div>
+                                <label class="switch" style="transform: scale(0.8);">
+                                    <input type="checkbox" class="check-dia" data-index="<%= i %>" onchange="toggleDia(<%= i %>)" <%= agendaDia.aberto ? 'checked' : '' %>>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        <% }) %>
+                    </div>
+
+                    <button onclick="salvarHorarios()" style="width: 100%; background: #0066ff; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor: pointer;">Salvar horário</button>
                 </div>
             </div>
 
@@ -336,7 +393,45 @@
         let pedidoAtivoId = null;
         let dataAtualPainel = new Date().toLocaleDateString('pt-BR');
 
-        // NOVA FUNÇÃO: SALVAR CONFIGURAÇÕES DO SITE
+        // FUNÇÕES DO MODAL DE HORÁRIOS
+        function abrirModalHorarios() { document.getElementById('modalHorarios').style.display = 'block'; }
+        function fecharModalHorarios() { document.getElementById('modalHorarios').style.display = 'none'; }
+        function toggleDia(index) {
+            const isChecked = document.querySelectorAll('.check-dia')[index].checked;
+            document.getElementById(`box-horario-${index}`).style.display = isChecked ? 'flex' : 'none';
+        }
+
+        async function salvarHorarios() {
+            const agenda = [];
+            const checks = document.querySelectorAll('.check-dia');
+            const incios = document.querySelectorAll('.input-inicio');
+            const fins = document.querySelectorAll('.input-fim');
+
+            checks.forEach((check, i) => {
+                agenda.push({
+                    aberto: check.checked,
+                    inicio: incios[i].value,
+                    fim: fins[i].value
+                });
+            });
+
+            const dados = {
+                fusoHorario: document.getElementById('conf-fusoHorario').value,
+                agenda: agenda
+            };
+
+            const res = await fetch('/update-horarios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            if (res.ok) {
+                alert("✅ Horários salvos com sucesso!");
+                fecharModalHorarios();
+            }
+        }
+
         async function salvarConfigSite() {
             const dados = {
                 manutencao: document.getElementById('conf-manutencao').checked,
@@ -351,7 +446,6 @@
 
             if (res.ok) {
                 console.log("Configurações salvas com sucesso!");
-                // Não colocamos alert para não atrapalhar o toggle, apenas feedback visual se quiser
             }
         }
 

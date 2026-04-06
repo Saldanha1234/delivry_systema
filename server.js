@@ -26,7 +26,9 @@ const ConfigSchema = new mongoose.Schema({
     pixClientId: String,
     pixClientSecret: String,
     manutencao: { type: Boolean, default: false },
-    nomeSite: { type: String, default: 'Meu Delivery' }
+    nomeSite: { type: String, default: 'Meu Delivery' },
+    // Armazena os horários por dia da semana configurados no admin
+    horarios: { type: Object, default: {} } 
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
@@ -99,11 +101,35 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // --- LÓGICA DE HORÁRIO ---
 const checarAberta = async () => {
     const config = await Config.findOne({ chave: 'global' });
-    if (config && config.manutencao === true) return true;
+    
+    // Prioridade para modo manutenção manual
+    if (config && config.manutencao === true) return false; 
 
     const agora = new Date();
-    const horaBrasilia = agora.getUTCHours() - 3;
-    const horaTratada = horaBrasilia < 0 ? horaBrasilia + 24 : horaBrasilia;
+    // Ajuste para horário de Brasília
+    const dataBrasilia = new Date(agora.getTime() - (3 * 60 * 60 * 1000));
+    
+    const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+    const diaAtual = diasSemana[dataBrasilia.getUTCDay()];
+    
+    const horaAtualStr = dataBrasilia.getUTCHours().toString().padStart(2, '0') + ':' + 
+                         dataBrasilia.getUTCMinutes().toString().padStart(2, '0');
+
+    if (config && config.horarios && config.horarios[diaAtual]) {
+        const { abertura, fechamento, fechado } = config.horarios[diaAtual];
+        
+        if (fechado) return false;
+        
+        // Se o horário de fechamento for menor que o de abertura (ex: fecha às 02:00 da manhã)
+        if (fechamento < abertura) {
+            return horaAtualStr >= abertura || horaAtualStr < fechamento;
+        }
+        
+        return horaAtualStr >= abertura && horaAtualStr < fechamento;
+    }
+
+    // Fallback caso não haja configuração no admin (Horário padrão antigo)
+    const horaTratada = dataBrasilia.getUTCHours();
     return horaTratada >= 8 && horaTratada < 23;
 };
 
@@ -221,10 +247,15 @@ app.post('/update-config-pix', async (req, res) => {
 
 app.post('/update-config-site', async (req, res) => {
     try {
-        const { manutencao, nomeSite } = req.body;
+        const { manutencao, nomeSite, horarios } = req.body;
+        // Agora salva também o objeto de horários vindo do admin
         await Config.findOneAndUpdate(
             { chave: 'global' },
-            { manutencao: manutencao === 'true' || manutencao === true, nomeSite },
+            { 
+                manutencao: manutencao === 'true' || manutencao === true, 
+                nomeSite,
+                horarios: horarios // Campo adicionado para respeitar a configuração do admin
+            },
             { upsert: true }
         );
         res.json({ success: true });
