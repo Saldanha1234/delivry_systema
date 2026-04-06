@@ -235,7 +235,6 @@
     let carrinho = [];
     let produtoAtual = null;
 
-    // CORREÇÃO: Recebe os dados injetados pelo servidor (Automático)
     let configLocal = <%- JSON.stringify(estruturaAdicionais) %>;
 
     function abrirModalMontagem(nome, preco, desc, img) {
@@ -398,10 +397,12 @@
             btnFinalizar.disabled = true;
             btnFinalizar.innerText = "Você tem um pedido ativo";
             btnFinalizar.classList.add('btn-disabled');
+            document.getElementById('status-alerta').style.display = 'block';
         } else if (btnFinalizar) {
             btnFinalizar.disabled = false;
             btnFinalizar.innerText = "Finalizar Pedido";
             btnFinalizar.classList.remove('btn-disabled');
+            document.getElementById('status-alerta').style.display = 'none';
         }
     }
 
@@ -468,26 +469,28 @@
         }
     }
 
-    // COLOQUE ISSO DENTRO DO SEU WINDOW.ONLOAD NO INDEX.EJS
-async function forcarLimpezaTravados() {
-    const idSalvo = localStorage.getItem('ultimoPedidoId');
-    if (idSalvo) {
-        try {
-            const res = await fetch('/api/pedido/' + idSalvo);
-            const data = await res.json();
-            
-            // Se o status retornado for um desses, deleta na marra
-            if (data.status === 'Concluído' || data.status === 'Cancelado' || !data.status) {
+    async function forcarLimpezaTravados() {
+        const idSalvo = localStorage.getItem('ultimoPedidoId');
+        if (idSalvo) {
+            try {
+                const res = await fetch('/api/pedido/' + idSalvo);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                
+                if (data.status === 'Concluído' || data.status === 'Cancelado' || !data.status) {
+                    localStorage.removeItem('ultimoPedidoId');
+                    atualizarUI();
+                } else {
+                    document.getElementById('status-alerta').style.display = 'block';
+                    socket.emit('join', idSalvo);
+                }
+            } catch (e) {
+                // Se o pedido não existir mais no banco, limpa por segurança
                 localStorage.removeItem('ultimoPedidoId');
-                document.getElementById('status-alerta').style.display = 'none';
-                atualizarUI(); // Libera o botão de finalizar
+                atualizarUI();
             }
-        } catch (e) {
-            console.log("Pedido não encontrado ou erro, ignorando...");
         }
     }
-}
-forcarLimpezaTravados();
 
     function irParaStatus() {
         const id = localStorage.getItem('ultimoPedidoId');
@@ -498,10 +501,14 @@ forcarLimpezaTravados();
         const idSalvo = localStorage.getItem('ultimoPedidoId');
         if (data.id == idSalvo && (data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
             localStorage.removeItem('ultimoPedidoId');
-            document.getElementById('status-alerta').style.display = 'none';
             atualizarUI();
         }
     });
+
+    window.onload = function() {
+        forcarLimpezaTravados();
+        atualizarUI();
+    };
 </script>
 </body>
 </html>
