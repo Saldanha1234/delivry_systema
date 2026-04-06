@@ -61,6 +61,15 @@
         .status-fechado { background: #feecef; color: #ff4757; border: 1px solid #ff4757; }
         .btn-disabled { background: #ccc !important; cursor: not-allowed !important; opacity: 0.6; }
 
+        /* MODAL HORÁRIOS ESTILO CLEAN */
+        .horario-link { color: var(--primary); text-decoration: underline; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+        .modal-horarios-content { width: 90%; max-width: 400px; border-radius: 15px; padding: 25px; text-align: left; }
+        .lista-horarios { list-style: none; padding: 0; margin-top: 15px; }
+        .item-horario { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
+        .item-horario:last-child { border-bottom: none; }
+        .dia-nome { font-weight: 600; color: #333; }
+        .dia-valor { color: #666; }
+
         @media (max-width: 600px) {
             .event-card { min-width: 240px; padding: 15px; }
             .category-nav { padding: 10px; }
@@ -178,6 +187,27 @@
     </div>
 </div>
 
+<div id="modal-horarios" class="modal">
+    <div class="modal-content modal-horarios-content">
+        <h2 style="font-size: 1.2rem; margin-bottom: 10px;">Horário de atendimento</h2>
+        <div class="lista-horarios">
+            <% 
+            const diasNomes = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+            diasNomes.forEach((dia, i) => { 
+                const agendaDia = (config && config.agenda && config.agenda[i]) ? config.agenda[i] : { aberto: false, inicio: '--:--', fim: '--:--' };
+            %>
+            <div class="item-horario">
+                <span class="dia-nome"><%= dia %>:</span>
+                <span class="dia-valor">
+                    <%= agendaDia.aberto ? `${agendaDia.inicio.replace(':','h')} às ${agendaDia.fim.replace(':','h')}` : 'Fechado' %>
+                </span>
+            </div>
+            <% }) %>
+        </div>
+        <button class="btn-close" onclick="document.getElementById('modal-horarios').style.display='none'" style="margin-top: 20px; width: 100%;">Fechar</button>
+    </div>
+</div>
+
 <footer class="social-footer">
     <div class="status-container">
         <% if (estaAberto) { %>
@@ -185,8 +215,10 @@
         <% } else { %>
             <div class="status-badge status-fechado">● Fechado no Momento</div>
         <% } %>
-        <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">
-            Horário de Funcionamento: <strong>08:00 às 20:00</strong>
+        <p style="margin-bottom: 20px;">
+            <span class="horario-link" onclick="document.getElementById('modal-horarios').style.display='flex'">
+                Ver Horários de Funcionamento
+            </span>
         </p>
     </div>
     <div class="social-buttons">
