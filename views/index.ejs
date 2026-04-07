@@ -104,12 +104,15 @@
 </section>
 
 <div class="category-nav">
+    <button class="cat-btn active" onclick="filtrarCategoria('Todos')">Todos</button>
+
     <% if (locals.categorias) { %>
-        <% categorias.forEach((cat, index) => { %>
-            <button class="cat-btn <%= cat.nome === 'Todos' ? 'active' : '' %>" onclick="filtrarCategoria('<%= cat.nome %>')">
+        <% categorias.forEach((cat, index) => { 
+            if(cat.nome !== 'Todos') { %>
+            <button class="cat-btn" onclick="filtrarCategoria('<%= cat.nome %>')">
                 <%= cat.nome %>
             </button>
-        <% }) %>
+        <% } }) %>
     <% } %>
 </div>
 
