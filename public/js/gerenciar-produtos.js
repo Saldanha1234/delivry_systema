@@ -1,331 +1,212 @@
 /**
- * SISTEMA DE GERENCIAMENTO DE CARDÁPIO - ARQUITETURA DINÂMICA
- * Integração de Lógica CRUD existente com Novo Layout de Modais e Categorias
+ * LÓGICA DE GERENCIAMENTO DE PRODUTOS E CATEGORIAS
+ * Este arquivo contém as funções de Criar, Editar e Excluir itens do cardápio e Categorias.
  */
 
-let imagemBase64 = ""; 
-let categoriasGlobais = [];
-let produtosGlobais = [];
+let imagemBase64 = ""; // Variável global para armazenar a imagem
 
-// --- INICIALIZAÇÃO E MONTAGEM DO PALCO NO ADMIN.EJS ---
-document.addEventListener('DOMContentLoaded', () => {
-    renderizarEstruturaBase();
-    carregarDadosIniciais();
-});
+// --- LÓGICA DE PRODUTOS (MANTIDA ORIGINAL COM AJUSTES DE ROTA) ---
 
-function renderizarEstruturaBase() {
-    const container = document.getElementById('container-gerenciar');
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="header-gerenciar">
-            <div class="controles-topo">
-                <button id="btn-menu-categorias" class="btn-categoria-main" onclick="toggleMenuLateral()">
-                    <i class="fas fa-bars"></i> Categorias
-                </button>
-                <div class="busca-container">
-                    <button class="btn-search-icon" onclick="toggleBusca()"><i class="fas fa-search"></i></button>
-                    <input type="text" id="input-busca" placeholder="Buscar produto..." oninput="filtrarProdutos(this.value)" class="hidden">
-                </div>
-            </div>
-            
-            <div id="menu-lateral-categorias" class="menu-suspenso hidden">
-                <button onclick="salvarCategoria()"><i class="fas fa-plus"></i> Adicionar Categoria</button>
-                <button onclick="toggleTodasCategorias(false)"><i class="fas fa-chevron-up"></i> Fechar todas</button>
-                <button onclick="toggleTodasCategorias(true)"><i class="fas fa-chevron-down"></i> Abrir todas</button>
-                <hr>
-                <div class="stats-menu">
-                    <span id="qtd-cats">0</span> Categorias / <span id="qtd-prods">0</span> Produtos
-                </div>
-            </div>
-        </div>
-
-        <div id="lista-categorias-main" class="corpo-categorias"></div>
-
-        <div id="modal-produto" class="modal-fullscreen hidden">
-            <div class="modal-header">
-                <button onclick="fecharModalProduto()"><i class="fas fa-arrow-left"></i> Voltar</button>
-                <h2 id="titulo-modal-produto">Novo Produto</h2>
-                <button class="btn-salvar-topo" onclick="enviarProduto()">SALVAR</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="p-id">
-                <div class="grid-edicao">
-                    <div class="col-esquerda">
-                        <label>Nome do Produto</label>
-                        <input type="text" id="p-nome" placeholder="Ex: Pizza Calabresa">
-                        
-                        <label>Descrição</label>
-                        <textarea id="p-desc" placeholder="Detalhes do produto..."></textarea>
-                        
-                        <div class="row-preco">
-                            <div>
-                                <label>Preço (R$)</label>
-                                <input type="number" id="p-preco" step="0.01">
-                            </div>
-                            <div>
-                                <label>Status</label>
-                                <select id="p-status">
-                                    <option value="disponivel">Disponível</option>
-                                    <option value="fora-estoque">Fora de Estoque</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <button class="btn-add-desconto" onclick="toggleCampoDesconto()">
-                            <i class="fas fa-tag"></i> + Desconto
-                        </button>
-                        <div id="area-desconto" class="hidden">
-                            <label>Valor com Desconto (R$)</label>
-                            <input type="number" id="p-desconto" step="0.01" placeholder="Ex: 25.00">
-                        </div>
-
-                        <hr>
-                        <button class="btn-abrir-modificadores" onclick="abrirModalModificadores()">
-                            <i class="fas fa-plus-circle"></i> Adicionar modificador
-                        </button>
-                    </div>
-
-                    <div class="col-direita">
-                        <div class="upload-foto" onclick="document.getElementById('p-file').click()">
-                            <img id="p-preview" src="img/placeholder.png">
-                            <input type="file" id="p-file" hidden onchange="converterImagem()">
-                            <input type="hidden" id="p-img-data">
-                            <span>Alterar Foto</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="modal-modificadores" class="modal-fullscreen hidden" style="z-index: 1001;">
-            <div class="modal-header">
-                <button onclick="fecharModalModificadores()"><i class="fas fa-times"></i> Fechar</button>
-                <h2>Modificadores</h2>
-                <button class="btn-salvar-topo" onclick="salvarNovoModificador()">CRIAR CATEGORIA</button>
-            </div>
-            <div id="lista-modificadores-categorias" class="modal-body">
-                </div>
-        </div>
-    `;
-}
-
-// --- LÓGICA DE DADOS (DATABASE FETCH) ---
-
-async function carregarDadosIniciais() {
-    try {
-        const [resCat, resProd] = await Promise.all([
-            fetch('/get-categorias'),
-            fetch('/get-produtos') // Ajuste se a rota for diferente
-        ]);
-        
-        categoriasGlobais = await resCat.json();
-        produtosGlobais = await resProd.json();
-        
-        renderizarListaCategorias();
-        atualizarContadores();
-    } catch (err) {
-        console.error("Erro ao carregar dados:", err);
+function converterImagem() {
+    const file = document.getElementById('p-file').files[0];
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        imagemBase64 = reader.result;
+        document.getElementById('p-img-data').value = reader.result;
     }
+    if (file) reader.readAsDataURL(file);
 }
 
-function renderizarListaCategorias() {
-    const lista = document.getElementById('lista-categorias-main');
-    lista.innerHTML = categoriasGlobais.map(cat => `
-        <div class="card-categoria" id="cat-${cat._id}">
-            <div class="header-cat">
-                <div class="nome-cat-edit">
-                    <input type="text" value="${cat.nome}" onchange="editarNomeCategoria('${cat._id}', this.value)">
-                    <span class="badge-qtd">${contarProdutos(cat.nome)}</span>
-                </div>
-                <div class="acoes-cat">
-                    <button onclick="menuAcoesCat('${cat._id}')"><i class="fas fa-ellipsis-v"></i></button>
-                    <button onclick="toggleCollapse('${cat._id}')"><i class="fas fa-chevron-down" id="seta-${cat._id}"></i></button>
-                </div>
-            </div>
-            <div id="conteudo-cat-${cat._id}" class="lista-produtos hidden">
-                <button class="btn-add-produto-item" onclick="abrirNovoProduto('${cat.nome}')">
-                    <i class="fas fa-plus"></i> Produto
-                </button>
-                ${renderizarProdutosDaCategoria(cat.nome)}
-            </div>
-        </div>
-    `).join('');
-}
-
-function renderizarProdutosDaCategoria(catNome) {
-    const filtrados = produtosGlobais.filter(p => p.categoria === catNome);
-    return filtrados.map(p => `
-        <div class="item-produto-linha">
-            <div class="info-principal" onclick="prepararEdicaoProduto('${p._id}')">
-                <img src="${p.img || 'img/placeholder.png'}">
-                <div class="txts">
-                    <span class="nome">${p.nome}</span>
-                    <span class="preco">R$ ${p.preco}</span>
-                </div>
-            </div>
-            <button class="btn-opcoes-prod"><i class="fas fa-ellipsis-v"></i></button>
-        </div>
-    `).join('');
-}
-
-// --- FUNÇÕES DE PRODUTO (CRUD) ---
-
-function abrirNovoProduto(categoriaPai) {
-    limparFormProduto();
-    document.getElementById('p-id').value = "";
-    document.getElementById('titulo-modal-produto').innerText = "Novo Produto em " + categoriaPai;
-    // Define a categoria automaticamente ao criar
-    const selectCat = document.createElement('input'); 
-    selectCat.type = "hidden"; selectCat.id = "p-cat"; selectCat.value = categoriaPai;
-    document.getElementById('modal-produto').appendChild(selectCat);
-    
-    document.getElementById('modal-produto').classList.remove('hidden');
-}
-
-async function enviarProduto() {
+async function salvarProduto() {
     const id = document.getElementById('p-id').value;
     const dados = {
         nome: document.getElementById('p-nome').value,
         preco: document.getElementById('p-preco').value,
         categoria: document.getElementById('p-cat').value,
         desc: document.getElementById('p-desc').value,
-        img: imagemBase64 || document.getElementById('p-img-data').value,
-        desconto: document.getElementById('p-desconto').value,
-        disponivel: document.getElementById('p-status').value === 'disponivel'
+        img: imagemBase64 || document.getElementById('p-img-data').value
     };
 
     const url = id ? `/edit-produto/${id}` : '/add-produto';
     const method = id ? 'PUT' : 'POST';
 
-    const res = await fetch(url, {
-        method: method,
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(dados)
-    });
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(dados)
+        });
 
-    if(res.ok) location.reload();
+        if(res.ok) {
+            location.reload();
+        } else {
+            alert("Erro ao salvar produto.");
+        }
+    } catch (err) {
+        console.error("Erro na requisição:", err);
+    }
 }
 
-async function prepararEdicaoProduto(id) {
-    const p = produtosGlobais.find(item => item._id === id);
-    if(!p) return;
-
+function prepararEdicao(p) {
+    document.getElementById('form-title').innerText = "📝 Editando: " + p.nome;
     document.getElementById('p-id').value = p._id;
     document.getElementById('p-nome').value = p.nome;
     document.getElementById('p-preco').value = p.preco;
+    document.getElementById('p-cat').value = p.categoria;
     document.getElementById('p-desc').value = p.desc || "";
-    document.getElementById('p-preview').src = p.img || "img/placeholder.png";
     document.getElementById('p-img-data').value = p.img;
+    document.getElementById('btn-submit').innerText = "ATUALIZAR";
+    document.getElementById('btn-cancel').style.display = "block";
     
-    // Lógica de Desconto
-    if(p.desconto) {
-        document.getElementById('area-desconto').classList.remove('hidden');
-        document.getElementById('p-desconto').value = p.desconto;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function excluirProduto(id) {
+    if(confirm("Deseja realmente excluir este item?")) {
+        const res = await fetch(`/delete-produto/${id}`, { method: 'DELETE' });
+        if(res.ok) {
+            location.reload();
+        } else {
+            alert("Erro ao excluir produto.");
+        }
     }
-
-    document.getElementById('modal-produto').classList.remove('hidden');
 }
 
-// --- SISTEMA DE MODIFICADORES (LÓGICA PEDIDA) ---
-
-function abrirModalModificadores() {
-    document.getElementById('modal-modificadores').classList.remove('hidden');
+function limparForm() {
+    location.reload();
 }
 
-function salvarNovoModificador() {
-    const container = document.getElementById('lista-modificadores-categorias');
-    const idUnico = Date.now();
-    
-    const htmlCatMod = `
-        <div class="card-modificador" id="mod-cat-${idUnico}">
-            <div class="header-mod-flex">
-                <button onclick="toggleCollapseMod('${idUnico}')"><i class="fas fa-chevron-down"></i></button>
-                <input type="text" placeholder="Nome da Categoria (Ex: Escolha o Molho)">
-                <div class="acoes">
-                    <button><i class="fas fa-ellipsis-v"></i></button>
-                </div>
-            </div>
-            
-            <div id="body-mod-${idUnico}" class="body-mod hidden">
-                <div class="config-mod-row">
-                    <button class="btn-associar" onclick="abrirModalAssociar('${idUnico}')">Associar/Desassociar</button>
-                    <select id="condicao-${idUnico}">
-                        <option value="obrigatorio">Obrigatório</option>
-                        <option value="opcional">Opcional</option>
-                    </select>
-                </div>
+// --- NOVA LÓGICA DE CATEGORIAS DINÂMICAS (SISTEMA COMPLETO) ---
 
-                <div class="selecao-qtd">
-                    <label>Nessa categoria pode selecionar:</label>
-                    <select onchange="toggleMinMax('${idUnico}', this.value)">
-                        <option value="apenas-um">Apenas um Adicional</option>
-                        <option value="varios">Vários</option>
-                    </select>
-                    <div id="min-max-${idUnico}" class="hidden">
-                        Min: <input type="number" class="small-input" value="1">
-                        Max: <input type="number" class="small-input" value="1">
-                    </div>
-                </div>
+/**
+ * Injeta o HTML do Painel de Criação de Categorias no Admin.
+ */
+function renderizarPainelCategorias(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
 
-                <hr>
-                <div id="itens-adicionais-${idUnico}">
-                    </div>
-                <button class="btn-novo-item-mod" onclick="addLinhaAdicional('${idUnico}')">+ Adicionar Modificador</button>
+    container.innerHTML = `
+        <div class="card-gerenciamento">
+            <h3>📁 Gerenciar Categorias</h3>
+            <div class="form-categoria">
+                <input type="hidden" id="cat-id">
+                <input type="text" id="cat-nome" placeholder="Nome da Categoria (ex: Pizzas Doces)">
+                <button id="btn-salvar-cat" class="btn-sucesso" onclick="salvarCategoria()">CRIAR CATEGORIA</button>
             </div>
+            <div id="lista-categorias" class="lista-itens-admin">
+                </div>
         </div>
     `;
-    container.insertAdjacentHTML('beforeend', htmlCatMod);
+    carregarCategorias();
 }
 
-// --- AUXILIARES DE UI ---
+async function salvarCategoria() {
+    const id = document.getElementById('cat-id').value;
+    const nome = document.getElementById('cat-nome').value;
 
-function converterImagem() {
-    const file = document.getElementById('p-file').files[0];
-    const reader = new FileReader();
-    reader.onloadend = () => { 
-        imagemBase64 = reader.result; 
-        document.getElementById('p-preview').src = reader.result; 
+    if (!nome) return alert("Digite o nome da categoria!");
+
+    const url = id ? `/edit-categoria/${id}` : '/add-categoria';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nome })
+        });
+
+        if (res.ok) {
+            document.getElementById('cat-id').value = "";
+            document.getElementById('cat-nome').value = "";
+            const btn = document.getElementById('btn-salvar-cat');
+            if(btn) btn.innerText = "CRIAR CATEGORIA";
+            carregarCategorias();
+        } else {
+            alert("Erro ao salvar categoria.");
+        }
+    } catch (err) {
+        console.error("Erro ao salvar categoria:", err);
     }
-    if (file) reader.readAsDataURL(file);
 }
 
-function toggleCollapse(id) {
-    const content = document.getElementById(`conteudo-cat-${id}`);
-    const seta = document.getElementById(`seta-${id}`);
-    content.classList.toggle('hidden');
-    seta.classList.toggle('fa-chevron-up');
+async function carregarCategorias() {
+    try {
+        const res = await fetch('/get-categorias');
+        
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.warn("Aguardando o servidor processar as rotas de categoria...");
+            return;
+        }
+
+        let categoriasDoBanco = await res.json();
+
+        // --- LÓGICA DE CATEGORIAS FIXAS (PROMOÇÃO E DESTAQUES/MAIS VENDIDOS) ---
+        const categoriasFixas = [
+            { nome: "Promoção" },
+            { nome: "Destaques" }
+        ];
+
+        // 1. Atualiza a lista de gerenciamento no Admin
+        const lista = document.getElementById('lista-categorias');
+        if (lista) {
+            lista.innerHTML = categoriasDoBanco.map(c => `
+                <div class="item-categoria-linha" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                    <span><strong>${c.nome}</strong></span>
+                    <div>
+                        <button class="btn-edit" style="padding: 4px 8px; font-size: 10px;" onclick="prepararEdicaoCategoria('${c._id}', '${c.nome}')">EDITAR</button>
+                        <button class="btn-del" style="padding: 4px 8px; font-size: 10px;" onclick="excluirCategoria('${c._id}')">EXCLUIR</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 2. Atualiza o <select> no formulário de produtos
+        const selectProduto = document.getElementById('p-cat');
+        if (selectProduto) {
+            const valorAtual = selectProduto.value;
+            selectProduto.innerHTML = '<option value="">Selecione uma Categoria</option>';
+            
+            categoriasFixas.forEach(f => {
+                selectProduto.innerHTML += `<option value="${f.nome}">${f.nome}</option>`;
+            });
+
+            categoriasDoBanco.forEach(c => {
+                selectProduto.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
+            });
+
+            if (valorAtual) selectProduto.value = valorAtual;
+        }
+    } catch (error) {
+        console.error("Erro ao carregar categorias:", error);
+    }
 }
 
-function toggleMenuLateral() {
-    document.getElementById('menu-lateral-categorias').classList.toggle('hidden');
+function prepararEdicaoCategoria(id, nome) {
+    const inputId = document.getElementById('cat-id');
+    const inputNome = document.getElementById('cat-nome');
+    const btn = document.getElementById('btn-salvar-cat');
+
+    if(inputId && inputNome && btn) {
+        inputId.value = id;
+        inputNome.value = nome;
+        btn.innerText = "ATUALIZAR CATEGORIA";
+        inputNome.focus();
+    }
 }
 
-function fecharModalProduto() {
-    document.getElementById('modal-produto').classList.add('hidden');
+async function excluirCategoria(id) {
+    if (confirm("Ao excluir a categoria, os produtos vinculados a ela podem ficar sem categoria. Continuar?")) {
+        try {
+            const res = await fetch(`/delete-categoria/${id}`, { method: 'DELETE' });
+            if (res.ok) carregarCategorias();
+        } catch (err) {
+            console.error("Erro ao excluir:", err);
+        }
+    }
 }
 
-function fecharModalModificadores() {
-    document.getElementById('modal-modificadores').classList.add('hidden');
-}
-
-function toggleCampoDesconto() {
-    document.getElementById('area-desconto').classList.toggle('hidden');
-}
-
-function atualizarContadores() {
-    document.getElementById('qtd-cats').innerText = categoriasGlobais.length;
-    document.getElementById('qtd-prods').innerText = produtosGlobais.length;
-}
-
-function contarProdutos(catNome) {
-    return produtosGlobais.filter(p => p.categoria === catNome).length;
-}
-
-function limparFormProduto() {
-    document.getElementById('p-nome').value = "";
-    document.getElementById('p-preco').value = "";
-    document.getElementById('p-desc').value = "";
-    document.getElementById('p-preview').src = "img/placeholder.png";
-    imagemBase64 = "";
-}
+document.addEventListener('DOMContentLoaded', () => {
+    carregarCategorias();
+});
