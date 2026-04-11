@@ -1,11 +1,10 @@
 /**
- * LÓGICA DE GERENCIAMENTO DE PRODUTOS E CATEGORIAS
- * Este arquivo contém as funções de Criar, Editar e Excluir itens do cardápio e Categorias.
+ * LÓGICA DE GERENCIAMENTO DE PRODUTOS E CATEGORIAS (UI AVANÇADA)
  */
 
-let imagemBase64 = ""; // Variável global para armazenar a imagem
+let imagemBase64 = ""; 
 
-// --- LÓGICA DE PRODUTOS (MANTIDA ORIGINAL COM AJUSTES DE ROTA) ---
+// --- LÓGICA DE PRODUTOS (MANTIDA ORIGINAL) ---
 
 function converterImagem() {
     const file = document.getElementById('p-file').files[0];
@@ -48,6 +47,7 @@ async function salvarProduto() {
 }
 
 function prepararEdicao(p) {
+    // Agora o formulário/modal deve estar visível para editar
     document.getElementById('form-title').innerText = "📝 Editando: " + p.nome;
     document.getElementById('p-id').value = p._id;
     document.getElementById('p-nome').value = p.nome;
@@ -56,7 +56,9 @@ function prepararEdicao(p) {
     document.getElementById('p-desc').value = p.desc || "";
     document.getElementById('p-img-data').value = p.img;
     document.getElementById('btn-submit').innerText = "ATUALIZAR";
-    document.getElementById('btn-cancel').style.display = "block";
+    
+    // Se você usa modal do Bootstrap ou similar, abra-o aqui:
+    // $('#seuModal').modal('show');
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -72,39 +74,128 @@ async function excluirProduto(id) {
     }
 }
 
-function limparForm() {
-    location.reload();
-}
-
-// --- NOVA LÓGICA DE CATEGORIAS DINÂMICAS (SISTEMA COMPLETO) ---
+// --- NOVA INTERFACE ORGANIZADA POR CATEGORIAS ---
 
 /**
- * Injeta o HTML do Painel de Criação de Categorias no Admin.
+ * Esta função substitui a lista gigante por uma lista de categorias colapsáveis.
+ * Ela deve ser chamada no DOMContentLoaded ou após carregar produtos e categorias.
  */
-function renderizarPainelCategorias(containerId) {
-    const container = document.getElementById(containerId);
+async function renderizarInterfaceAgrupada() {
+    const container = document.getElementById('lista-categorias');
     if (!container) return;
 
-    container.innerHTML = `
-        <div class="card-gerenciamento">
-            <h3>📁 Gerenciar Categorias</h3>
-            <div class="form-categoria">
-                <input type="hidden" id="cat-id">
-                <input type="text" id="cat-nome" placeholder="Nome da Categoria (ex: Pizzas Doces)">
-                <button id="btn-salvar-cat" class="btn-sucesso" onclick="salvarCategoria()">CRIAR CATEGORIA</button>
-            </div>
-            <div id="lista-categorias" class="lista-itens-admin">
+    try {
+        const resCat = await fetch('/get-categorias');
+        const categorias = await resCat.json();
+        
+        const resProd = await fetch('/get-produtos'); // Supondo que você tenha essa rota
+        const produtos = await resProd.json();
+
+        container.innerHTML = ""; // Limpa a lista
+
+        categorias.forEach(cat => {
+            const produtosDaCat = produtos.filter(p => p.categoria === cat.nome);
+            
+            const divCat = document.createElement('div');
+            divCat.className = 'categoria-group mb-2';
+            divCat.innerHTML = `
+                <div class="cat-header" style="display: flex; align-items: center; background: #f8f9fa; border: 1px solid #ddd; padding: 10px; border-radius: 5px; cursor: pointer;">
+                    
+                    <div class="dropdown" style="margin-right: 15px;">
+                        <span onclick="toggleMenuCat(event, '${cat._id}')" style="cursor:pointer; font-weight:bold;">⋮</span>
+                        <div id="menu-${cat._id}" class="menu-cat-options" style="display:none; position:absolute; background:white; border:1px solid #ccc; z-index:10; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
+                            <div style="padding: 5px 10px; color: red;" onclick="excluirCategoria('${cat._id}')">Excluir</div>
+                            <div style="padding: 5px 10px;" onclick="duplicarCategoria('${cat._id}', '${cat.nome}')">Duplicar</div>
+                        </div>
+                    </div>
+
+                    <input type="text" value="${cat.nome}" 
+                        style="border:none; background:transparent; font-weight:bold; flex-grow:1;" 
+                        onblur="salvarNomeCategoria('${cat._id}', this.value)"
+                        onclick="event.stopPropagation()">
+
+                    <span class="seta-cat" onclick="toggleConteudo(this)" style="transition: 0.3s; padding: 0 10px;">▲</span>
                 </div>
-        </div>
-    `;
-    carregarCategorias();
+
+                <div class="cat-content" style="display:none; padding: 15px; border: 1px solid #eee; border-top:none;">
+                    <div class="lista-produtos-interna">
+                        ${produtosDaCat.map(p => `
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f0f0f0; padding: 8px 0;">
+                                <span>${p.nome} - R$ ${p.preco}</span>
+                                <div>
+                                    <button onclick="prepararEdicao(${JSON.stringify(p).replace(/"/g, '&quot;')})">Editar</button>
+                                    <button onclick="excluirProduto('${p._id}')" style="color:red">Sair</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="btn-sucesso" style="margin-top:10px; width:100%;" onclick="abrirModalCriarNoCat('${cat.nome}')">+ CRIAR PRODUTO</button>
+                </div>
+            `;
+            container.appendChild(divCat);
+        });
+
+    } catch (err) {
+        console.error("Erro ao montar interface:", err);
+    }
 }
+
+// --- FUNÇÕES AUXILIARES DA NOVA INTERFACE ---
+
+function toggleConteudo(seta) {
+    const content = seta.closest('.categoria-group').querySelector('.cat-content');
+    if (content.style.display === "none") {
+        content.style.display = "block";
+        seta.style.transform = "rotate(180deg)";
+    } else {
+        content.style.display = "none";
+        seta.style.transform = "rotate(0deg)";
+    }
+}
+
+function toggleMenuCat(event, id) {
+    event.stopPropagation();
+    const menu = document.getElementById(`menu-${id}`);
+    menu.style.display = menu.style.display === "none" ? "block" : "none";
+}
+
+async function salvarNomeCategoria(id, novoNome) {
+    if (!novoNome) return;
+    try {
+        await fetch(`/edit-categoria/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nome: novoNome })
+        });
+        carregarCategorias(); // Atualiza os selects
+    } catch (err) { console.error(err); }
+}
+
+function abrirModalCriarNoCat(nomeCat) {
+    document.getElementById('p-id').value = ""; // Limpa ID (novo produto)
+    document.getElementById('p-cat').value = nomeCat; // Seta a categoria automaticamente
+    document.getElementById('form-title').innerText = "Novo Produto em: " + nomeCat;
+    // Aqui você chama a função para mostrar seu modal ou rola até o formulário
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function duplicarCategoria(id, nome) {
+    const novoNome = nome + " (Cópia)";
+    try {
+        await fetch('/add-categoria', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nome: novoNome })
+        });
+        location.reload();
+    } catch (err) { console.error(err); }
+}
+
+// --- LÓGICA DE CATEGORIAS (ADAPTADA) ---
 
 async function salvarCategoria() {
     const id = document.getElementById('cat-id').value;
-    const nome = document.getElementById('cat-nome').value;
-
-    if (!nome) return alert("Digite o nome da categoria!");
+    const nome = document.getElementById('cat-nome').value || "Nova Categoria";
 
     const url = id ? `/edit-categoria/${id}` : '/add-categoria';
     const method = id ? 'PUT' : 'POST';
@@ -117,96 +208,38 @@ async function salvarCategoria() {
         });
 
         if (res.ok) {
-            document.getElementById('cat-id').value = "";
-            document.getElementById('cat-nome').value = "";
-            const btn = document.getElementById('btn-salvar-cat');
-            if(btn) btn.innerText = "CRIAR CATEGORIA";
-            carregarCategorias();
-        } else {
-            alert("Erro ao salvar categoria.");
+            location.reload();
         }
-    } catch (err) {
-        console.error("Erro ao salvar categoria:", err);
+    } catch (err) { console.error(err); }
+}
+
+async function excluirCategoria(id) {
+    if (confirm("Excluir categoria e seus vínculos?")) {
+        try {
+            const res = await fetch(`/delete-categoria/${id}`, { method: 'DELETE' });
+            if (res.ok) location.reload();
+        } catch (err) { console.error(err); }
     }
 }
 
 async function carregarCategorias() {
+    // Esta função agora foca apenas em atualizar os SELECTS de produtos
     try {
         const res = await fetch('/get-categorias');
-        
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            console.warn("Aguardando o servidor processar as rotas de categoria...");
-            return;
-        }
-
-        let categoriasDoBanco = await res.json();
-
-        // --- LÓGICA DE CATEGORIAS FIXAS (PROMOÇÃO E DESTAQUES/MAIS VENDIDOS) ---
-        const categoriasFixas = [
-            { nome: "Promoção" },
-            { nome: "Destaques" }
-        ];
-
-        // 1. Atualiza a lista de gerenciamento no Admin
-        const lista = document.getElementById('lista-categorias');
-        if (lista) {
-            lista.innerHTML = categoriasDoBanco.map(c => `
-                <div class="item-categoria-linha" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
-                    <span><strong>${c.nome}</strong></span>
-                    <div>
-                        <button class="btn-edit" style="padding: 4px 8px; font-size: 10px;" onclick="prepararEdicaoCategoria('${c._id}', '${c.nome}')">EDITAR</button>
-                        <button class="btn-del" style="padding: 4px 8px; font-size: 10px;" onclick="excluirCategoria('${c._id}')">EXCLUIR</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // 2. Atualiza o <select> no formulário de produtos
+        const categoriasDoBanco = await res.json();
         const selectProduto = document.getElementById('p-cat');
+        
         if (selectProduto) {
-            const valorAtual = selectProduto.value;
             selectProduto.innerHTML = '<option value="">Selecione uma Categoria</option>';
-            
-            categoriasFixas.forEach(f => {
-                selectProduto.innerHTML += `<option value="${f.nome}">${f.nome}</option>`;
-            });
-
             categoriasDoBanco.forEach(c => {
                 selectProduto.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
             });
-
-            if (valorAtual) selectProduto.value = valorAtual;
         }
-    } catch (error) {
-        console.error("Erro ao carregar categorias:", error);
-    }
+    } catch (error) { console.error(error); }
 }
 
-function prepararEdicaoCategoria(id, nome) {
-    const inputId = document.getElementById('cat-id');
-    const inputNome = document.getElementById('cat-nome');
-    const btn = document.getElementById('btn-salvar-cat');
-
-    if(inputId && inputNome && btn) {
-        inputId.value = id;
-        inputNome.value = nome;
-        btn.innerText = "ATUALIZAR CATEGORIA";
-        inputNome.focus();
-    }
-}
-
-async function excluirCategoria(id) {
-    if (confirm("Ao excluir a categoria, os produtos vinculados a ela podem ficar sem categoria. Continuar?")) {
-        try {
-            const res = await fetch(`/delete-categoria/${id}`, { method: 'DELETE' });
-            if (res.ok) carregarCategorias();
-        } catch (err) {
-            console.error("Erro ao excluir:", err);
-        }
-    }
-}
-
+// Inicialização
 document.addEventListener('DOMContentLoaded', () => {
     carregarCategorias();
+    renderizarInterfaceAgrupada();
 });
