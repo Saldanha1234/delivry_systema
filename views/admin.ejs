@@ -387,7 +387,7 @@
                                 <tr>
                                     <td><img src="<%= p.img %>" class="img-thumb"></td>
                                     <td><strong><%= p.nome %></strong><br><small style="color:#888"><%= p.categoria %></small></td>
-                                    <td>R$ <%= p.preco.toFixed(2) %></td>
+                                    <td>R$ <%= (p.preco || 0).toFixed(2) %></td>
                                     <td>
                                         <div class="action-btns">
                                             <button class="btn-edit" onclick='prepararEdicao(<%- JSON.stringify(p) %>)'>EDITAR</button>

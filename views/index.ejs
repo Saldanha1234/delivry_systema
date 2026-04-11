@@ -136,14 +136,20 @@
                 <h3><%= p.nome %></h3>
                 <p class="desc"><%= p.desc %></p>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                    <div style="display: flex; flex-direction: column;">
-                        <% if (p.desconto && p.desconto > 0) { %>
-                            <span style="text-decoration: line-through; color: #bbb; font-size: 0.8rem;">R$ <%= p.preco.toFixed(2) %></span>
-                            <span class="price-tag">R$ <%= (p.preco - p.desconto).toFixed(2) %></span>
-                        <% } else { %>
-                            <span class="price-tag">R$ <%= p.preco.toFixed(2) %></span>
-                        <% } %>
-                    </div>
+                   <div style="display: flex; flex-direction: column;">
+    <% if (p.desconto && p.desconto > 0) { %>
+        <span style="text-decoration: line-through; color: #bbb; font-size: 0.8rem;">
+            R$ <%= (p.preco || 0).toFixed(2) %>
+        </span>
+        <span class="price-tag">
+            R$ <%= ((p.preco || 0) - p.desconto).toFixed(2) %>
+        </span>
+    <% } else { %>
+        <span class="price-tag">
+            R$ <%= (p.preco || 0).toFixed(2) %>
+        </span>
+    <% } %>
+</div>
                     <span style="color: var(--primary); font-weight: bold; font-size: 0.8rem;">Ver detalhes +</span>
                 </div>
             </div>
