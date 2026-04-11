@@ -353,18 +353,7 @@
 
                         <input type="file" id="p-file" onchange="converterImagem()" style="font-size: 0.8rem;">
                         <input type="hidden" id="p-img-data">
-
-                        <select id="p-tipo-desconto" onchange="toggleDescontoField()" style="grid-column: 1 / -1; padding:10px; border-radius:8px; border:1px solid #ddd; background: #fff;">
-                            <option value="nenhum">Sem Desconto nos Adicionais</option>
-                            <option value="todos">Desconto Todos (Global p/ Adicional)</option>
-                            <option value="unico">Desconto Único (Apenas neste Produto)</option>
-                        </select>
-
-                        <div id="container-regra-desconto" style="display: none; grid-column: 1 / -1;">
-                            <input type="text" id="p-regra-desconto" placeholder="Ex: Morango:1.50, Banana:2" style="width: 100%; padding:10px; border-radius:8px; border:1px solid #ddd;">
-                        </div>
                         <textarea id="p-desc" placeholder="Descrição rápida..." style="grid-column: 1 / -1; padding:10px; border:1px solid #ddd; border-radius:8px; height: 60px;"></textarea>
-                        
                         <div style="grid-column: 1 / -1; display:flex; gap:10px;">
                             <button type="button" onclick="salvarProduto()" id="btn-submit" style="flex:1; background:var(--success); color:#fff; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">SALVAR ITEM</button>
                             <button type="button" onclick="limparForm()" id="btn-cancel" style="display:none; background:#888; color:#fff; padding:12px; border:none; border-radius:8px;">CANCELAR</button>
@@ -387,7 +376,7 @@
                                 <tr>
                                     <td><img src="<%= p.img %>" class="img-thumb"></td>
                                     <td><strong><%= p.nome %></strong><br><small style="color:#888"><%= p.categoria %></small></td>
-                                    <td>R$ <%= (p.preco || 0).toFixed(2) %></td>
+                                    <td>R$ <%= p.preco.toFixed(2) %></td>
                                     <td>
                                         <div class="action-btns">
                                             <button class="btn-edit" onclick='prepararEdicao(<%- JSON.stringify(p) %>)'>EDITAR</button>

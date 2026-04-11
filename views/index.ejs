@@ -35,12 +35,6 @@
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .card.hidden { display: none; }
 
-        /* ESTILO DO SELO DE DESCONTO */
-        .badge-desconto {
-            position: absolute; top: 10px; left: 10px; background: #2ecc71; color: white;
-            padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; z-index: 10;
-        }
-
         /* ESTILOS DO MODAL DE MONTAGEM */
         .modal-montagem-content { width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 0 !important; }
         .modal-body { padding: 20px; }
@@ -126,30 +120,12 @@
     <% produtos.forEach(p => { %>
         <div class="card" data-categoria="<%= p.categoria %>" 
              onclick="abrirModalMontagem('<%= p.nome %>', '<%= p.preco %>', '<%= p.desc %>', '<%= p.img %>')">
-            
-            <% if (p.desconto && p.desconto > 0) { %>
-                <div class="badge-desconto">OFF</div>
-            <% } %>
-
             <img src="<%= p.img %>" alt="<%= p.nome %>">
             <div class="card-content">
                 <h3><%= p.nome %></h3>
                 <p class="desc"><%= p.desc %></p>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                   <div style="display: flex; flex-direction: column;">
-    <% if (p.desconto && p.desconto > 0) { %>
-        <span style="text-decoration: line-through; color: #bbb; font-size: 0.8rem;">
-            R$ <%= (p.preco || 0).toFixed(2) %>
-        </span>
-        <span class="price-tag">
-            R$ <%= ((p.preco || 0) - p.desconto).toFixed(2) %>
-        </span>
-    <% } else { %>
-        <span class="price-tag">
-            R$ <%= (p.preco || 0).toFixed(2) %>
-        </span>
-    <% } %>
-</div>
+                    <span class="price-tag">R$ <%= p.preco.toFixed(2) %></span>
                     <span style="color: var(--primary); font-weight: bold; font-size: 0.8rem;">Ver detalhes +</span>
                 </div>
             </div>
