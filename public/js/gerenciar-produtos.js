@@ -17,6 +17,17 @@ function converterImagem() {
     if (file) reader.readAsDataURL(file);
 }
 
+// Função para controlar a exibição do campo de regra de desconto
+function toggleDescontoField() {
+    const tipo = document.getElementById('p-tipo-desconto').value;
+    const container = document.getElementById('container-regra-desconto');
+    if (tipo === "todos" || tipo === "unico") {
+        container.style.display = "block";
+    } else {
+        container.style.display = "none";
+    }
+}
+
 async function salvarProduto() {
     const id = document.getElementById('p-id').value;
     const dados = {
@@ -24,7 +35,10 @@ async function salvarProduto() {
         preco: document.getElementById('p-preco').value,
         categoria: document.getElementById('p-cat').value,
         desc: document.getElementById('p-desc').value,
-        img: imagemBase64 || document.getElementById('p-img-data').value
+        img: imagemBase64 || document.getElementById('p-img-data').value,
+        // Novos campos de desconto
+        tipoDesconto: document.getElementById('p-tipo-desconto').value,
+        regraDesconto: document.getElementById('p-regra-desconto').value
     };
 
     const url = id ? `/edit-produto/${id}` : '/add-produto';
@@ -55,6 +69,12 @@ function prepararEdicao(p) {
     document.getElementById('p-cat').value = p.categoria;
     document.getElementById('p-desc').value = p.desc || "";
     document.getElementById('p-img-data').value = p.img;
+    
+    // Preenchimento dos novos campos de desconto na edição
+    document.getElementById('p-tipo-desconto').value = p.tipoDesconto || "nenhum";
+    document.getElementById('p-regra-desconto').value = p.regraDesconto || "";
+    toggleDescontoField();
+
     document.getElementById('btn-submit').innerText = "ATUALIZAR";
     document.getElementById('btn-cancel').style.display = "block";
     

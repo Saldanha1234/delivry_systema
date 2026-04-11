@@ -55,6 +55,8 @@ const PedidoSchema = new mongoose.Schema({
     endereco: String,
     pagamento: String,
     itens: Array, 
+    subtotal: Number, // Adicionado para salvar subtotal
+    desconto: Number, // Adicionado para salvar descontos
     total: Number,
     status: { type: String, default: "Pendente" },
     hora: String,
