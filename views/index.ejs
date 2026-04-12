@@ -22,6 +22,8 @@
 </head>
 <body>
 
+<audio id="notificacao-som" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
+
 <div id="modal-erro-endereco" class="modal-erro-endereco">
     <h2>Ops! 📍</h2>
     <p id="mensagem-erro-endereco">Infelizmente não entregamos neste endereço ou bairro.</p>
@@ -238,6 +240,14 @@
         cidadeAtiva: "<%= locals.config?.cidadeSede || '' %>",
         ativarTrava: <%= locals.config?.limitarArea || false %>
     };
+
+    // Lógica de som ao receber mensagem
+    socket.on('novaMensagem', () => {
+        const som = document.getElementById('notificacao-som');
+        if (som) {
+            som.play().catch(e => console.log("Interação do usuário necessária para tocar som."));
+        }
+    });
 
     // Função para buscar CEP
     async function buscarCEP(valor) {
@@ -575,7 +585,7 @@
 
     socket.on('statusAtualizado', (data) => {
         const idSalvo = localStorage.getItem('ultimoPedidoId');
-        if (data.id == idSalvo && (data.novoStatus === 'Finalizado' || data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
+        if (idSalvo && data.id == idSalvo && (data.novoStatus === 'Finalizado' || data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
             localStorage.removeItem('ultimoPedidoId');
             atualizarUI();
         }
