@@ -341,14 +341,18 @@
         let pedidoAtivoId = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            if(typeof renderizarPainelCategorias === "function") {
-                renderizarPainelCategorias('container-gerenciador-produtos');
-            }
+            // Pequeno delay para garantir que o script externo foi carregado
+            setTimeout(() => {
+                if(typeof renderizarPainelCategorias === "function") {
+                    renderizarPainelCategorias('container-gerenciador-produtos');
+                }
+            }, 100);
         });
 
         function toggleCamposCidade() {
             const isChecked = document.getElementById('conf-cidadeAtiva').checked;
-            document.getElementById('container-campos-cidade').style.display = isChecked ? 'block' : 'none';
+            const container = document.getElementById('container-campos-cidade');
+            if(container) container.style.display = isChecked ? 'block' : 'none';
         }
 
         function abrirModalHorarios() { document.getElementById('modalHorarios').style.display = 'block'; }

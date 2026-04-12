@@ -238,7 +238,6 @@
         ativarTrava: <%= locals.config?.limitarArea || false %>
     };
 
-    // Função para obter o horário atual em formato HH:mm
     function obterHorarioAtual() {
         const agora = new Date();
         return agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -314,13 +313,13 @@
         document.getElementById('m-desc').innerText = desc;
         document.getElementById('m-obs').value = "";
         
-        const containerLógica = document.getElementById('container-adicionais-logic');
+        const containerLogica = document.getElementById('container-adicionais-logic');
         
         if (temModificadores) {
-            containerLógica.style.display = 'block';
+            containerLogica.style.display = 'block';
             renderizarCategorias();
         } else {
-            containerLógica.style.display = 'none';
+            containerLogica.style.display = 'none';
         }
 
         atualizarTotalModal();
@@ -337,7 +336,6 @@
             cat.opcoes.forEach(opt => {
                 if (filtro === "" || opt.nome.toLowerCase().includes(filtro.toLowerCase())) {
                     
-                    // LÓGICA DE DESCONTO NOS ADICIONAIS
                     const temDesc = opt.desconto && Number(opt.desconto) > 0;
                     const precoExibicao = temDesc ? Number(opt.desconto) : Number(opt.preco);
                     
@@ -402,7 +400,6 @@
         if (produtoAtual.temModificadores && configLocal) {
             configLocal.categorias.forEach(cat => {
                 cat.opcoes.forEach(opt => { 
-                    // Soma usando o valor com desconto se ele existir
                     const valorEfetivo = (opt.desconto && Number(opt.desconto) > 0) ? Number(opt.desconto) : Number(opt.preco);
                     extra += (valorEfetivo * opt.qtd); 
                 });
