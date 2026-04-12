@@ -114,6 +114,7 @@
 
         .config-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
         
+        /* Estilo novo campo cidade */
         .campo-cidade-container { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px dashed #ddd; }
         .grid-cidade { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-top: 10px; }
         .grid-cidade input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; }
@@ -194,10 +195,8 @@
                     let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
                     let entregasDia = pedidosHoje.length;
 
-                    let totalMesAcumulado = 0;
-                    if(vendasMensais && vendasMensais.length > 0) {
-                        totalMesAcumulado = vendasMensais[0].totalAcumulado;
-                    }
+                    let totalMesAcumulado = config.vendasMes || 0;
+                    let entregasMesAcumulado = config.entregasMes || 0;
                 %>
                 <div class="finance-grid">
                     <div class="stat-card" style="border-left-color: var(--success);">
@@ -214,6 +213,11 @@
                         <h4>📊 Total Acumulado (<%= mesAtualNome %>)</h4>
                         <div class="value">R$ <%= totalMesAcumulado.toFixed(2) %></div>
                         <p style="font-size: 0.65rem; color: #999; margin: 5px 0 0 0;">Soma dos dias encerrados</p>
+                    </div>
+                    <div class="stat-card" style="border-left-color: #3498db;">
+                        <h4>🚚 Entregas Totais no Mês</h4>
+                        <div class="value"><%= entregasMesAcumulado %></div>
+                        <p style="font-size: 0.65rem; color: #999; margin: 5px 0 0 0;">Volume mensal</p>
                     </div>
                 </div>
 
@@ -341,18 +345,14 @@
         let pedidoAtivoId = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Pequeno delay para garantir que o script externo foi carregado
-            setTimeout(() => {
-                if(typeof renderizarPainelCategorias === "function") {
-                    renderizarPainelCategorias('container-gerenciador-produtos');
-                }
-            }, 100);
+            if(typeof renderizarPainelCategorias === "function") {
+                renderizarPainelCategorias('container-gerenciador-produtos');
+            }
         });
 
         function toggleCamposCidade() {
             const isChecked = document.getElementById('conf-cidadeAtiva').checked;
-            const container = document.getElementById('container-campos-cidade');
-            if(container) container.style.display = isChecked ? 'block' : 'none';
+            document.getElementById('container-campos-cidade').style.display = isChecked ? 'block' : 'none';
         }
 
         function abrirModalHorarios() { document.getElementById('modalHorarios').style.display = 'block'; }
@@ -417,6 +417,7 @@
             if (res.ok) alert("✅ Chaves de pagamento atualizadas com sucesso!");
         }
 
+        // CHAT LOGIC
         function selecionarChat(id, cliente) {
             pedidoAtivoId = id;
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
@@ -442,12 +443,15 @@
         });
 
         function renderizarMensagem(msg) {
+            const agora = new Date();
+            const horaFormatada = agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+            
             const div = document.createElement('div');
             div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
             div.innerHTML = `
                 <small style="font-size:9px; display:block; opacity:0.7; margin-bottom:2px;">${msg.usuario}</small>
                 <span>${msg.texto}</span>
-                <small style="font-size:8px; display:block; text-align:right; opacity:0.6; margin-top:3px;">${msg.hora || ''}</small>
+                <small style="font-size:8px; display:block; text-align:right; opacity:0.6; margin-top:3px;">${horaFormatada}</small>
             `;
             const box = document.getElementById('chat-box');
             box.appendChild(div);

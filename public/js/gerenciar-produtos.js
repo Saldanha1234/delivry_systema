@@ -1,19 +1,21 @@
 /**
- * LÓGICA DE GERENCIAMENTO DE PRODUTOS E ADICIONAIS - VERSÃO FINAL RESTAURADA
+ * LÓGICA DE GERENCIAMENTO DE PRODUTOS E ADICIONAIS - VERSÃO EVOLUÍDA
  */
 
 let imagemBase64 = ""; 
 let listaProdutosLocal = [];
-let listaAdicionaisLocal = []; 
+let listaAdicionaisLocal = []; // Novo armazenamento para adicionais
 
-// --- 0. INJEÇÃO DE CSS ---
+// --- 0. INJEÇÃO DE CSS (Ajustes de Dropdown, Layout e Abas de Navegação) ---
 const styles = `
     .nav-tabs-admin { display: flex; gap: 10px; padding: 10px; background: #fff; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); justify-content: center; }
     .tab-btn { padding: 10px 20px; border-radius: 20px; border: 1px solid #007bff; background: transparent; color: #007bff; cursor: pointer; font-weight: bold; transition: 0.3s; }
     .tab-btn.active { background: #007bff; color: white; }
+
     .painel-unico-admin { font-family: sans-serif; max-width: 800px; margin: 20px auto; background: #f4f4f4; padding: 15px; border-radius: 8px; }
     .header-painel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .btn-add-principal { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+    
     .item-categoria-container { background: white; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; }
     .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid #eee; }
     .cat-info { display: flex; align-items: center; cursor: pointer; flex-grow: 1; }
@@ -21,8 +23,10 @@ const styles = `
     .cat-nome { font-weight: bold; font-size: 1.1em; outline: none; }
     .label-obrigatorio { font-size: 0.7em; background: #eee; padding: 2px 6px; border-radius: 4px; margin-left: 10px; color: #666; }
     .label-desconto-tag { color: #d63031; font-size: 0.75em; font-weight: bold; margin-left: 10px; }
+
     .produtos-lista { padding: 10px 15px; background: #fafafa; border-top: 1px solid #eee; }
     .btn-add-produto { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px dashed #ccc; background: #fff; cursor: pointer; border-radius: 4px; }
+    
     .produto-linha { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 4px; cursor: pointer; }
     .prod-info-wrapper { display: flex; align-items: center; flex-grow: 1; }
     .prod-img-min { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 12px; background: #eee; }
@@ -30,11 +34,16 @@ const styles = `
     .prod-nome-txt { font-weight: bold; }
     .prod-preco-txt { font-size: 0.9em; color: #28a745; font-weight: bold; }
     .preco-riscado { text-decoration: line-through; color: #999; font-size: 0.8em; margin-right: 5px; }
+
     .dropdown { position: relative; display: inline-block; }
-    .dropdown-content { display: none; position: absolute; right: 0; top: 100%; background: white; min-width: 150px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); z-index: 9999; border-radius: 4px; border: 1px solid #ddd; }
+    .dropdown-content { 
+        display: none; position: absolute; right: 0; top: 100%; background: white; min-width: 150px; 
+        box-shadow: 0 8px 16px rgba(0,0,0,0.3); z-index: 9999; border-radius: 4px; border: 1px solid #ddd;
+    }
     .dropdown-content.show { display: block; }
-    .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; }
     .dropdown-content a:hover { background: #f1f1f1; }
+
     .modal-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; overflow-y: auto; }
     .modal-content header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; }
     .modal-body { padding: 20px; max-width: 600px; margin: 0 auto; }
@@ -43,6 +52,7 @@ const styles = `
     .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
     .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
     .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    
     .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
@@ -50,6 +60,7 @@ const styles = `
     input:checked + .slider { background-color: #28a745; }
     input:checked + .slider:before { transform: translateX(26px); }
     .toggle-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-top: 1px solid #eee; }
+
     .secao-vinculo { border: 1px solid #eee; border-radius: 8px; padding: 10px; margin-top: 10px; max-height: 250px; overflow-y: auto; }
     .item-vinculo { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #f9f9f9; font-size: 0.9em; }
 `;
@@ -69,6 +80,7 @@ function renderizarPainelCategorias(containerId) {
             <button class="tab-btn active" id="btn-tab-itens" onclick="rolarPara('secao-itens', 'btn-tab-itens')">Gerenciar Itens</button>
             <button class="tab-btn" id="btn-tab-adicionais" onclick="rolarPara('secao-adicionais', 'btn-tab-adicionais')">Configurar Adicionais</button>
         </div>
+
         <div id="secao-itens" class="painel-unico-admin" onclick="fecharTodosDropdowns(event)">
             <div class="header-painel">
                 <h3>Gerenciar Itens do Cardápio</h3>
@@ -76,6 +88,7 @@ function renderizarPainelCategorias(containerId) {
             </div>
             <div id="lista-hierarquica-itens"></div>
         </div>
+
         <div id="secao-adicionais" class="painel-unico-admin" onclick="fecharTodosDropdowns(event)">
             <div class="header-painel">
                 <h3>Gerenciar Adicionais</h3>
@@ -83,14 +96,16 @@ function renderizarPainelCategorias(containerId) {
             </div>
             <div id="lista-hierarquica-adicionais"></div>
         </div>
+
         <div id="modal-produto" class="modal-fullscreen" style="display:none;">
             <div class="modal-content">
                 <header>
                     <button onclick="fecharModal()" style="border:none; background:none; font-size:18px; cursor:pointer;">← Voltar</button>
-                    <span id="modal-titulo" style="font-weight:bold;">Editar</span>
-                    <button class="btn-salvar-modal" style="background:#007bff; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
+                    <span id="modal-titulo" style="font-weight:bold;">Editar Produto</span>
+                    <button class="btn-salvar-modal" onclick="salvarProduto()" style="background:#007bff; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
                 </header>
-                <div class="modal-body" id="modal-body-content"></div>
+                <div class="modal-body" id="modal-body-content">
+                    </div>
             </div>
         </div>
     `;
@@ -110,39 +125,35 @@ async function carregarDadosCompletos() {
         const [resCat, resProd, resAdic] = await Promise.all([
             fetch('/get-categorias'),
             fetch('/get-produtos'),
-            fetch('/get-adicionais')
+            fetch('/get-adicionais') // Endpoint assumido para o novo sistema
         ]);
 
         const categorias = await resCat.json();
         const produtos = await resProd.json();
         const adicionais = await resAdic.json();
         
-        listaProdutosLocal = Array.isArray(produtos) ? produtos : [];
-        listaAdicionaisLocal = Array.isArray(adicionais) ? adicionais : [];
+        listaProdutosLocal = produtos;
+        listaAdicionaisLocal = adicionais;
 
+        // Renderiza Itens
         const listaItens = document.getElementById('lista-hierarquica-itens');
-        if (listaItens) {
-            listaItens.innerHTML = "";
-            ["Promoção", "Mais Comprados"].forEach(nome => renderizarItemCategoria({ nome, fixa: true, _id: nome }, listaProdutosLocal, listaItens));
-            if (Array.isArray(categorias)) {
-                categorias.forEach(cat => {
-                    if (!["Promoção", "Mais Comprados", "Todos", "Defina um nome"].includes(cat.nome)) {
-                        renderizarItemCategoria(cat, listaProdutosLocal, listaItens);
-                    }
-                });
+        listaItens.innerHTML = "";
+        ["Promoção", "Mais Comprados"].forEach(nome => renderizarItemCategoria({ nome, fixa: true, _id: nome }, produtos, listaItens));
+        categorias.forEach(cat => {
+            if (!["Promoção", "Mais Comprados", "Todos", "Defina um nome"].includes(cat.nome)) {
+                renderizarItemCategoria(cat, produtos, listaItens);
             }
-        }
+        });
 
+        // Renderiza Adicionais
         const listaAdic = document.getElementById('lista-hierarquica-adicionais');
-        if (listaAdic) {
-            listaAdic.innerHTML = "";
-            listaAdicionaisLocal.forEach(catAd => renderizarItemCategoriaAdicional(catAd, listaAdic));
-        }
+        listaAdic.innerHTML = "";
+        adicionais.forEach(catAd => renderizarItemCategoriaAdicional(catAd, listaAdic));
 
     } catch (err) { console.error("Erro ao carregar dados:", err); }
 }
 
-// --- 3. RENDERIZAÇÃO DE CATEGORIAS ---
+// --- 3. RENDERIZAÇÃO DE CATEGORIAS (ITENS E ADICIONAIS) ---
 
 function renderizarItemCategoria(cat, todosProdutos, container) {
     const produtosDaCat = todosProdutos.filter(p => p.categoria === cat.nome);
@@ -150,21 +161,21 @@ function renderizarItemCategoria(cat, todosProdutos, container) {
     div.className = "item-categoria-container";
     div.innerHTML = `
         <div class="categoria-header">
-            <div class="cat-info" onclick="toggleExpandir('itens-${cat._id}')">
-                <span class="seta" id="seta-itens-${cat._id}">▲</span>
+            <div class="cat-info" onclick="toggleExpandir('itens-${cat.nome}')">
+                <span class="seta" id="seta-itens-${cat.nome}">▲</span>
                 <span class="cat-nome">${cat.nome}</span>
             </div>
             <div class="dropdown">
                 <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer;">⋮</button>
                 <div class="dropdown-content">
-                    <a onclick="duplicarCategoria('${cat._id}')">Duplicar</a>
-                    <a onclick="confirmarExclusaoCat('${cat._id}', '${cat.fixa}')">Excluir</a>
+                    <a href="#" onclick="confirmarExclusaoCat('${cat._id}', '${cat.fixa}')">Excluir</a>
+                    <a href="#" onclick="duplicarCategoria('${cat._id}')">Duplicar</a>
                 </div>
             </div>
         </div>
-        <div class="produtos-lista" id="lista-prod-itens-${cat._id}" style="display:none;">
+        <div class="produtos-lista" id="lista-prod-itens-${cat.nome}" style="display:none;">
             <button class="btn-add-produto" onclick="abrirCriarProduto('${cat.nome}')">+ Criar Produto em ${cat.nome}</button>
-            <div id="itens-prod-${cat._id}">
+            <div id="itens-prod-${cat.nome}">
                 ${produtosDaCat.map(p => `
                     <div class="produto-linha" onclick="prepararEdicao('${p._id}')">
                         <div class="prod-info-wrapper">
@@ -177,8 +188,8 @@ function renderizarItemCategoria(cat, todosProdutos, container) {
                         <div class="dropdown">
                             <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
                             <div class="dropdown-content">
-                                <a onclick="duplicarProduto('${p._id}')">Duplicar</a>
-                                <a onclick="excluirProduto('${p._id}')">Excluir</a>
+                                <a href="#" onclick="excluirProduto('${p._id}')">Excluir</a>
+                                <a href="#" onclick="duplicarProduto('${p._id}')">Duplicar</a>
                             </div>
                         </div>
                     </div>
@@ -190,7 +201,7 @@ function renderizarItemCategoria(cat, todosProdutos, container) {
 }
 
 function renderizarItemCategoriaAdicional(catAd, container) {
-    const temDesconto = catAd.itens?.some(i => i.precoDesconto > 0);
+    const temDesconto = catAd.itens.some(i => i.precoDesconto > 0);
     const div = document.createElement('div');
     div.className = "item-categoria-container";
     div.innerHTML = `
@@ -204,31 +215,33 @@ function renderizarItemCategoriaAdicional(catAd, container) {
             <div class="dropdown">
                 <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer;">⋮</button>
                 <div class="dropdown-content">
-                    <a onclick="abrirEditarCatAdicional('${catAd._id}')">Editar</a>
-                    <a onclick="duplicarCatAdicional('${catAd._id}')">Duplicar</a>
-                    <a onclick="excluirCatAdicional('${catAd._id}')">Excluir</a>
+                    <a href="#" onclick="abrirEditarCatAdicional('${catAd._id}')">Editar</a>
+                    <a href="#" onclick="excluirCatAdicional('${catAd._id}')">Excluir</a>
+                    <a href="#" onclick="duplicarCatAdicional('${catAd._id}')">Duplicar</a>
                 </div>
             </div>
         </div>
         <div class="produtos-lista" id="lista-prod-adic-${catAd._id}" style="display:none;">
             <button class="btn-add-produto" onclick="abrirCriarItemAdicional('${catAd._id}')">+ Criar Adicional em ${catAd.nome}</button>
             <div id="itens-adic-${catAd._id}">
-                ${catAd.itens?.map(i => `
+                ${catAd.itens.map(i => `
                     <div class="produto-linha" onclick="abrirEditarItemAdicional('${catAd._id}', '${i.id}')">
                         <div class="prod-info-wrapper">
                             <div class="prod-txt-container">
-                                <span class="prod-nome-txt">${i.nome}</span>
-                                <span class="prod-preco-txt">R$ ${parseFloat(i.preco || 0).toFixed(2)}</span>
+                                <span class="prod-nome-txt">${i.nome} ${i.status === 'indisponivel' ? '<small style="color:red">(Indisponível)</small>' : ''}</span>
+                                <span class="prod-preco-txt">
+                                    ${i.precoDesconto > 0 ? `<span class="preco-riscado">R$ ${i.preco.toFixed(2)}</span> R$ ${i.precoDesconto.toFixed(2)}` : `R$ ${i.preco.toFixed(2)}`}
+                                </span>
                             </div>
                         </div>
                         <div class="dropdown">
-                             <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
-                             <div class="dropdown-content">
-                                <a onclick="excluirItemAdicional('${catAd._id}', '${i.id}')">Excluir</a>
-                             </div>
+                            <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
+                            <div class="dropdown-content">
+                                <a href="#" onclick="excluirItemAdicional('${catAd._id}', '${i.id}')">Excluir</a>
+                            </div>
                         </div>
                     </div>
-                `).join('') || ''}
+                `).join('')}
             </div>
         </div>
     `;
@@ -237,10 +250,44 @@ function renderizarItemCategoriaAdicional(catAd, container) {
 
 // --- 4. MODAIS E LÓGICA DE EDIÇÃO ---
 
-function prepararEdicao(id) {
-    const p = listaProdutosLocal.find(prod => prod._id === id);
-    if (!p) return;
-    abrirEdicaoProduto(id, p);
+function abrirEditarCatAdicional(id) {
+    const cat = listaAdicionaisLocal.find(c => c._id === id);
+    document.getElementById('modal-titulo').innerText = "Configurar Categoria de Adicional";
+    document.getElementById('modal-body-content').innerHTML = `
+        <div class="input-group">
+            <label>Nome da Categoria</label>
+            <input type="text" id="cat-ad-nome" value="${cat.nome}">
+        </div>
+        <div class="input-group">
+            <label>Tipo de Seleção</label>
+            <select id="cat-ad-obrigatorio">
+                <option value="false" ${!cat.obrigatorio ? 'selected' : ''}>Opcional (Cliente escolhe se quiser)</option>
+                <option value="true" ${cat.obrigatorio ? 'selected' : ''}>Obrigatório (Cliente deve escolher)</option>
+            </select>
+        </div>
+        <hr>
+        <div class="toggle-item">
+            <strong>Vincular aos Produtos</strong>
+            <label class="switch">
+                <input type="checkbox" id="cat-ad-vincular-toggle" onchange="toggleListaVinculoProdutos()">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div id="container-vinculo-produtos" class="secao-vinculo" style="display:none;">
+            ${listaProdutosLocal.map(p => `
+                <div class="item-vinculo">
+                    <span>${p.nome} <small>(${p.categoria})</small></span>
+                    <button onclick="alternarVinculoAdicional('${cat._id}', '${p._id}')" 
+                        style="padding:5px 10px; border-radius:5px; border:none; background:${cat.produtosVinculados?.includes(p._id) ? '#ff4757' : '#28a745'}; color:white; cursor:pointer;">
+                        ${cat.produtosVinculados?.includes(p._id) ? 'Remover' : 'Adicionar'}
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    document.getElementById('modal-produto').style.display = "block";
+    // Salvar no botão de salvar global
+    document.querySelector('.btn-salvar-modal').onclick = () => salvarCategoriaAdicional(id);
 }
 
 function abrirEdicaoProduto(id, p) {
@@ -302,111 +349,94 @@ function abrirEdicaoProduto(id, p) {
     document.querySelector('.btn-salvar-modal').onclick = () => salvarProduto();
 }
 
-function abrirEditarCatAdicional(id) {
-    const cat = listaAdicionaisLocal.find(c => c._id === id);
-    if (!cat) return;
-    document.getElementById('modal-titulo').innerText = "Editar Categoria de Adicional";
-    document.getElementById('modal-body-content').innerHTML = `
-        <div class="input-group">
-            <label>Nome da Categoria</label>
-            <input type="text" id="cat-ad-nome" value="${cat.nome}">
-        </div>
-        <div class="input-group">
-            <label>Obrigatório?</label>
-            <select id="cat-ad-obrigatorio">
-                <option value="false" ${!cat.obrigatorio ? 'selected' : ''}>Não</option>
-                <option value="true" ${cat.obrigatorio ? 'selected' : ''}>Sim</option>
-            </select>
-        </div>
-    `;
-    document.getElementById('modal-produto').style.display = "block";
-    document.querySelector('.btn-salvar-modal').onclick = () => salvarCategoriaAdicional(id);
-}
-
-// --- 5. FUNÇÕES AUXILIARES ---
-
-function menuClique(e) {
-    e.stopPropagation();
-    fecharTodosDropdowns();
-    const content = e.target.nextElementSibling;
-    if (content) content.classList.toggle('show');
-}
+// --- 5. FUNÇÕES AUXILIARES E ACTIONS ---
 
 function fecharTodosDropdowns() {
     document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
 }
 
+function menuClique(e) {
+    e.stopPropagation();
+    fecharTodosDropdowns();
+    e.target.nextElementSibling.classList.toggle('show');
+}
+
 function toggleExpandir(id) {
     const lista = document.getElementById(`lista-prod-${id}`);
     const seta = document.getElementById(`seta-${id}`);
-    if (!lista) return;
     const isHidden = lista.style.display === "none";
     lista.style.display = isHidden ? "block" : "none";
-    if (seta) seta.innerHTML = isHidden ? "▼" : "▲";
+    seta.innerHTML = isHidden ? "▼" : "▲";
+}
+
+function toggleListaVinculoProdutos() {
+    const container = document.getElementById('container-vinculo-produtos');
+    container.style.display = document.getElementById('cat-ad-vincular-toggle').checked ? 'block' : 'none';
 }
 
 function toggleListagemAdicionaisNoProduto() {
     const container = document.getElementById('lista-vinculo-adicionais');
-    if (container) container.style.display = document.getElementById('p-modificador').checked ? 'block' : 'none';
+    container.style.display = document.getElementById('p-modificador').checked ? 'block' : 'none';
 }
 
 function fecharModal() {
     document.getElementById('modal-produto').style.display = "none";
-    imagemBase64 = "";
 }
+
+// --- 6. PERSISTÊNCIA (SALVAR) ---
 
 async function salvarProduto() {
     const id = document.getElementById('p-id').value;
+    // Captura as categorias de adicionais marcadas
     const checks = document.querySelectorAll('.check-cat-ad:checked');
     const catsAdicionais = Array.from(checks).map(c => c.dataset.id);
 
     const dados = {
         nome: document.getElementById('p-nome').value,
-        preco: parseFloat(document.getElementById('p-preco').value) || 0,
+        preco: document.getElementById('p-preco').value,
         desc: document.getElementById('p-desc').value,
         status: document.getElementById('p-status').value,
-        desconto: parseFloat(document.getElementById('p-desconto').value) || null,
+        desconto: document.getElementById('p-desconto').value,
         modificadoresAtivos: document.getElementById('p-modificador').checked,
         categoriasAdicionais: catsAdicionais,
         categoria: document.getElementById('p-categoria-origem').value,
         img: imagemBase64 || document.getElementById('p-img-data').value
     };
 
-    try {
-        const url = id ? `/edit-produto/${id}` : '/add-produto';
-        const res = await fetch(url, {
-            method: id ? 'PUT' : 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(dados)
-        });
-        if(res.ok) { fecharModal(); carregarDadosCompletos(); }
-    } catch(e) { alert("Erro ao salvar produto"); }
+    const url = id ? `/edit-produto/${id}` : '/add-produto';
+    const res = await fetch(url, {
+        method: id ? 'PUT' : 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(dados)
+    });
+    if(res.ok) { fecharModal(); carregarDadosCompletos(); }
 }
 
+async function salvarCategoriaAdicional(id) {
+    const dados = {
+        nome: document.getElementById('cat-ad-nome').value,
+        obrigatorio: document.getElementById('cat-ad-obrigatorio').value === "true"
+    };
+    // Fetch para editar categoria de adicional...
+    const res = await fetch(`/edit-categoria-adicional/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(dados)
+    });
+    if(res.ok) { fecharModal(); carregarDadosCompletos(); }
+}
+
+// Outras funções (excluir, duplicar, converter imagem) permanecem com a lógica original adaptada aos novos IDs
 function converterImagem() {
     const file = document.getElementById('p-file').files[0];
-    if (!file) return;
     const reader = new FileReader();
     reader.onloadend = () => {
         imagemBase64 = reader.result;
-        const preview = document.getElementById('p-preview');
-        preview.src = reader.result;
-        preview.style.display = "block";
+        document.getElementById('p-preview').src = reader.result;
+        document.getElementById('p-preview').style.display = "block";
     }
-    reader.readAsDataURL(file);
+    if (file) reader.readAsDataURL(file);
 }
 
-// Inicialização Global
-window.onload = () => {
-    if (document.getElementById('meu-container-admin')) {
-        renderizarPainelCategorias('meu-container-admin');
-    }
-};
-
-// Vinculação de Funções ao Window para evitar ReferenceError
-window.prepararEdicao = prepararEdicao;
-window.menuClique = menuClique;
-window.toggleExpandir = toggleExpandir;
-window.rolarPara = rolarPara;
-window.abrirEditarCatAdicional = abrirEditarCatAdicional;
-window.fecharModal = fecharModal;
+// Inicializa o painel
+window.onload = () => renderizarPainelCategorias('meu-container-admin');
