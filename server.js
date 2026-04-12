@@ -5,9 +5,6 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 require('dotenv').config(); 
 
-// Importação da configuração de adicionais
-const { ConfigEstrutura } = require('./public/js/estrutura-produtos');
-
 const app = express();
 const server = http.createServer(app); 
 const io = new Server(server); 
@@ -42,6 +39,19 @@ const CategoriaSchema = new mongoose.Schema({
 });
 const Categoria = mongoose.model('Categoria', CategoriaSchema);
 
+// NOVO SCHEMA PARA ADICIONAIS NO BANCO
+const CategoriaAdicionalSchema = new mongoose.Schema({
+    nome: String,
+    obrigatorio: { type: Boolean, default: false },
+    itens: [{
+        id: String,
+        nome: String,
+        preco: Number,
+        precoDesconto: { type: Number, default: 0 }
+    }]
+});
+const CategoriaAdicional = mongoose.model('CategoriaAdicional', CategoriaAdicionalSchema);
+
 const ProdutoSchema = new mongoose.Schema({
     nome: String,
     preco: Number,
@@ -50,7 +60,8 @@ const ProdutoSchema = new mongoose.Schema({
     categoria: String,
     desconto: { type: Number, default: null },
     status: { type: String, default: 'disponivel' },
-    modificadoresAtivos: { type: Boolean, default: false }
+    modificadoresAtivos: { type: Boolean, default: false },
+    categoriasAdicionais: { type: [String], default: [] } // Lista de IDs das categorias de adicionais
 });
 const Produto = mongoose.model('Produto', ProdutoSchema);
 
@@ -162,15 +173,36 @@ app.use(async (req, res, next) => {
     }
 });
 
-// --- ROTA PARA ADICIONAIS (CORRIGIDA PARA EVITAR TYPEERROR NO FRONT) ---
-app.get('/get-adicionais', (req, res) => {
+// --- ROTAS DE ADICIONAIS (AGORA NO BANCO) ---
+app.get('/get-adicionais', async (req, res) => {
     try {
-        // Garante que retorne um array, mesmo que o objeto esteja vazio
-        const listaAdicionais = ConfigEstrutura ? Object.values(ConfigEstrutura) : [];
-        res.json(listaAdicionais);
+        const lista = await CategoriaAdicional.find();
+        res.json(lista);
     } catch (err) {
         res.status(500).json([]); 
     }
+});
+
+app.post('/add-categoria-adicional', async (req, res) => {
+    try {
+        const nova = new CategoriaAdicional(req.body);
+        await nova.save();
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
+app.put('/edit-categoria-adicional/:id', async (req, res) => {
+    try {
+        await CategoriaAdicional.findByIdAndUpdate(req.params.id, req.body);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
+app.delete('/delete-categoria-adicional/:id', async (req, res) => {
+    try {
+        await CategoriaAdicional.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 // --- ROTAS DE VENDAS MENSAL ---
@@ -252,14 +284,15 @@ app.post('/update-config-pix', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// --- ROTAS DE TELAS (CORRIGIDAS PARA CARREGAR ESTRUTURA SEMPRE) ---
+// --- ROTAS DE TELAS ---
 app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
         const categoriasDoBanco = await Categoria.find();
         const categorias = [{ nome: 'Promoção' }, { nome: 'Destaques' }, ...categoriasDoBanco];
         let config = await Config.findOne({ chave: 'global' }) || { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
-        res.render('index', { produtos, categorias, config, estruturaAdicionais: ConfigEstrutura || {} });
+        const adicionais = await CategoriaAdicional.find();
+        res.render('index', { produtos, categorias, config, estruturaAdicionais: adicionais });
     } catch (err) { res.status(500).send("Erro interno."); }
 });
 
@@ -269,8 +302,9 @@ app.get('/admin', async (req, res) => {
         const pedidos = await Pedido.find().sort({ createdAt: -1 }); 
         const categorias = await Categoria.find(); 
         const vendasMensais = await VendaMensal.find().sort({ _id: -1 });
+        const adicionais = await CategoriaAdicional.find();
         let config = await Config.findOne({ chave: 'global' }) || await Config.create({ chave: 'global' });
-        res.render('admin', { pedidos, produtos, config, categorias, vendasMensais, estruturaAdicionais: ConfigEstrutura || {} });
+        res.render('admin', { pedidos, produtos, config, categorias, vendasMensais, estruturaAdicionais: adicionais });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 

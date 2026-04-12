@@ -1,5 +1,5 @@
 /**
- * LÓGICA DE GERENCIAMENTO DE PRODUTOS E ADICIONAIS - VERSÃO BLINDADA
+ * LÓGICA DE GERENCIAMENTO DE PRODUTOS E ADICIONAIS - VERSÃO FINAL RESTAURADA
  */
 
 let imagemBase64 = ""; 
@@ -33,7 +33,7 @@ const styles = `
     .dropdown { position: relative; display: inline-block; }
     .dropdown-content { display: none; position: absolute; right: 0; top: 100%; background: white; min-width: 150px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); z-index: 9999; border-radius: 4px; border: 1px solid #ddd; }
     .dropdown-content.show { display: block; }
-    .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; }
+    .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; cursor: pointer; }
     .dropdown-content a:hover { background: #f1f1f1; }
     .modal-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; overflow-y: auto; }
     .modal-content header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; }
@@ -157,7 +157,8 @@ function renderizarItemCategoria(cat, todosProdutos, container) {
             <div class="dropdown">
                 <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer;">⋮</button>
                 <div class="dropdown-content">
-                    <a href="#" onclick="confirmarExclusaoCat('${cat._id}', '${cat.fixa}')">Excluir</a>
+                    <a onclick="duplicarCategoria('${cat._id}')">Duplicar</a>
+                    <a onclick="confirmarExclusaoCat('${cat._id}', '${cat.fixa}')">Excluir</a>
                 </div>
             </div>
         </div>
@@ -173,6 +174,13 @@ function renderizarItemCategoria(cat, todosProdutos, container) {
                                 <span class="prod-preco-txt">R$ ${parseFloat(p.preco || 0).toFixed(2)}</span>
                             </div>
                         </div>
+                        <div class="dropdown">
+                            <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
+                            <div class="dropdown-content">
+                                <a onclick="duplicarProduto('${p._id}')">Duplicar</a>
+                                <a onclick="excluirProduto('${p._id}')">Excluir</a>
+                            </div>
+                        </div>
                     </div>
                 `).join('')}
             </div>
@@ -182,7 +190,6 @@ function renderizarItemCategoria(cat, todosProdutos, container) {
 }
 
 function renderizarItemCategoriaAdicional(catAd, container) {
-    // CORREÇÃO CRÍTICA AQUI: O .some() agora tem trava de segurança ?.
     const temDesconto = catAd.itens?.some(i => i.precoDesconto > 0);
     const div = document.createElement('div');
     div.className = "item-categoria-container";
@@ -197,19 +204,28 @@ function renderizarItemCategoriaAdicional(catAd, container) {
             <div class="dropdown">
                 <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer;">⋮</button>
                 <div class="dropdown-content">
-                    <a href="#" onclick="abrirEditarCatAdicional('${catAd._id}')">Editar</a>
+                    <a onclick="abrirEditarCatAdicional('${catAd._id}')">Editar</a>
+                    <a onclick="duplicarCatAdicional('${catAd._id}')">Duplicar</a>
+                    <a onclick="excluirCatAdicional('${catAd._id}')">Excluir</a>
                 </div>
             </div>
         </div>
         <div class="produtos-lista" id="lista-prod-adic-${catAd._id}" style="display:none;">
+            <button class="btn-add-produto" onclick="abrirCriarItemAdicional('${catAd._id}')">+ Criar Adicional em ${catAd.nome}</button>
             <div id="itens-adic-${catAd._id}">
                 ${catAd.itens?.map(i => `
-                    <div class="produto-linha">
+                    <div class="produto-linha" onclick="abrirEditarItemAdicional('${catAd._id}', '${i.id}')">
                         <div class="prod-info-wrapper">
                             <div class="prod-txt-container">
                                 <span class="prod-nome-txt">${i.nome}</span>
                                 <span class="prod-preco-txt">R$ ${parseFloat(i.preco || 0).toFixed(2)}</span>
                             </div>
+                        </div>
+                        <div class="dropdown">
+                             <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
+                             <div class="dropdown-content">
+                                <a onclick="excluirItemAdicional('${catAd._id}', '${i.id}')">Excluir</a>
+                             </div>
                         </div>
                     </div>
                 `).join('') || ''}
@@ -284,6 +300,27 @@ function abrirEdicaoProduto(id, p) {
     `;
     document.getElementById('modal-produto').style.display = "block";
     document.querySelector('.btn-salvar-modal').onclick = () => salvarProduto();
+}
+
+function abrirEditarCatAdicional(id) {
+    const cat = listaAdicionaisLocal.find(c => c._id === id);
+    if (!cat) return;
+    document.getElementById('modal-titulo').innerText = "Editar Categoria de Adicional";
+    document.getElementById('modal-body-content').innerHTML = `
+        <div class="input-group">
+            <label>Nome da Categoria</label>
+            <input type="text" id="cat-ad-nome" value="${cat.nome}">
+        </div>
+        <div class="input-group">
+            <label>Obrigatório?</label>
+            <select id="cat-ad-obrigatorio">
+                <option value="false" ${!cat.obrigatorio ? 'selected' : ''}>Não</option>
+                <option value="true" ${cat.obrigatorio ? 'selected' : ''}>Sim</option>
+            </select>
+        </div>
+    `;
+    document.getElementById('modal-produto').style.display = "block";
+    document.querySelector('.btn-salvar-modal').onclick = () => salvarCategoriaAdicional(id);
 }
 
 // --- 5. FUNÇÕES AUXILIARES ---
@@ -366,8 +403,10 @@ window.onload = () => {
     }
 };
 
-// Tornando funções disponíveis globalmente para os onclick do HTML
+// Vinculação de Funções ao Window para evitar ReferenceError
 window.prepararEdicao = prepararEdicao;
 window.menuClique = menuClique;
 window.toggleExpandir = toggleExpandir;
 window.rolarPara = rolarPara;
+window.abrirEditarCatAdicional = abrirEditarCatAdicional;
+window.fecharModal = fecharModal;
