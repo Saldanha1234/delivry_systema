@@ -6,7 +6,6 @@ const mongoose = require('mongoose');
 require('dotenv').config(); 
 
 // Importação da configuração de adicionais
-// Certifique-se que o arquivo estrutura-produtos.js use module.exports = { ConfigEstrutura };
 const { ConfigEstrutura } = require('./public/js/estrutura-produtos');
 
 const app = express();
@@ -79,14 +78,13 @@ const MensagemSchema = new mongoose.Schema({
 });
 const Mensagem = mongoose.model('Mensagem', MensagemSchema);
 
-// NOVO SCHEMA PARA VALOR MENSAL
 const VendaMensalSchema = new mongoose.Schema({
-    mesAno: String, // Formato "MM/YYYY"
+    mesAno: String, 
     totalAcumulado: { type: Number, default: 0 }
 });
 const VendaMensal = mongoose.model('VendaMensal', VendaMensalSchema);
 
-// --- SISTEMA DE LIMPEZA E ACUMULADO MENSAL (VIRADA DO DIA) ---
+// --- SISTEMA DE LIMPEZA E ACUMULADO MENSAL ---
 setInterval(async () => {
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
@@ -94,29 +92,24 @@ setInterval(async () => {
 
     if (horaTratada === 0) {
         try {
-            // 1. Calcular total do dia antes de deletar
             const pedidosDoDia = await Pedido.find({ status: { $in: ['Finalizado', 'Concluído'] } });
             const totalDia = pedidosDoDia.reduce((acc, p) => acc + (p.total || 0), 0);
-
-            // 2. Identificar Mês/Ano atual para o acumulador
             const mesAnoAtual = (agora.getMonth() + 1).toString().padStart(2, '0') + '/' + agora.getFullYear();
 
-            // 3. Atualizar ou Criar o registro mensal
             await VendaMensal.findOneAndUpdate(
                 { mesAno: mesAnoAtual },
                 { $inc: { totalAcumulado: totalDia } },
                 { upsert: true }
             );
 
-            // 4. Faxina original
             await Pedido.deleteMany({ status: { $in: ['Finalizado', 'Cancelado', 'Concluído'] } });
             const pedidosAtivos = await Pedido.find().distinct('id');
             const stringIdsAtivos = pedidosAtivos.map(id => id.toString());
             await Mensagem.deleteMany({ pedidoId: { $nin: stringIdsAtivos } });
             
-            console.log(`♻️ Faxina e Acúmulo de Vendas (${mesAnoAtual}) concluídos. Total hoje: R$ ${totalDia}`);
+            console.log(`♻️ Faxina concluída. Total hoje: R$ ${totalDia}`);
         } catch (err) {
-            console.error("❌ Erro na limpeza/acumulado:", err);
+            console.error("❌ Erro na limpeza:", err);
         }
     }
 }, 3600000); 
@@ -132,8 +125,7 @@ app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 const checarAberta = async () => {
     try {
         const config = await Config.findOne({ chave: 'global' });
-        if (!config) return false;
-        if (config.manutencao === true) return false; 
+        if (!config || config.manutencao) return false; 
 
         const fuso = config.fusoHorario || 'America/Sao_Paulo';
         const agora = new Date();
@@ -145,7 +137,7 @@ const checarAberta = async () => {
 
         const agendaHoje = config.agenda && config.agenda[diaSemana];
 
-        if (agendaHoje && agendaHoje.aberto === true) {
+        if (agendaHoje && agendaHoje.aberto) {
             const { inicio, fim } = agendaHoje;
             if (fim < inicio) {
                 if (horaAtual >= inicio || horaAtual < fim) return true;
@@ -170,14 +162,14 @@ app.use(async (req, res, next) => {
     }
 });
 
-// --- ROTA PARA ADICIONAIS ---
+// --- ROTA PARA ADICIONAIS (CORRIGIDA PARA EVITAR TYPEERROR NO FRONT) ---
 app.get('/get-adicionais', (req, res) => {
     try {
-        // Converte o Objeto ConfigEstrutura em Array para evitar erro de .forEach no frontend
-        const listaAdicionais = Object.values(ConfigEstrutura);
+        // Garante que retorne um array, mesmo que o objeto esteja vazio
+        const listaAdicionais = ConfigEstrutura ? Object.values(ConfigEstrutura) : [];
         res.json(listaAdicionais);
     } catch (err) {
-        res.status(500).json({ error: "Erro ao carregar adicionais" });
+        res.status(500).json([]); 
     }
 });
 
@@ -189,8 +181,7 @@ app.get('/get-vendas-mensal', async (req, res) => {
     } catch (err) { res.status(500).json([]); }
 });
 
-// --- ROTAS DE CATEGORIAS E PRODUTOS (MANTIDAS) ---
-
+// --- ROTAS DE CATEGORIAS E PRODUTOS ---
 app.get('/get-categorias', async (req, res) => {
     try { const categorias = await Categoria.find(); res.json(categorias); } catch (err) { res.status(500).json([]); }
 });
@@ -224,26 +215,21 @@ app.delete('/delete-produto/:id', async (req, res) => {
 });
 
 // --- ROTAS DE CONFIGURAÇÃO ---
-
 app.post('/update-config-site', async (req, res) => {
     try {
-        const { 
-            manutencao, nomeSite, whatsapp, taxaEntrega, tempoEntrega,
-            cidadeAtiva, cidadeNome, cidadeEstado, cidadePais 
-        } = req.body;
-
+        const data = req.body;
         await Config.findOneAndUpdate(
             { chave: 'global' },
             { 
-                manutencao: (manutencao === true || manutencao === 'true'), 
-                nomeSite,
-                whatsapp,
-                taxaEntrega: parseFloat(taxaEntrega) || 0,
-                tempoEntrega,
-                cidadeAtiva: (cidadeAtiva === true || cidadeAtiva === 'true'),
-                cidadeNome,
-                cidadeEstado,
-                cidadePais
+                manutencao: data.manutencao === true || data.manutencao === 'true', 
+                nomeSite: data.nomeSite,
+                whatsapp: data.whatsapp,
+                taxaEntrega: parseFloat(data.taxaEntrega) || 0,
+                tempoEntrega: data.tempoEntrega,
+                cidadeAtiva: data.cidadeAtiva === true || data.cidadeAtiva === 'true',
+                cidadeNome: data.cidadeNome,
+                cidadeEstado: data.cidadeEstado,
+                cidadePais: data.cidadePais
             },
             { upsert: true }
         );
@@ -254,11 +240,7 @@ app.post('/update-config-site', async (req, res) => {
 app.post('/update-horarios', async (req, res) => {
     try {
         const { fusoHorario, agenda } = req.body;
-        await Config.findOneAndUpdate(
-            { chave: 'global' },
-            { fusoHorario, agenda },
-            { upsert: true }
-        );
+        await Config.findOneAndUpdate({ chave: 'global' }, { fusoHorario, agenda }, { upsert: true });
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
 });
@@ -270,19 +252,14 @@ app.post('/update-config-pix', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// --- ROTAS DE PEDIDOS E TELAS ---
-
+// --- ROTAS DE TELAS (CORRIGIDAS PARA CARREGAR ESTRUTURA SEMPRE) ---
 app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
         const categoriasDoBanco = await Categoria.find();
-        const categoriasFixas = [{ nome: 'Promoção' }, { nome: 'Destaques' }];
-        const categorias = [...categoriasFixas, ...categoriasDoBanco];
-
-        let config = await Config.findOne({ chave: 'global' });
-        if (!config) config = { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
-        
-        res.render('index', { produtos, categorias, config, estruturaAdicionais: ConfigEstrutura });
+        const categorias = [{ nome: 'Promoção' }, { nome: 'Destaques' }, ...categoriasDoBanco];
+        let config = await Config.findOne({ chave: 'global' }) || { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
+        res.render('index', { produtos, categorias, config, estruturaAdicionais: ConfigEstrutura || {} });
     } catch (err) { res.status(500).send("Erro interno."); }
 });
 
@@ -292,10 +269,8 @@ app.get('/admin', async (req, res) => {
         const pedidos = await Pedido.find().sort({ createdAt: -1 }); 
         const categorias = await Categoria.find(); 
         const vendasMensais = await VendaMensal.find().sort({ _id: -1 });
-        let config = await Config.findOne({ chave: 'global' });
-        if (!config) config = await Config.create({ chave: 'global' });
-
-        res.render('admin', { pedidos, produtos, config, categorias, vendasMensais, estruturaAdicionais: ConfigEstrutura });
+        let config = await Config.findOne({ chave: 'global' }) || await Config.create({ chave: 'global' });
+        res.render('admin', { pedidos, produtos, config, categorias, vendasMensais, estruturaAdicionais: ConfigEstrutura || {} });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
@@ -311,45 +286,23 @@ app.get('/operacao', async (req, res) => {
 app.post('/enviar-pedido', async (req, res) => {
     const aberta = await checarAberta();
     if (!aberta) return res.status(403).json({ success: false, message: "A loja está fechada agora!" });
-    
     try {
         const config = await Config.findOne({ chave: 'global' });
-        
-        if (config && config.cidadeAtiva) {
-            const enderecoCliente = (req.body.endereco || "").toLowerCase();
-            const cidadeConfig = (config.cidadeNome || "").toLowerCase();
-            const estadoConfig = (config.cidadeEstado || "").toLowerCase();
-
-            const contemCidade = enderecoCliente.includes(cidadeConfig);
-            const contemEstado = enderecoCliente.includes(estadoConfig);
-
-            if (!contemCidade || !contemEstado) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: `Endereço Inválido! Aceitamos apenas pedidos da cidade de ${config.cidadeNome} - ${config.cidadeEstado}.` 
-                });
+        if (config?.cidadeAtiva) {
+            const end = (req.body.endereco || "").toLowerCase();
+            if (!end.includes(config.cidadeNome.toLowerCase()) || !end.includes(config.cidadeEstado.toLowerCase())) {
+                return res.status(400).json({ success: false, message: `Apenas entregas em ${config.cidadeNome}.` });
             }
         }
-
         const novoPedido = new Pedido({
             ...req.body,
             id: Math.floor(Math.random() * 9000) + 1000,
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         });
-        
         await novoPedido.save(); 
         io.emit('novoPedido', novoPedido);
         res.json({ success: true, id: novoPedido.id });
-    } catch (error) { 
-        res.status(500).json({ success: false }); 
-    }
-});
-
-app.get('/api/pedido/:id', async (req, res) => {
-    try {
-        const pedido = await Pedido.findOne({ id: req.params.id });
-        res.json({ status: pedido ? pedido.status : null });
-    } catch (err) { res.json({ status: null }); }
+    } catch (error) { res.status(500).json({ success: false }); }
 });
 
 app.post('/update-status', async (req, res) => {
@@ -374,7 +327,6 @@ app.get('/status/:id', async (req, res) => {
 });
 
 // --- CHAT SOCKET.IO ---
-
 io.on('connection', (socket) => {
     socket.on('join', async (pedidoId) => {
         if(!pedidoId) return;
@@ -382,7 +334,6 @@ io.on('connection', (socket) => {
         const historico = await Mensagem.find({ pedidoId: pedidoId.toString() }).sort({ createdAt: 1 });
         socket.emit('historico', historico);
     });
-
     socket.on('enviarMensagem', async (data) => {
         if(!data.pedidoId) return;
         const msg = new Mensagem({
@@ -395,11 +346,6 @@ io.on('connection', (socket) => {
         await msg.save();
         io.to(data.pedidoId.toString()).emit('novaMensagem', msg);
         if(data.usuario !== 'Admin') io.emit('alertaAdmin', msg);
-    });
-
-    socket.on('lerMensagens', async (pedidoId) => {
-        if(!pedidoId) return;
-        await Mensagem.updateMany({ pedidoId: pedidoId.toString(), usuario: { $ne: 'Admin' } }, { lida: true });
     });
 });
 
