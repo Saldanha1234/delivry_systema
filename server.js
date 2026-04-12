@@ -3,10 +3,10 @@ const path = require('path');
 const http = require('http'); 
 const { Server } = require('socket.io'); 
 const mongoose = require('mongoose');
-const mercury = require('mercadopago'); // Adicionado para suporte ao PIX
+const mercury = require('mercadopago'); 
 require('dotenv').config(); 
 
-// Importação da configuração de adicionais
+// Importação da configuração de adicionais (Estrutura base)
 const { ConfigEstrutura } = require('./public/js/estrutura-produtos');
 
 const app = express();
@@ -34,7 +34,9 @@ const ConfigSchema = new mongoose.Schema({
     cidadeAtiva: { type: Boolean, default: false },
     cidadeNome: { type: String, default: '' },
     cidadeEstado: { type: String, default: '' },
-    cidadePais: { type: String, default: 'Brasil' }
+    cidadePais: { type: String, default: 'Brasil' },
+    // NOVO: Persistência para categorias de adicionais dinâmicas
+    categoriasAdicionais: { type: Array, default: [] }
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
@@ -64,7 +66,7 @@ const PedidoSchema = new mongoose.Schema({
     total: Number,
     status: { type: String, default: "Pendente" },
     hora: String,
-    pixId: String, // ID da transação no Mercado Pago
+    pixId: String, 
     pixCopiaCola: String,
     pixQrCode: String,
     createdAt: { type: Date, default: Date.now },
@@ -166,12 +168,32 @@ app.use(async (req, res, next) => {
     }
 });
 
-// --- ROTA PARA ADICIONAIS ---
+// --- NOVAS ROTAS DO SISTEMA DE ADICIONAIS (RESOLVENDO ERRO 404) ---
+
 app.get('/get-adicionais', (req, res) => {
+    res.json(ConfigEstrutura);
+});
+
+app.get('/get-categorias-adicionais', async (req, res) => {
     try {
-        res.json(ConfigEstrutura);
+        const config = await Config.findOne({ chave: 'global' });
+        res.json(config.categoriasAdicionais || []);
     } catch (err) {
-        res.status(500).json({ error: "Erro ao carregar adicionais" });
+        res.status(500).json([]);
+    }
+});
+
+app.post('/add-categoria-adicional', async (req, res) => {
+    try {
+        const { nome } = req.body;
+        const config = await Config.findOneAndUpdate(
+            { chave: 'global' },
+            { $push: { categoriasAdicionais: { nome, id: Date.now().toString() } } },
+            { upsert: true, new: true }
+        );
+        res.json({ success: true, categorias: config.categoriasAdicionais });
+    } catch (err) {
+        res.status(500).json({ success: false });
     }
 });
 
@@ -265,9 +287,7 @@ app.get('/', async (req, res) => {
         const categoriasDoBanco = await Categoria.find();
         const categoriasFixas = [{ nome: 'Promoção' }, { nome: 'Destaques' }];
         const categorias = [...categoriasFixas, ...categoriasDoBanco];
-
         let config = await Config.findOne({ chave: 'global' }) || { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
-        
         res.render('index', { produtos, categorias, config, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { res.status(500).send("Erro interno."); }
 });
@@ -279,7 +299,6 @@ app.get('/admin', async (req, res) => {
         const categorias = await Categoria.find(); 
         const vendasMensais = await VendaMensal.find().sort({ _id: -1 });
         let config = await Config.findOne({ chave: 'global' }) || await Config.create({ chave: 'global' });
-
         res.render('admin', { pedidos, produtos, config, categorias, vendasMensais, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
@@ -293,20 +312,17 @@ app.get('/operacao', async (req, res) => {
     } catch (err) { res.status(500).send("Erro no painel."); }
 });
 
-// --- LÓGICA DE GERAÇÃO DE PIX MERCADO PAGO ---
+// --- LÓGICA MERCADO PAGO ---
 async function gerarPixMercadoPago(valor, email, config) {
     if (!config.pixToken) return null;
-    
     const client = new mercury.MercadoPagoConfig({ accessToken: config.pixToken });
     const payment = new mercury.Payment(client);
-
     const body = {
         transaction_amount: valor,
         description: `Pedido ${config.nomeSite}`,
         payment_method_id: 'pix',
         payer: { email: email || 'cliente@email.com' }
     };
-
     const result = await payment.create({ body });
     return {
         id: result.id,
@@ -321,7 +337,6 @@ app.post('/enviar-pedido', async (req, res) => {
     
     try {
         const config = await Config.findOne({ chave: 'global' });
-        
         if (config && config.cidadeAtiva) {
             const enderecoCliente = (req.body.endereco || "").toLowerCase();
             if (!enderecoCliente.includes(config.cidadeNome.toLowerCase()) || !enderecoCliente.includes(config.cidadeEstado.toLowerCase())) {
@@ -338,7 +353,6 @@ app.post('/enviar-pedido', async (req, res) => {
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         };
 
-        // Lógica de Pagamento PIX
         if (req.body.pagamento === 'PIX' && config.pixToken) {
             try {
                 const pix = await gerarPixMercadoPago(req.body.total, 'cliente@email.com', config);
@@ -347,9 +361,7 @@ app.post('/enviar-pedido', async (req, res) => {
                     dadosPedido.pixCopiaCola = pix.copiaCola;
                     dadosPedido.pixQrCode = pix.qrCode;
                 }
-            } catch (e) {
-                console.error("Erro Pix:", e);
-            }
+            } catch (e) { console.error("Erro Pix:", e); }
         }
 
         const novoPedido = new Pedido(dadosPedido);
@@ -357,13 +369,6 @@ app.post('/enviar-pedido', async (req, res) => {
         io.emit('novoPedido', novoPedido);
         res.json({ success: true, id: novoPedido.id, pixCopiaCola: novoPedido.pixCopiaCola, pixQrCode: novoPedido.pixQrCode });
     } catch (error) { res.status(500).json({ success: false }); }
-});
-
-app.get('/api/pedido/:id', async (req, res) => {
-    try {
-        const pedido = await Pedido.findOne({ id: req.params.id });
-        res.json({ status: pedido ? pedido.status : null });
-    } catch (err) { res.json({ status: null }); }
 });
 
 app.post('/update-status', async (req, res) => {
