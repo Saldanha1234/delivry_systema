@@ -119,27 +119,22 @@
         const clienteNome = "<%= pedido.cliente %>";
         let statusAtual = "<%= pedido.status %>";
 
-        // Entrar na sala do pedido ao carregar
         socket.emit('join', pedidoId);
 
-        // Se o status carregado já for final, garante que o ID suma do localStorage
         if (statusAtual === 'Cancelado' || statusAtual === 'Concluído') {
             localStorage.removeItem('ultimoPedidoId');
         }
 
-        // FUNÇÃO PARA ABRIR/FECHAR CHAT
         function toggleChat() {
             const wrapper = document.getElementById('chat-wrapper');
             wrapper.style.display = (wrapper.style.display === 'flex') ? 'none' : 'flex';
         }
 
-        // --- ATUALIZAÇÃO DE STATUS ---
         setInterval(async () => {
             try {
                 const res = await fetch('/api/pedido/' + pedidoId);
                 const data = await res.json();
                 if (data.status && data.status !== statusAtual) {
-                    // Se mudar para cancelado ou concluído, limpa o ID antes de recarregar
                     if (data.status === 'Cancelado' || data.status === 'Concluído') {
                         localStorage.removeItem('ultimoPedidoId');
                     }
@@ -155,7 +150,6 @@
             window.location.href = '/';
         }
 
-        // --- LÓGICA DO CHAT ---
         socket.on('novaMensagem', (msg) => {
             adicionarMensagemNaTela(msg);
         });
@@ -171,7 +165,10 @@
             
             const ehAdmin = msg.usuario === 'Admin';
             const nomeParaExibir = ehAdmin ? 'Suporte' : msg.usuario;
-            const horaParaExibir = msg.hora || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+            // Força o horário em tempo real se não vier no objeto msg
+            const agora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const horaParaExibir = msg.hora || agora;
             
             div.className = `m-st ${ehAdmin ? 'adm' : 'cli'}`;
             div.innerHTML = `
@@ -188,11 +185,13 @@
             const input = document.getElementById('msg-input');
             if(!input.value.trim()) return;
 
+            const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
             socket.emit('enviarMensagem', {
                 usuario: clienteNome,
                 texto: input.value,
                 pedidoId: pedidoId,
-                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                hora: horaAtual
             });
 
             input.value = '';
