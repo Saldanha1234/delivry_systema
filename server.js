@@ -181,7 +181,7 @@ app.delete('/delete-produto/:id', async (req, res) => {
     try { await Produto.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// --- ROTAS DE CONFIGURAÇÃO ATUALIZADAS ---
+// --- ROTAS DE CONFIGURAÇÃO ---
 
 app.post('/update-config-site', async (req, res) => {
     try {
@@ -264,7 +264,7 @@ app.get('/operacao', async (req, res) => {
     } catch (err) { res.status(500).send("Erro no painel."); }
 });
 
-// --- ROTA DE ENVIO COM VALIDAÇÃO DE CIDADE ---
+// --- ROTA DE ENVIO COM VALIDAÇÃO REFEITA ---
 app.post('/enviar-pedido', async (req, res) => {
     const aberta = await checarAberta();
     if (!aberta) return res.status(403).json({ success: false, message: "A loja está fechada agora!" });
@@ -272,20 +272,20 @@ app.post('/enviar-pedido', async (req, res) => {
     try {
         const config = await Config.findOne({ chave: 'global' });
         
-        // Lógica de Validação de Localidade
+        // Lógica de Validação: Se ativado, barra endereços fora da cidade
         if (config && config.cidadeAtiva) {
             const enderecoCliente = (req.body.endereco || "").toLowerCase();
             const cidadeConfig = (config.cidadeNome || "").toLowerCase();
             const estadoConfig = (config.cidadeEstado || "").toLowerCase();
 
-            // Verifica se a cidade E o estado configurados estão presentes na string de endereço
             const contemCidade = enderecoCliente.includes(cidadeConfig);
             const contemEstado = enderecoCliente.includes(estadoConfig);
 
             if (!contemCidade || !contemEstado) {
+                // Retorna exatamente o erro para o front-end disparar o alerta
                 return res.status(400).json({ 
                     success: false, 
-                    message: `Endereço inválido! Atendemos apenas na cidade de ${config.cidadeNome}-${config.cidadeEstado}. Verifique seu CEP ou nome da cidade.` 
+                    message: `Endereço Inválido! Aceitamos apenas pedidos da cidade de ${config.cidadeNome} - ${config.cidadeEstado}.` 
                 });
             }
         }
@@ -332,7 +332,7 @@ app.get('/status/:id', async (req, res) => {
     } catch (err) { res.status(500).send("Erro."); }
 });
 
-// --- CHAT SOCKET.IO (MANTIDO) ---
+// --- CHAT SOCKET.IO ---
 
 io.on('connection', (socket) => {
     socket.on('join', async (pedidoId) => {

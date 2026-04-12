@@ -22,6 +22,12 @@
 </head>
 <body>
 
+<div id="modal-erro-endereco" class="modal-erro-endereco">
+    <h2>Ops! 📍</h2>
+    <p id="mensagem-erro-endereco">Infelizmente não entregamos neste endereço ou bairro.</p>
+    <button class="btn-confirm" onclick="document.getElementById('modal-erro-endereco').style.display='none'">Entendido</button>
+</div>
+
 <div id="status-alerta" style="display:none;" onclick="irParaStatus()">
     ⏳ PEDIDO EM ANDAMENTO! CLIQUE PARA ACOMPANHAR.
 </div>
@@ -519,6 +525,15 @@
                 const data = await res.json();
                 localStorage.setItem('ultimoPedidoId', data.id);
                 location.href = '/status/' + data.id;
+            } else if (res.status === 400) {
+                // NOVO: TRATAMENTO PARA ENDEREÇO BLOQUEADO PELO SERVER
+                const erroData = await res.json();
+                document.getElementById('mensagem-erro-endereco').innerText = erroData.message || "Não entregamos neste endereço.";
+                document.getElementById('modal-erro-endereco').style.display = 'block';
+                
+                btnFinalizar.disabled = false;
+                btnFinalizar.innerText = "Finalizar Pedido";
+                btnFinalizar.classList.remove('btn-disabled');
             } else {
                 alert("Ocorreu um erro ao processar seu pedido.");
                 btnFinalizar.disabled = false;
