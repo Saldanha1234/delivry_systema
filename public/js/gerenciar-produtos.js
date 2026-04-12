@@ -133,9 +133,19 @@ async function carregarTudo() {
             fetch('/get-categorias-adicionais')
         ]);
 
-        listaCategoriasProdutos = await resCatP.json();
-        listaProdutosLocal = await resProd.json();
-        listaCategoriasAdicionais = await resCatA.json();
+        // Função auxiliar que protege o código do erro 'Unexpected token <'
+        // Ela verifica se o conteúdo é realmente JSON antes de tentar ler.
+        const extrairJson = async (res) => {
+            if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+                return await res.json();
+            }
+            console.warn(`Aviso: Falha ao carregar dados de ${res.url} (Provável rota ausente/404). Retornando lista vazia.`);
+            return []; // Retorna lista vazia para evitar que a tela quebre
+        };
+
+        listaCategoriasProdutos = await extrairJson(resCatP);
+        listaProdutosLocal = await extrairJson(resProd);
+        listaCategoriasAdicionais = await extrairJson(resCatA);
 
         renderizarListaProdutos();
         renderizarListaAdicionais();
@@ -467,5 +477,5 @@ window.onclick = function(event) {
 
 // --- EXPOSIÇÃO GLOBAL PARA O ADMIN.EJS ---
 window.renderizarPainelCategorias = renderizarPainelCategorias;
-window.renderizarPainelAdmin = renderizarPainelAdmin;
+// window.renderizarPainelAdmin = renderizarPainelAdmin; // <-- CORRIGIDO: Linha comentada para evitar o "Uncaught ReferenceError"
 window.carregarTudo = carregarTudo;

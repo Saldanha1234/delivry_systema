@@ -3,6 +3,7 @@ const path = require('path');
 const http = require('http'); 
 const { Server } = require('socket.io'); 
 const mongoose = require('mongoose');
+const mercury = require('mercadopago'); // Adicionado para suporte ao PIX
 require('dotenv').config(); 
 
 // Importação da configuração de adicionais
@@ -50,7 +51,6 @@ const ProdutoSchema = new mongoose.Schema({
     categoria: String,
     desconto: { type: Number, default: null },
     status: { type: String, default: 'disponivel' },
-    // NOVO SISTEMA DE ADICIONAIS: Armazena os IDs dos grupos vinculados
     modificadores: { type: Array, default: [] } 
 });
 const Produto = mongoose.model('Produto', ProdutoSchema);
@@ -64,6 +64,9 @@ const PedidoSchema = new mongoose.Schema({
     total: Number,
     status: { type: String, default: "Pendente" },
     hora: String,
+    pixId: String, // ID da transação no Mercado Pago
+    pixCopiaCola: String,
+    pixQrCode: String,
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
@@ -80,7 +83,7 @@ const MensagemSchema = new mongoose.Schema({
 const Mensagem = mongoose.model('Mensagem', MensagemSchema);
 
 const VendaMensalSchema = new mongoose.Schema({
-    mesAno: String, // Formato "MM/YYYY"
+    mesAno: String, 
     totalAcumulado: { type: Number, default: 0 }
 });
 const VendaMensal = mongoose.model('VendaMensal', VendaMensalSchema);
@@ -290,6 +293,28 @@ app.get('/operacao', async (req, res) => {
     } catch (err) { res.status(500).send("Erro no painel."); }
 });
 
+// --- LÓGICA DE GERAÇÃO DE PIX MERCADO PAGO ---
+async function gerarPixMercadoPago(valor, email, config) {
+    if (!config.pixToken) return null;
+    
+    const client = new mercury.MercadoPagoConfig({ accessToken: config.pixToken });
+    const payment = new mercury.Payment(client);
+
+    const body = {
+        transaction_amount: valor,
+        description: `Pedido ${config.nomeSite}`,
+        payment_method_id: 'pix',
+        payer: { email: email || 'cliente@email.com' }
+    };
+
+    const result = await payment.create({ body });
+    return {
+        id: result.id,
+        copiaCola: result.point_of_interaction.transaction_data.qr_code,
+        qrCode: result.point_of_interaction.transaction_data.qr_code_base64
+    };
+}
+
 app.post('/enviar-pedido', async (req, res) => {
     const aberta = await checarAberta();
     if (!aberta) return res.status(403).json({ success: false, message: "A loja está fechada agora!" });
@@ -307,15 +332,30 @@ app.post('/enviar-pedido', async (req, res) => {
             }
         }
 
-        const novoPedido = new Pedido({
+        const dadosPedido = {
             ...req.body,
             id: Math.floor(Math.random() * 9000) + 1000,
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        });
-        
+        };
+
+        // Lógica de Pagamento PIX
+        if (req.body.pagamento === 'PIX' && config.pixToken) {
+            try {
+                const pix = await gerarPixMercadoPago(req.body.total, 'cliente@email.com', config);
+                if (pix) {
+                    dadosPedido.pixId = pix.id;
+                    dadosPedido.pixCopiaCola = pix.copiaCola;
+                    dadosPedido.pixQrCode = pix.qrCode;
+                }
+            } catch (e) {
+                console.error("Erro Pix:", e);
+            }
+        }
+
+        const novoPedido = new Pedido(dadosPedido);
         await novoPedido.save(); 
         io.emit('novoPedido', novoPedido);
-        res.json({ success: true, id: novoPedido.id });
+        res.json({ success: true, id: novoPedido.id, pixCopiaCola: novoPedido.pixCopiaCola, pixQrCode: novoPedido.pixQrCode });
     } catch (error) { res.status(500).json({ success: false }); }
 });
 
