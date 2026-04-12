@@ -7,81 +7,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Premium Delivery</title>
     <script src="/socket.io/socket.io.js"></script>
-    <style>
-        :root { --primary: #FF385C; --dark: #2f3542; --warning: #f1c40f; }
-
-        /* --- ESTILOS DE CATEGORIAS E FILTROS --- */
-        .category-nav {
-            display: flex; gap: 10px; padding: 10px 20px; overflow-x: auto;
-            background: white; position: sticky; top: 0; z-index: 900; border-bottom: 1px solid #eee;
-        }
-        .category-nav::-webkit-scrollbar { display: none; }
-        .cat-btn {
-            padding: 8px 20px; border-radius: 20px; border: 1px solid #ddd;
-            background: white; color: #666; cursor: pointer; white-space: nowrap;
-            font-weight: 600; transition: 0.3s;
-        }
-        .cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-
-        .events-area { display: flex; gap: 15px; padding: 20px; overflow-x: auto; }
-        .events-area::-webkit-scrollbar { display: none; }
-        .event-card { min-width: 280px; padding: 20px; border-radius: 15px; color: white; cursor: pointer; transition: transform 0.2s; }
-        .event-card:active { transform: scale(0.95); }
-        .promo { background: linear-gradient(135deg, #ff4757, #ff6b81); }
-        .top-seller { background: linear-gradient(135deg, #2f3542, #57606f); }
-
-        /* CARD CLICÁVEL */
-        .card { cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .card.hidden { display: none; }
-        
-        /* Estilo Indisponível */
-        .card.indisponivel { opacity: 0.6; filter: grayscale(1); }
-
-        /* ESTILOS DO MODAL DE MONTAGEM */
-        .modal-montagem-content { width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 0 !important; }
-        .modal-body { padding: 20px; }
-        .search-box { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 10px; margin: 15px 0; outline: none; font-size: 1rem; }
-        .cat-section { margin-bottom: 20px; }
-        .cat-header { background: #f8f8f8; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--primary); }
-        .item-add { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f5f5f5; }
-        .item-controls { display: flex; align-items: center; gap: 12px; }
-        .btn-qty { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--primary); background: white; color: var(--primary); font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-        .btn-qty:active { background: var(--primary); color: white; }
-        .obs-box { width: 100%; height: 80px; border: 1px solid #ddd; border-radius: 10px; padding: 10px; margin: 10px 0; resize: none; font-family: inherit; }
-
-        /* CARRINHO */
-        .cart-item-row { border-bottom: 1px solid #eee; padding: 15px 0; position: relative; }
-        .remove-product { color: #ff4757; cursor: pointer; font-size: 1.2rem; margin-left: 10px; }
-        
-        .social-footer { margin-top: 50px; padding: 40px 20px; background: #fdfdfd; border-top: 1px solid #eee; text-align: center; }
-        .social-buttons { display: flex; justify-content: center; gap: 25px; margin-bottom: 20px; }
-        .social-icon { color: #888; font-size: 1.8rem; transition: 0.3s; text-decoration: none; }
-        .social-icon:hover { color: var(--primary); transform: translateY(-3px); }
-
-        .status-badge { display: inline-block; padding: 6px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
-        .status-aberto { background: #e7f9ee; color: #2ecc71; border: 1px solid #2ecc71; }
-        .status-fechado { background: #feecef; color: #ff4757; border: 1px solid #ff4757; }
-        .btn-disabled { background: #ccc !important; cursor: not-allowed !important; opacity: 0.6; }
-
-        /* MODAL HORÁRIOS ESTILO CLEAN */
-        .horario-link { color: var(--primary); text-decoration: underline; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
-        .modal-horarios-content { width: 90%; max-width: 400px; border-radius: 15px; padding: 25px; text-align: left; }
-        .lista-horarios { list-style: none; padding: 0; margin-top: 15px; }
-        .item-horario { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
-        .item-horario:last-child { border-bottom: none; }
-        .dia-nome { font-weight: 600; color: #333; }
-        .dia-valor { color: #666; }
-
-        @media (max-width: 600px) {
-            .event-card { min-width: 240px; padding: 15px; }
-            .category-nav { padding: 10px; }
-        }
-    </style>
 </head>
 <body>
 
-<div id="status-alerta" style="display:none; background: var(--warning); color: var(--dark); padding: 12px; text-align: center; font-weight: 800; cursor: pointer;" onclick="irParaStatus()">
+<div id="status-alerta" style="display:none;" onclick="irParaStatus()">
     ⏳ PEDIDO EM ANDAMENTO! CLIQUE PARA ACOMPANHAR.
 </div>
 
@@ -122,9 +51,9 @@
 <div class="container" id="produtos-container">
     <% produtos.forEach(p => { %>
         <% 
-           const temDesconto = p.desconto && Number(p.desconto) > 0;
-           const valorVenda = temDesconto ? Number(p.desconto) : Number(p.preco);
-           const isIndisponivel = p.status === 'indisponivel';
+            const temDesconto = p.desconto && Number(p.desconto) > 0;
+            const valorVenda = temDesconto ? Number(p.desconto) : Number(p.preco);
+            const isIndisponivel = p.status === 'indisponivel';
         %>
         <div class="card <%= isIndisponivel ? 'indisponivel' : '' %>" data-categoria="<%= p.categoria %>" 
              onclick="gerenciarCliqueProduto('<%= p.status %>', '<%= p.modificadoresAtivos %>', '<%= p.nome %>', '<%= valorVenda %>', '<%= p.desc %>', '<%= p.img %>', '<%= p.preco %>')">
@@ -265,9 +194,7 @@
 
     let configLocal = <%- JSON.stringify(estruturaAdicionais) %>;
 
-    // --- NOVA LÓGICA DE CLIQUE E SISTEMA DUPLO ---
     function gerenciarCliqueProduto(status, temModificadores, nome, preco, desc, img, precoOriginal) {
-        // Trava de Indisponível
         if (status === 'indisponivel') {
             alert("Este produto está indisponível no momento.");
             return;
@@ -282,7 +209,6 @@
             return;
         }
 
-        // Define o produto atual (preco já vem como o valor de venda/desconto)
         produtoAtual = { 
             nome, 
             precoBase: parseFloat(preco) || 0, 

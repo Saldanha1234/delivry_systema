@@ -12,7 +12,7 @@
     --bg: #F7F7F7;
     --white: #FFFFFF;
     --success: #2ed573;
-    --warning: #ffcc00;
+    --warning: #f1c40f;
     --info: #1e90ff;
     --radius: 16px;
     --shadow: 0 8px 30px rgba(0,0,0,0.05);
@@ -33,7 +33,7 @@ body {
 }
 
 /* =========================================
-   NAVEGAÇÃO
+   NAVEGAÇÃO E ALERTAS
    ========================================= */
 nav {
     background: rgba(255, 255, 255, 0.85);
@@ -50,6 +50,15 @@ nav {
 
 .logo { font-size: 1.5rem; font-weight: 800; color: var(--dark); cursor: default; }
 .logo span { color: var(--primary); }
+
+#status-alerta {
+    background: var(--warning);
+    color: var(--dark);
+    padding: 12px;
+    text-align: center;
+    font-weight: 800;
+    cursor: pointer;
+}
 
 .cart-btn {
     background: var(--dark);
@@ -75,7 +84,34 @@ nav {
 }
 
 /* =========================================
-   GRID DE PRODUTOS
+   CATEGORIAS, FILTROS E EVENTOS
+   ========================================= */
+.category-nav {
+    display: flex; gap: 10px; padding: 10px 20px; overflow-x: auto;
+    background: white; position: sticky; top: 0; z-index: 900; border-bottom: 1px solid #eee;
+}
+.category-nav::-webkit-scrollbar { display: none; }
+
+.cat-btn {
+    padding: 8px 20px; border-radius: 20px; border: 1px solid #ddd;
+    background: white; color: #666; cursor: pointer; white-space: nowrap;
+    font-weight: 600; transition: 0.3s;
+}
+.cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+.events-area { display: flex; gap: 15px; padding: 20px; overflow-x: auto; }
+.events-area::-webkit-scrollbar { display: none; }
+
+.event-card { 
+    min-width: 280px; padding: 20px; border-radius: 15px; 
+    color: white; cursor: pointer; transition: transform 0.2s; 
+}
+.event-card:active { transform: scale(0.95); }
+.promo { background: linear-gradient(135deg, #ff4757, #ff6b81); }
+.top-seller { background: linear-gradient(135deg, #2f3542, #57606f); }
+
+/* =========================================
+   GRID E CARDS DE PRODUTOS
    ========================================= */
 .container {
     max-width: 1200px;
@@ -94,6 +130,7 @@ nav {
     transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: 1px solid transparent;
     cursor: pointer;
+    position: relative;
 }
 
 .card:hover { 
@@ -101,6 +138,9 @@ nav {
     border-color: var(--primary); 
     box-shadow: 0 15px 35px rgba(0,0,0,0.1);
 }
+
+.card.hidden { display: none; }
+.card.indisponivel { opacity: 0.6; filter: grayscale(1); }
 
 .card img { width: 100%; height: 200px; object-fit: cover; transition: 0.3s; }
 .card:hover img { transform: scale(1.05); }
@@ -117,7 +157,7 @@ nav {
 }
 
 /* =========================================
-   MODAIS (CARRINHO E MONTAGEM)
+   MODAIS (GERAL, MONTAGEM E HORÁRIOS)
    ========================================= */
 .modal {
     display: none;
@@ -149,7 +189,10 @@ nav {
     to { transform: translateY(0); opacity: 1; }
 }
 
-/* --- Estilos do Modal de Montagem --- */
+/* Modal de Montagem Específico */
+.modal-montagem-content { width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 0 !important; }
+.modal-body { padding: 20px; }
+
 .search-box {
     width: 100%;
     padding: 14px;
@@ -161,7 +204,6 @@ nav {
     font-size: 0.95rem;
     transition: 0.2s;
 }
-
 .search-box:focus { border-color: var(--primary); background: white; }
 
 .cat-section { margin-bottom: 25px; }
@@ -184,8 +226,7 @@ nav {
 .item-controls { display: flex; align-items: center; gap: 15px; }
 
 .btn-qty {
-    width: 34px;
-    height: 34px;
+    width: 34px; height: 34px;
     border-radius: 50%;
     border: 2px solid var(--primary);
     background: white;
@@ -197,13 +238,11 @@ nav {
     justify-content: center;
     transition: 0.2s;
 }
-
 .btn-qty:hover { background: var(--primary); color: white; }
 .btn-qty:active { transform: scale(0.9); }
 
 .obs-box {
-    width: 100%;
-    height: 90px;
+    width: 100%; height: 90px;
     border: 2px solid #f0f0f0;
     border-radius: 12px;
     padding: 12px;
@@ -212,6 +251,15 @@ nav {
     background: #f9f9f9;
     font-size: 0.9rem;
 }
+
+/* Modal de Horários */
+.horario-link { color: var(--primary); text-decoration: underline; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+.modal-horarios-content { width: 90%; max-width: 400px; border-radius: 15px; padding: 25px; text-align: left; }
+.lista-horarios { list-style: none; padding: 0; margin-top: 15px; }
+.item-horario { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
+.item-horario:last-child { border-bottom: none; }
+.dia-nome { font-weight: 600; color: #333; }
+.dia-valor { color: #666; }
 
 /* =========================================
    FORMULÁRIOS E BOTÕES
@@ -229,7 +277,6 @@ input, select, textarea {
     transition: 0.2s;
     color: var(--dark);
 }
-
 input:focus, select:focus { border-color: var(--primary); outline: none; background: white; }
 
 .btn-confirm {
@@ -244,8 +291,8 @@ input:focus, select:focus { border-color: var(--primary); outline: none; backgro
     cursor: pointer;
     transition: 0.3s;
 }
-
 .btn-confirm:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 56, 92, 0.3); }
+.btn-disabled { background: #ccc !important; cursor: not-allowed !important; opacity: 0.6; }
 
 .btn-close {
     width: 100%;
@@ -258,16 +305,12 @@ input:focus, select:focus { border-color: var(--primary); outline: none; backgro
     margin-top: 10px;
     transition: 0.2s;
 }
-
 .btn-close:hover { color: var(--dark); }
 
 /* =========================================
-   CARRINHO (DETALHES)
+   CARRINHO E RODAPÉ
    ========================================= */
-#cart-items .cart-item-row {
-    padding: 15px 0;
-    border-bottom: 1px solid #eee;
-}
+.cart-item-row { border-bottom: 1px solid #eee; padding: 15px 0; position: relative; }
 
 .remove-product {
     color: #ff4757;
@@ -277,6 +320,15 @@ input:focus, select:focus { border-color: var(--primary); outline: none; backgro
     transition: 0.2s;
 }
 .remove-product:hover { transform: scale(1.2); }
+
+.social-footer { margin-top: 50px; padding: 40px 20px; background: #fdfdfd; border-top: 1px solid #eee; text-align: center; }
+.social-buttons { display: flex; justify-content: center; gap: 25px; margin-bottom: 20px; }
+.social-icon { color: #888; font-size: 1.8rem; transition: 0.3s; text-decoration: none; }
+.social-icon:hover { color: var(--primary); transform: translateY(-3px); }
+
+.status-badge { display: inline-block; padding: 6px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
+.status-aberto { background: #e7f9ee; color: #2ecc71; border: 1px solid #2ecc71; }
+.status-fechado { background: #feecef; color: #ff4757; border: 1px solid #ff4757; }
 
 /* =========================================
    ADMIN E KANBAN
@@ -314,6 +366,8 @@ input:focus, select:focus { border-color: var(--primary); outline: none; backgro
     .price-tag { font-size: 1.1rem; }
 
     .modal-content { width: 95%; padding: 20px; border-radius: 20px; }
+    .event-card { min-width: 240px; padding: 15px; }
+    .category-nav { padding: 10px; }
 }
 
 @media (max-width: 480px) {
