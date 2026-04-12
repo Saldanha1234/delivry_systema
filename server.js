@@ -270,6 +270,7 @@ app.get('/', async (req, res) => {
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
         
+        // Passamos ConfigEstrutura para o index.ejs renderizar os adicionais corretamente
         res.render('index', { produtos, categorias, config, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { res.status(500).send("Erro interno."); }
 });
@@ -279,10 +280,12 @@ app.get('/admin', async (req, res) => {
         const produtos = await Produto.find();
         const pedidos = await Pedido.find().sort({ createdAt: -1 }); 
         const categorias = await Categoria.find(); 
-        const vendasMensais = await VendaMensal.find().sort({ _id: -1 }); // Adicionado para o admin
+        const vendasMensais = await VendaMensal.find().sort({ _id: -1 });
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
-        res.render('admin', { pedidos, produtos, config, categorias, vendasMensais });
+
+        // Passamos ConfigEstrutura também para o admin caso precise gerenciar adicionais
+        res.render('admin', { pedidos, produtos, config, categorias, vendasMensais, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 

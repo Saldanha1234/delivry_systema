@@ -344,6 +344,7 @@
         const socket = io();
         let pedidoAtivoId = null;
 
+        // ALTERADO: Inicialização do painel de produtos com ID correto
         document.addEventListener('DOMContentLoaded', () => {
             if(typeof renderizarPainelCategorias === "function") {
                 renderizarPainelCategorias('container-gerenciador-produtos');

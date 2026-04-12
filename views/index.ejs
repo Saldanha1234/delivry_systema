@@ -336,11 +336,28 @@
             let htmlOpcoes = "";
             cat.opcoes.forEach(opt => {
                 if (filtro === "" || opt.nome.toLowerCase().includes(filtro.toLowerCase())) {
+                    
+                    // LÓGICA DE DESCONTO NOS ADICIONAIS
+                    const temDesc = opt.desconto && Number(opt.desconto) > 0;
+                    const precoExibicao = temDesc ? Number(opt.desconto) : Number(opt.preco);
+                    
+                    let precoHtml = "";
+                    if(temDesc) {
+                        precoHtml = `
+                            <div style="font-size:0.7rem; color: #28a745; font-weight: bold;">Desconto aplicado</div>
+                            <div style="font-size:0.75rem; color:var(--primary);">
+                                <span style="text-decoration: line-through; color: #bbb; margin-right: 5px;">R$ ${Number(opt.preco).toFixed(2)}</span>
+                                + R$ ${precoExibicao.toFixed(2)}
+                            </div>`;
+                    } else {
+                        precoHtml = `<div style="font-size:0.75rem; color:var(--primary);">${opt.preco > 0 ? '+ R$ '+Number(opt.preco).toFixed(2) : 'Incluso'}</div>`;
+                    }
+
                     htmlOpcoes += `
                         <div class="item-add">
                             <div>
                                 <div style="font-weight: 500;">${opt.nome}</div>
-                                <div style="font-size:0.75rem; color:var(--primary);">${opt.preco > 0 ? '+ R$ '+opt.preco.toFixed(2) : 'Incluso'}</div>
+                                ${precoHtml}
                             </div>
                             <div class="item-controls">
                                 <button class="btn-qty" onclick="alterarQtd('${cat.id}', '${opt.id}', -1)">-</button>
@@ -384,7 +401,11 @@
         let extra = 0;
         if (produtoAtual.temModificadores && configLocal) {
             configLocal.categorias.forEach(cat => {
-                cat.opcoes.forEach(opt => { extra += (opt.preco * opt.qtd); });
+                cat.opcoes.forEach(opt => { 
+                    // Soma usando o valor com desconto se ele existir
+                    const valorEfetivo = (opt.desconto && Number(opt.desconto) > 0) ? Number(opt.desconto) : Number(opt.preco);
+                    extra += (valorEfetivo * opt.qtd); 
+                });
             });
         }
         const total = (produtoAtual.precoBase || 0) + extra;
@@ -403,8 +424,9 @@
             configLocal.categorias.forEach(cat => {
                 cat.opcoes.forEach(opt => {
                     if(opt.qtd > 0) {
-                        selecionados.push({ nome: opt.nome, qtd: opt.qtd, preco: opt.preco });
-                        precoFinal += (opt.preco * opt.qtd);
+                        const valorEfetivo = (opt.desconto && Number(opt.desconto) > 0) ? Number(opt.desconto) : Number(opt.preco);
+                        selecionados.push({ nome: opt.nome, qtd: opt.qtd, preco: valorEfetivo });
+                        precoFinal += (valorEfetivo * opt.qtd);
                     }
                 });
             });
