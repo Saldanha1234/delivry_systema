@@ -48,6 +48,40 @@
         .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
 
+        /* --- Estilos Adicionados para o Cardápio --- */
+        .sub-nav-cardapio {
+            position: sticky;
+            top: 50px; /* Logo abaixo da tab-container principal */
+            z-index: 90;
+            background: #fff;
+            display: flex;
+            padding: 10px;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin: -15px -15px 20px -15px;
+            border-bottom: 1px solid #ddd;
+        }
+        .btn-mini-cat {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .btn-mini-cat:hover { background: #eee; }
+        .btn-mini-cat.active { background: var(--dark); color: #fff; border-color: var(--dark); }
+        
+        .secao-cardapio {
+            scroll-margin-top: 120px; /* Garante que o título não fique sob o menu fixo */
+            margin-bottom: 40px;
+        }
+        /* ------------------------------------------ */
+
         .banner-operacao {
             background: var(--dark);
             color: white;
@@ -133,6 +167,7 @@
             .suporte-container { flex-direction: column; height: 80vh; }
             .chat-sidebar-list { width: 100%; height: 180px; border-right: none; border-bottom: 1px solid #ddd; }
             .grid-cidade { grid-template-columns: 1fr; }
+            .sub-nav-cardapio { top: 45px; }
         }
     </style>
 </head>
@@ -334,7 +369,18 @@
             </div>
 
             <div id="aba-cardapio" class="tab-content">
-                <div id="container-gerenciador-produtos"></div>
+                <nav class="sub-nav-cardapio">
+                    <button class="btn-mini-cat active" onclick="rolarParaSecao(event, 'secao-produtos')">📦 Gerenciamento Produtos</button>
+                    <button class="btn-mini-cat" onclick="rolarParaSecao(event, 'secao-modificadores')">🛠️ Gerenciamento Modificadores</button>
+                </nav>
+
+                <div id="secao-produtos" class="secao-cardapio">
+                    <div id="container-gerenciador-produtos"></div>
+                </div>
+
+                <div id="secao-modificadores" class="secao-cardapio">
+                    <div id="container-gerenciador-adicionais"></div>
+                </div>
             </div>
 
         </div>
@@ -345,10 +391,26 @@
         let pedidoAtivoId = null;
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Inicializa os painéis se as funções existirem no gerenciar-produtos.js
             if(typeof renderizarPainelCategorias === "function") {
                 renderizarPainelCategorias('container-gerenciador-produtos');
             }
+            if(typeof renderizarPainelAdicionais === "function") {
+                renderizarPainelAdicionais('container-gerenciador-adicionais');
+            }
         });
+
+        // Função de Scroll Automático e Floating Menu
+        function rolarParaSecao(event, id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // Atualiza classe ativa nos botões
+                document.querySelectorAll('.btn-mini-cat').forEach(btn => btn.classList.remove('active'));
+                event.currentTarget.classList.add('active');
+            }
+        }
 
         function toggleCamposCidade() {
             const isChecked = document.getElementById('conf-cidadeAtiva').checked;
