@@ -29,7 +29,12 @@ const ConfigSchema = new mongoose.Schema({
     agenda: { type: Array, default: [] },
     whatsapp: { type: String, default: '' },
     taxaEntrega: { type: Number, default: 0 },
-    tempoEntrega: { type: String, default: '30-50' }
+    tempoEntrega: { type: String, default: '30-50' },
+    // NOVOS CAMPOS DE LOCALIDADE SOLICITADOS
+    cidadeAtiva: { type: Boolean, default: false },
+    cidadeNome: { type: String, default: '' },
+    cidadeEstado: { type: String, default: '' },
+    cidadePais: { type: String, default: 'Brasil' }
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
@@ -44,7 +49,6 @@ const ProdutoSchema = new mongoose.Schema({
     img: String,
     desc: String,
     categoria: String,
-    // NOVOS CAMPOS PARA SUPORTAR O GERENCIAMENTO COMPLETO
     desconto: { type: Number, default: null },
     status: { type: String, default: 'disponivel' },
     modificadoresAtivos: { type: Boolean, default: false }
@@ -101,7 +105,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '15mb' })); 
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
-// --- LÓGICA DE HORÁRIO REFEITA ---
+// --- LÓGICA DE HORÁRIO ---
 const checarAberta = async () => {
     try {
         const config = await Config.findOne({ chave: 'global' });
@@ -143,73 +147,49 @@ app.use(async (req, res, next) => {
     }
 });
 
-// --- ROTAS DE CATEGORIAS ---
+// --- ROTAS DE CATEGORIAS E PRODUTOS (MANTIDAS) ---
 
 app.get('/get-categorias', async (req, res) => {
-    try {
-        const categorias = await Categoria.find();
-        res.json(categorias);
-    } catch (err) { res.status(500).json([]); }
+    try { const categorias = await Categoria.find(); res.json(categorias); } catch (err) { res.status(500).json([]); }
 });
 
 app.post('/add-categoria', async (req, res) => {
-    try {
-        const novaCat = new Categoria(req.body);
-        await novaCat.save();
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
+    try { const novaCat = new Categoria(req.body); await novaCat.save(); res.json({ success: true }); } catch (err) { res.status(500).json({ success: false }); }
 });
 
 app.put('/edit-categoria/:id', async (req, res) => {
-    try {
-        await Categoria.findByIdAndUpdate(req.params.id, req.body);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
+    try { await Categoria.findByIdAndUpdate(req.params.id, req.body); res.json({ success: true }); } catch (err) { res.status(500).json({ success: false }); }
 });
 
 app.delete('/delete-categoria/:id', async (req, res) => {
-    try {
-        await Categoria.findByIdAndDelete(req.params.id);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
+    try { await Categoria.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// --- ROTAS DE PRODUTOS ---
-
 app.get('/get-produtos', async (req, res) => {
-    try {
-        const produtos = await Produto.find();
-        res.json(produtos);
-    } catch (err) { res.status(500).json([]); }
+    try { const produtos = await Produto.find(); res.json(produtos); } catch (err) { res.status(500).json([]); }
 });
 
 app.post('/add-produto', async (req, res) => {
-    try {
-        const novoProduto = new Produto(req.body);
-        await novoProduto.save();
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
+    try { const novoProduto = new Produto(req.body); await novoProduto.save(); res.json({ success: true }); } catch (err) { res.status(500).json({ success: false }); }
 });
 
 app.put('/edit-produto/:id', async (req, res) => {
-    try {
-        await Produto.findByIdAndUpdate(req.params.id, req.body);
-        res.json({ success: true });
-    } catch (err) { res.status(404).json({ success: false }); }
+    try { await Produto.findByIdAndUpdate(req.params.id, req.body); res.json({ success: true }); } catch (err) { res.status(404).json({ success: false }); }
 });
 
 app.delete('/delete-produto/:id', async (req, res) => {
-    try {
-        await Produto.findByIdAndDelete(req.params.id);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
+    try { await Produto.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// --- ROTAS DE CONFIGURAÇÃO ---
+// --- ROTAS DE CONFIGURAÇÃO ATUALIZADAS ---
 
 app.post('/update-config-site', async (req, res) => {
     try {
-        const { manutencao, nomeSite, whatsapp, taxaEntrega, tempoEntrega } = req.body;
+        const { 
+            manutencao, nomeSite, whatsapp, taxaEntrega, tempoEntrega,
+            cidadeAtiva, cidadeNome, cidadeEstado, cidadePais 
+        } = req.body;
+
         await Config.findOneAndUpdate(
             { chave: 'global' },
             { 
@@ -217,7 +197,11 @@ app.post('/update-config-site', async (req, res) => {
                 nomeSite,
                 whatsapp,
                 taxaEntrega: parseFloat(taxaEntrega) || 0,
-                tempoEntrega
+                tempoEntrega,
+                cidadeAtiva: (cidadeAtiva === true || cidadeAtiva === 'true'),
+                cidadeNome,
+                cidadeEstado,
+                cidadePais
             },
             { upsert: true }
         );
@@ -250,19 +234,14 @@ app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
         const categoriasDoBanco = await Categoria.find();
-        
         const categoriasFixas = [{ nome: 'Promoção' }, { nome: 'Destaques' }];
         const categorias = [...categoriasFixas, ...categoriasDoBanco];
 
         let config = await Config.findOne({ chave: 'global' });
-        if (!config) {
-            config = { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
-        }
+        if (!config) config = { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
+        
         res.render('index', { produtos, categorias, config, estruturaAdicionais: ConfigEstrutura });
-    } catch (err) { 
-        console.error(err);
-        res.status(500).send("Erro interno ao carregar a página principal."); 
-    }
+    } catch (err) { res.status(500).send("Erro interno."); }
 });
 
 app.get('/admin', async (req, res) => {
@@ -285,27 +264,50 @@ app.get('/operacao', async (req, res) => {
     } catch (err) { res.status(500).send("Erro no painel."); }
 });
 
+// --- ROTA DE ENVIO COM VALIDAÇÃO DE CIDADE ---
 app.post('/enviar-pedido', async (req, res) => {
     const aberta = await checarAberta();
     if (!aberta) return res.status(403).json({ success: false, message: "A loja está fechada agora!" });
     
     try {
+        const config = await Config.findOne({ chave: 'global' });
+        
+        // Lógica de Validação de Localidade
+        if (config && config.cidadeAtiva) {
+            const enderecoCliente = (req.body.endereco || "").toLowerCase();
+            const cidadeConfig = (config.cidadeNome || "").toLowerCase();
+            const estadoConfig = (config.cidadeEstado || "").toLowerCase();
+
+            // Verifica se a cidade E o estado configurados estão presentes na string de endereço
+            const contemCidade = enderecoCliente.includes(cidadeConfig);
+            const contemEstado = enderecoCliente.includes(estadoConfig);
+
+            if (!contemCidade || !contemEstado) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Endereço inválido! Atendemos apenas na cidade de ${config.cidadeNome}-${config.cidadeEstado}. Verifique seu CEP ou nome da cidade.` 
+                });
+            }
+        }
+
         const novoPedido = new Pedido({
             ...req.body,
             id: Math.floor(Math.random() * 9000) + 1000,
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         });
+        
         await novoPedido.save(); 
         io.emit('novoPedido', novoPedido);
         res.json({ success: true, id: novoPedido.id });
-    } catch (error) { res.status(500).json({ success: false }); }
+    } catch (error) { 
+        res.status(500).json({ success: false }); 
+    }
 });
 
 app.get('/api/pedido/:id', async (req, res) => {
     try {
         const pedido = await Pedido.findOne({ id: req.params.id });
-        if (!pedido) return res.json({ status: null }); 
-        res.json({ status: pedido.status });
+        res.json({ status: pedido ? pedido.status : null });
     } catch (err) { res.json({ status: null }); }
 });
 
@@ -313,12 +315,10 @@ app.post('/update-status', async (req, res) => {
     const { id, novoStatus } = req.body;
     try {
         await Pedido.findOneAndUpdate({ id: id }, { status: novoStatus, updatedAt: Date.now() });
-        
-        if (novoStatus === 'Finalizado' || novoStatus === 'Cancelado' || novoStatus === 'Concluído') {
+        if (['Finalizado', 'Cancelado', 'Concluído'].includes(novoStatus)) {
             await Mensagem.deleteMany({ pedidoId: id.toString() });
             io.emit('pedidoEncerrado', { id }); 
         }
-        
         io.emit('statusAtualizado', { id, novoStatus });
         res.json({ success: true });
     } catch (err) { res.status(404).json({ success: false }); }
@@ -332,7 +332,7 @@ app.get('/status/:id', async (req, res) => {
     } catch (err) { res.status(500).send("Erro."); }
 });
 
-// --- CHAT SOCKET.IO ---
+// --- CHAT SOCKET.IO (MANTIDO) ---
 
 io.on('connection', (socket) => {
     socket.on('join', async (pedidoId) => {

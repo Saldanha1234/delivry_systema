@@ -7,6 +7,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Premium Delivery</title>
     <script src="/socket.io/socket.io.js"></script>
+    <style>
+        /* Estilos específicos para a organização dos campos de endereço */
+        .address-grid {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .address-grid .form-group { margin-bottom: 0; flex: 1; }
+        .flex-70 { flex: 0 0 65% !important; }
+        .flex-30 { flex: 0 0 32% !important; }
+        .loading-cep { font-size: 0.7rem; color: var(--primary); display: none; }
+    </style>
 </head>
 <body>
 
@@ -117,10 +129,31 @@
 <div id="cart-modal" class="modal">
     <div class="modal-content">
         <h2>Seu Carrinho</h2>
-        <div id="cart-items" style="max-height: 350px; overflow-y: auto; margin-bottom: 20px;"></div>
+        <div id="cart-items" style="max-height: 250px; overflow-y: auto; margin-bottom: 20px;"></div>
         
         <div class="form-group"><label>NOME</label><input type="text" id="cliente-nome" placeholder="Seu nome completo"></div>
-        <div class="form-group"><label>ENDEREÇO</label><input type="text" id="cliente-end" placeholder="Rua, número, bairro"></div>
+        
+        <div class="form-group">
+            <label>CEP <span id="cep-loading" class="loading-cep">(Buscando...)</span></label>
+            <input type="text" id="cliente-cep" placeholder="00000-000" maxlength="9" onblur="buscarCEP(this.value)">
+        </div>
+
+        <div class="address-grid">
+            <div class="form-group flex-70">
+                <label>RUA</label>
+                <input type="text" id="cliente-rua" placeholder="Rua / Av">
+            </div>
+            <div class="form-group flex-30">
+                <label>BAIRRO</label>
+                <input type="text" id="cliente-bairro" placeholder="Bairro">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>NÚMERO E COMPLEMENTO</label>
+            <input type="text" id="cliente-complemento" placeholder="Ex: Casa 10, Apto 202, Prédio...">
+        </div>
+
         <div class="form-group">
             <label>PAGAMENTO</label>
             <select id="cliente-pagto">
@@ -191,8 +224,50 @@
     const socket = io();
     let carrinho = [];
     let produtoAtual = null;
-
     let configLocal = <%- JSON.stringify(estruturaAdicionais) %>;
+    
+    // Objeto para armazenar configurações globais vindas do admin
+    const settingsEmpresa = {
+        travaCidade: "<%= locals.config?.travaCidade || '' %>",
+        cidadeAtiva: "<%= locals.config?.cidadeSede || '' %>",
+        ativarTrava: <%= locals.config?.limitarArea || false %>
+    };
+
+    // Função para buscar CEP
+    async function buscarCEP(valor) {
+        const cep = valor.replace(/\D/g, '');
+        if (cep.length !== 8) return;
+
+        document.getElementById('cep-loading').style.display = 'inline';
+        
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            const data = await response.json();
+
+            if (data.erro) {
+                alert("CEP não encontrado!");
+                return;
+            }
+
+            // Validação de cidade sede (se ativado no admin)
+            if (settingsEmpresa.ativarTrava && settingsEmpresa.cidadeAtiva) {
+                if (data.localidade.toLowerCase() !== settingsEmpresa.cidadeAtiva.toLowerCase()) {
+                    alert(`Desculpe! Atendemos apenas na cidade de ${settingsEmpresa.cidadeAtiva}.`);
+                    document.getElementById('cliente-cep').value = "";
+                    return;
+                }
+            }
+
+            document.getElementById('cliente-rua').value = data.logradouro;
+            document.getElementById('cliente-bairro').value = data.bairro;
+            document.getElementById('cliente-complemento').focus();
+
+        } catch (error) {
+            console.error("Erro ao buscar CEP", error);
+        } finally {
+            document.getElementById('cep-loading').style.display = 'none';
+        }
+    }
 
     function gerenciarCliqueProduto(status, temModificadores, nome, preco, desc, img, precoOriginal) {
         if (status === 'indisponivel') {
@@ -410,17 +485,22 @@
 
     async function finalizar() {
         const nome = document.getElementById('cliente-nome').value;
-        const endereco = document.getElementById('cliente-end').value;
+        const cep = document.getElementById('cliente-cep').value;
+        const rua = document.getElementById('cliente-rua').value;
+        const bairro = document.getElementById('cliente-bairro').value;
+        const complemento = document.getElementById('cliente-complemento').value;
         const pagto = document.getElementById('cliente-pagto').value;
         const btnFinalizar = document.getElementById('btn-finalizar');
         
         if (localStorage.getItem('ultimoPedidoId')) return alert("Ação bloqueada: Você já possui um pedido ativo.");
-        if(!nome || !endereco) return alert("Por favor, informe seu nome e endereço!");
+        if(!nome || !cep || !rua || !bairro) return alert("Por favor, preencha o endereço completo!");
         if(carrinho.length === 0) return alert("Seu carrinho está vazio!");
 
         btnFinalizar.disabled = true;
         btnFinalizar.innerText = "Processando...";
         btnFinalizar.classList.add('btn-disabled');
+
+        const enderecoMontado = `${rua}, Bairro: ${bairro}, CEP: ${cep} - ${complemento}`;
 
         try {
             const res = await fetch('/enviar-pedido', {
@@ -428,7 +508,7 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     cliente: nome, 
-                    endereco: endereco, 
+                    endereco: enderecoMontado, 
                     pagamento: pagto,
                     itens: carrinho, 
                     total: carrinho.reduce((acc, i) => acc + i.preco, 0)
