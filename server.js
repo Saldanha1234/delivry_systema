@@ -27,14 +27,12 @@ const ConfigSchema = new mongoose.Schema({
     nomeSite: { type: String, default: 'Meu Delivery' },
     fusoHorario: { type: String, default: 'America/Sao_Paulo' },
     agenda: { type: Array, default: [] },
-    // Novos campos adicionados
     whatsapp: { type: String, default: '' },
     taxaEntrega: { type: Number, default: 0 },
     tempoEntrega: { type: String, default: '30-50' }
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
-// NOVO SCHEMA: CATEGORIA
 const CategoriaSchema = new mongoose.Schema({
     nome: { type: String, required: true }
 });
@@ -45,7 +43,11 @@ const ProdutoSchema = new mongoose.Schema({
     preco: Number,
     img: String,
     desc: String,
-    categoria: String
+    categoria: String,
+    // NOVOS CAMPOS PARA SUPORTAR O GERENCIAMENTO COMPLETO
+    desconto: { type: Number, default: null },
+    status: { type: String, default: 'disponivel' },
+    modificadoresAtivos: { type: Boolean, default: false }
 });
 const Produto = mongoose.model('Produto', ProdutoSchema);
 
@@ -158,7 +160,6 @@ app.post('/add-categoria', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// ADICIONADA: Rota para editar categoria
 app.put('/edit-categoria/:id', async (req, res) => {
     try {
         await Categoria.findByIdAndUpdate(req.params.id, req.body);
@@ -175,7 +176,6 @@ app.delete('/delete-categoria/:id', async (req, res) => {
 
 // --- ROTAS DE PRODUTOS ---
 
-// NOVA ROTA: Obter todos os produtos (Necessária para o gerenciar-produtos.js)
 app.get('/get-produtos', async (req, res) => {
     try {
         const produtos = await Produto.find();
@@ -251,7 +251,6 @@ app.get('/', async (req, res) => {
         const produtos = await Produto.find();
         const categoriasDoBanco = await Categoria.find();
         
-        // Unir categorias do banco com as fixas (Promoção e Destaques) para o index
         const categoriasFixas = [{ nome: 'Promoção' }, { nome: 'Destaques' }];
         const categorias = [...categoriasFixas, ...categoriasDoBanco];
 
@@ -270,7 +269,7 @@ app.get('/admin', async (req, res) => {
     try {
         const produtos = await Produto.find();
         const pedidos = await Pedido.find().sort({ createdAt: -1 }); 
-        const categorias = await Categoria.find(); // Adicionado para o admin reconhecer categorias
+        const categorias = await Categoria.find(); 
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
         res.render('admin', { pedidos, produtos, config, categorias });
