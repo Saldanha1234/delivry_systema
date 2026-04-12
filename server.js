@@ -173,9 +173,7 @@ app.use(async (req, res, next) => {
 // --- ROTA PARA ADICIONAIS ---
 app.get('/get-adicionais', (req, res) => {
     try {
-        // Converte o Objeto ConfigEstrutura em Array para evitar erro de .forEach no frontend
-        const listaAdicionais = Object.values(ConfigEstrutura);
-        res.json(listaAdicionais);
+        res.json(ConfigEstrutura);
     } catch (err) {
         res.status(500).json({ error: "Erro ao carregar adicionais" });
     }
