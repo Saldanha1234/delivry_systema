@@ -162,7 +162,6 @@ async function carregarDadosCompletos() {
         const categorias = await resCat.json();
         const produtos = await resProd.json();
         
-        // Salva produtos na memória para acesso seguro por ID
         listaProdutosLocal = produtos;
 
         const lista = document.getElementById('lista-hierarquica');
@@ -256,7 +255,6 @@ function toggleExpandir(catNome) {
 
 // --- 4. LÓGICA DE PRODUTOS ---
 
-// Busca o produto no array da memória pelo ID para evitar erro de Token/JSON no HTML
 function prepararEdicao(id) {
     const produto = listaProdutosLocal.find(item => item._id === id);
     if(produto) {
@@ -286,7 +284,8 @@ function abrirEdicaoProduto(id, p) {
     document.getElementById('p-preco').value = p.preco || "";
     document.getElementById('p-status').value = p.status || "disponivel";
     document.getElementById('p-desconto').value = p.desconto || "";
-    document.getElementById('p-modificador').checked = p.modificadoresAtivos || false;
+    // CORREÇÃO: Alinhando o nome do campo com o que vem do banco
+    document.getElementById('p-modificador').checked = p.modificadoresAtivos === true;
     document.getElementById('p-img-data').value = p.img || "";
     document.getElementById('p-categoria-origem').value = p.categoria;
     
@@ -307,6 +306,7 @@ async function salvarProduto() {
         preco: document.getElementById('p-preco').value,
         desc: document.getElementById('p-desc').value,
         status: document.getElementById('p-status').value,
+        // CORREÇÃO: Garante o envio do desconto e do estado do modificador
         desconto: document.getElementById('p-desconto').value,
         modificadoresAtivos: document.getElementById('p-modificador').checked,
         categoria: document.getElementById('p-categoria-origem').value,
@@ -361,7 +361,7 @@ function confirmarExclusaoCat(id, fixa) {
         return;
     }
     if(confirm("Excluir esta categoria?")) {
-        // fetch('/delete-categoria/' + id, { method: 'DELETE' }).then(() => carregarDadosCompletos());
+        fetch('/delete-categoria/' + id, { method: 'DELETE' }).then(() => carregarDadosCompletos());
     }
 }
 
