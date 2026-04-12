@@ -71,7 +71,7 @@ document.head.appendChild(styleSheet);
 
 // --- 1. RENDERIZAÇÃO E CARREGAMENTO ---
 
-function renderizarPainelAdmin(containerId) {
+function renderizarPainelCategorias(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -146,6 +146,7 @@ async function carregarTudo() {
 
 function renderizarListaProdutos() {
     const container = document.getElementById('lista-categorias-produtos');
+    if(!container) return;
     container.innerHTML = "";
 
     listaCategoriasProdutos.forEach(cat => {
@@ -247,6 +248,7 @@ function abrirModalProduto(id = null, catNome = "") {
 
 function renderizarListaAdicionais() {
     const container = document.getElementById('lista-categorias-adicionais');
+    if(!container) return;
     container.innerHTML = "";
 
     listaCategoriasAdicionais.forEach(cat => {
@@ -420,7 +422,8 @@ function fecharTodosDropdowns() {
 }
 
 function fecharModal(id) {
-    document.getElementById(id).style.display = "none";
+    const modal = document.getElementById(id);
+    if(modal) modal.style.display = "none";
 }
 
 // --- 5. LÓGICA DE PERSISTÊNCIA (PARA O SERVER.JS) ---
@@ -461,3 +464,8 @@ async function salvarItemAdicional() {
 window.onclick = function(event) {
     if (!event.target.matches('button')) fecharTodosDropdowns();
 }
+
+// --- EXPOSIÇÃO GLOBAL PARA O ADMIN.EJS ---
+window.renderizarPainelCategorias = renderizarPainelCategorias;
+window.renderizarPainelAdmin = renderizarPainelAdmin;
+window.carregarTudo = carregarTudo;

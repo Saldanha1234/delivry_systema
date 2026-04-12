@@ -358,7 +358,6 @@
         async function salvarConfigSite() {
             const dados = {
                 manutencao: document.getElementById('conf-manutencao').checked,
-                nomeSite: document.getElementById('conf-nomeSite')?.value || '',
                 cidadeAtiva: document.getElementById('conf-cidadeAtiva').checked,
                 cidadeNome: document.getElementById('conf-cidadeNome').value,
                 cidadeEstado: document.getElementById('conf-cidadeEstado').value
@@ -368,6 +367,19 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
+        }
+
+        async function salvarConfigPix() {
+            const dados = {
+                pixProvedor: document.getElementById('conf-pixProvedor').value,
+                pixToken: document.getElementById('conf-pixToken').value
+            };
+            const res = await fetch('/update-config-pix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if(res.ok) alert('Configurações Pix salvas!');
         }
 
         function toggleCamposCidade() {
