@@ -1,491 +1,387 @@
 /**
- * LÓGICA DE GERENCIAMENTO DE PRODUTOS E CATEGORIAS - VERSÃO DINÂMICA COM ADICIONAIS
+ * GERENCIAR PRODUTOS.JS - VERSÃO RESTAURADA E COMPLETA (2026)
+ * Sistema de listagem automática e criação de produtos recuperado.
  */
 
+// Variáveis Globais de Controle
 let imagemBase64 = ""; 
 let listaProdutosLocal = [];
-let listaCategoriasProdutos = [];
-let listaCategoriasAdicionais = [];
 
-// --- 0. CSS ATUALIZADO (Incluindo Adicionais e Modais Dinâmicos) ---
+// --- 0. INJEÇÃO DE CSS (Interface Organizada) ---
 const styles = `
     .painel-unico-admin { font-family: sans-serif; max-width: 800px; margin: 20px auto; background: #f4f4f4; padding: 15px; border-radius: 8px; }
-    .header-painel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px; }
+    .header-painel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .btn-add-principal { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-    .btn-add-adicional-cat { background: #6f42c1; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
     
-    .item-categoria-container { background: white; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+    .item-categoria-container { background: white; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
     .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid #eee; }
     .cat-info { display: flex; align-items: center; cursor: pointer; flex-grow: 1; }
-    .seta { margin-right: 15px; font-weight: bold; transition: 0.3s; }
-    .cat-nome { font-weight: bold; font-size: 1.1em; }
+    .seta { margin-right: 15px; font-weight: bold; transition: 0.3s; color: #666; }
+    .cat-nome { font-weight: bold; font-size: 1.1em; color: #333; }
     
-    .conteudo-lista { padding: 10px 15px; background: #fafafa; border-top: 1px solid #eee; }
-    .btn-acao-interna { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px dashed #ccc; background: #fff; cursor: pointer; border-radius: 4px; font-weight: bold; }
+    .produtos-lista { padding: 10px 15px; background: #fafafa; border-top: 1px solid #eee; }
+    .btn-add-produto { width: 100%; padding: 10px; margin-bottom: 10px; border: 2px dashed #ddd; background: #fff; cursor: pointer; border-radius: 6px; color: #666; font-weight: bold; }
+    .btn-add-produto:hover { background: #f0f0f0; border-color: #bbb; }
     
-    .item-linha { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 4px; }
-    .item-info-wrapper { display: flex; align-items: center; flex-grow: 1; }
-    .prod-img-min { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 12px; background: #eee; }
-    .item-txt-container { display: flex; flex-direction: column; }
-    .item-nome-txt { font-weight: bold; }
-    .item-preco-txt { font-size: 0.9em; color: #28a745; font-weight: bold; }
-    .item-status-tag { font-size: 0.7em; padding: 2px 5px; border-radius: 3px; margin-top: 3px; width: fit-content; }
-    .tag-indisponivel { background: #ff4d4d; color: white; }
+    .produto-linha { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+    .produto-linha:hover { background: #f9f9f9; }
+    .prod-info-wrapper { display: flex; align-items: center; flex-grow: 1; }
+    .prod-img-min { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; margin-right: 12px; background: #eee; border: 1px solid #ddd; }
+    .prod-txt-container { display: flex; flex-direction: column; }
+    .prod-nome-txt { font-weight: bold; color: #333; }
+    .prod-preco-txt { font-size: 0.95em; color: #28a745; font-weight: bold; margin-top: 2px; }
 
     .dropdown { position: relative; display: inline-block; }
-    .dropdown-content { display: none; position: absolute; right: 0; top: 100%; background: white; min-width: 150px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); z-index: 999; border-radius: 4px; border: 1px solid #ddd; }
+    .dropdown-content { 
+        display: none; 
+        position: absolute; 
+        right: 0; 
+        top: 100%; 
+        background: white; 
+        min-width: 160px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+        z-index: 1000; 
+        border-radius: 8px; 
+        border: 1px solid #eee;
+        overflow: hidden;
+    }
     .dropdown-content.show { display: block; }
-    .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; cursor: pointer; }
-    .dropdown-content a:hover { background: #f1f1f1; }
+    .dropdown-content a { color: #333; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #f5f5f5; }
+    .dropdown-content a:hover { background: #f8f9fa; color: #007bff; }
 
+    /* Modal Fullscreen */
     .modal-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; overflow-y: auto; display: none; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; z-index: 10; }
+    .modal-content header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; z-index: 10; }
     .modal-body { padding: 20px; max-width: 600px; margin: 0 auto; }
+    .upload-area { text-align: center; margin-bottom: 25px; border: 2px dashed #ddd; padding: 20px; border-radius: 12px; background: #fcfcfc; }
+    .input-group { margin-bottom: 18px; }
+    .input-group label { display: block; margin-bottom: 6px; font-weight: bold; color: #444; }
+    .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     
-    .tree-categoria { margin-top: 15px; border: 1px solid #eee; border-radius: 5px; padding: 10px; }
-    .tree-produto { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #f9f9f9; }
-    .btn-vinculo { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: bold; }
-    .btn-vinculo.adicionado { background: #28a745; color: white; border-color: #28a745; }
-    .txt-adicionado { color: #28a745; font-size: 0.8em; font-weight: bold; margin-left: 10px; }
-
-    .input-group { margin-bottom: 15px; }
-    .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-    .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-    .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+    .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
     .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
     input:checked + .slider { background-color: #28a745; }
-    input:checked + .slider:before { transform: translateX(26px); }
-    .flex-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-top: 1px solid #eee; }
+    input:checked + .slider:before { transform: translateX(22px); }
+    .toggle-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-top: 1px solid #eee; }
 `;
 
 const styleSheet = document.createElement("style");
 styleSheet.innerText = styles;
 document.head.appendChild(styleSheet);
 
-// --- 1. RENDERIZAÇÃO E CARREGAMENTO ---
+// --- 1. RENDERIZAÇÃO E INICIALIZAÇÃO ---
 
-function renderizarPainelCategorias(containerId) {
+window.renderizarPainelCategorias = function(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
     container.innerHTML = `
         <div class="painel-unico-admin" onclick="fecharTodosDropdowns(event)">
             <div class="header-painel">
-                <h3>Categorias de Produtos</h3>
-                <button class="btn-add-principal" onclick="criarNovaCategoriaProd()">+ Categoria Produtos</button>
+                <h3>Gerenciar Itens</h3>
+                <button class="btn-add-principal" onclick="criarNovaCategoria()">+ Categoria</button>
             </div>
-            <div id="lista-categorias-produtos"></div>
-
-            <hr style="margin: 40px 0; border: 1px solid #ddd;">
-
-            <div class="header-painel">
-                <h3>Categorias de Adicionais</h3>
-                <button class="btn-add-adicional-cat" onclick="criarNovaCategoriaAdicional()">+ Categoria Adicionais</button>
-            </div>
-            <div id="lista-categorias-adicionais"></div>
+            <div id="lista-hierarquica"></div>
         </div>
 
         <div id="modal-produto" class="modal-fullscreen">
-            <div class="modal-header">
-                <button onclick="fecharModal('modal-produto')">← Voltar</button>
-                <span id="titulo-modal-produto" style="font-weight:bold;">Produto</span>
-                <button onclick="salvarProduto()" style="background:#007bff; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
-            </div>
-            <div class="modal-body" id="body-modal-produto"></div>
-        </div>
+            <div class="modal-content">
+                <header>
+                    <button onclick="fecharModal()" style="border:none; background:none; font-size:22px; cursor:pointer;">✕</button>
+                    <span id="modal-titulo" style="font-weight:bold; font-size:1.2em;">Novo Produto</span>
+                    <button class="btn-salvar-modal" onclick="salvarProduto()" style="background:#007bff; color:white; border:none; padding:10px 25px; border-radius:8px; cursor:pointer; font-weight:bold;">SALVAR</button>
+                </header>
+                
+                <div class="modal-body">
+                    <input type="hidden" id="p-id">
+                    <input type="hidden" id="p-img-data">
+                    <input type="hidden" id="p-categoria-origem">
 
-        <div id="modal-cat-adicional" class="modal-fullscreen">
-            <div class="modal-header">
-                <button onclick="fecharModal('modal-cat-adicional')">← Voltar</button>
-                <span style="font-weight:bold;">Configurar Categoria de Adicional</span>
-                <button onclick="salvarCatAdicional()" style="background:#6f42c1; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
-            </div>
-            <div class="modal-body" id="body-modal-cat-adicional"></div>
-        </div>
+                    <div class="upload-area">
+                        <img id="p-preview" src="" style="width: 180px; height: 180px; object-fit: cover; border-radius:12px; margin-bottom:15px; display:none; border: 1px solid #ddd;">
+                        <input type="file" id="p-file" accept="image/*" onchange="converterImagem()" style="display:none;">
+                        <label for="p-file" style="cursor:pointer; color:#007bff; font-weight:bold; display:block; padding:10px;">📷 Alterar Foto do Produto</label>
+                    </div>
 
-        <div id="modal-item-adicional" class="modal-fullscreen">
-            <div class="modal-header">
-                <button onclick="fecharModal('modal-item-adicional')">← Voltar</button>
-                <span style="font-weight:bold;">Adicional</span>
-                <button onclick="salvarItemAdicional()" style="background:#28a745; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
+                    <div class="input-group">
+                        <label>Nome do Produto</label>
+                        <input type="text" id="p-nome" placeholder="Ex: X-Salada Especial">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Descrição / Ingredientes</label>
+                        <textarea id="p-desc" rows="3" placeholder="Pão, hambúrguer, alface..."></textarea>
+                    </div>
+
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Preço de Venda (R$)</label>
+                            <input type="number" id="p-preco" step="0.01" placeholder="0,00">
+                        </div>
+                        <div class="input-group">
+                            <label>Disponibilidade</label>
+                            <select id="p-status">
+                                <option value="disponivel">Disponível</option>
+                                <option value="indisponivel">Pausado / Esgotado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="toggle-item">
+                        <span>🏷️ Preço Promocional (R$)</span>
+                        <input type="number" id="p-desconto" style="width:130px; padding:10px; border-radius:8px; border:1px solid #ddd;" placeholder="Opcional">
+                    </div>
+
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Adicionais e Modificadores</strong><br>
+                            <small style="color:#666;">Permitir que o cliente escolha extras</small>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="p-modificador">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
-            <div class="modal-body" id="body-modal-item-adicional"></div>
         </div>
     `;
-    carregarTudo();
-}
+    window.carregarDadosCompletos();
+};
 
-async function carregarTudo() {
+// --- 2. LÓGICA DE DADOS (Categorias Automáticas Restauradas) ---
+
+window.carregarDadosCompletos = async function() {
     try {
-        const [resCatP, resProd, resCatA] = await Promise.all([
+        const [resCat, resProd] = await Promise.all([
             fetch('/get-categorias'),
-            fetch('/get-produtos'),
-            fetch('/get-categorias-adicionais')
+            fetch('/get-produtos')
         ]);
 
-        const extrairJson = async (res) => {
-            if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-                return await res.json();
-            }
-            return [];
-        };
+        const categorias = await resCat.json();
+        const produtos = await resProd.json();
+        listaProdutosLocal = produtos;
 
-        listaCategoriasProdutos = await extrairJson(resCatP);
-        listaProdutosLocal = await extrairJson(resProd);
-        listaCategoriasAdicionais = await extrairJson(resCatA);
+        const lista = document.getElementById('lista-hierarquica');
+        if (!lista) return;
+        lista.innerHTML = "";
 
-        renderizarListaProdutos();
-        renderizarListaAdicionais();
-    } catch (err) { console.error("Erro ao carregar dados:", err); }
-}
-
-// --- 2. GESTÃO DE PRODUTOS ---
-
-function renderizarListaProdutos() {
-    const container = document.getElementById('lista-categorias-produtos');
-    if(!container) return;
-    container.innerHTML = "";
-
-    listaCategoriasProdutos.forEach(cat => {
-        if(cat.nome === "Todos" || cat.nome === "Defina um nome") return;
+        // RECUPERAÇÃO: Sistema de categorias fixas originais
+        const fixasNomes = ["Promoção", "Mais Comprados"];
         
-        const prodsDaCat = listaProdutosLocal.filter(p => p.categoria === cat.nome);
-        const div = document.createElement('div');
-        div.className = "item-categoria-container";
-        div.innerHTML = `
-            <div class="categoria-header">
-                <div class="cat-info" onclick="toggleConteudo('prod-cat-${cat._id}')">
-                    <span class="seta" id="seta-prod-cat-${cat._id}">▲</span>
-                    <span class="cat-nome">${cat.nome}</span>
-                </div>
-                <div class="dropdown">
-                    <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer;">⋮</button>
-                    <div class="dropdown-content">
-                        <a onclick="excluirCategoriaProd('${cat._id}')">Excluir</a>
-                        <a onclick="duplicarCategoriaProd('${cat._id}')">Duplicar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="conteudo-lista" id="prod-cat-${cat._id}" style="display:none;">
-                <button class="btn-acao-interna" onclick="abrirModalProduto(null, '${cat.nome}')">+ Criar Produto em ${cat.nome}</button>
-                <div id="itens-de-${cat._id}">
-                    ${prodsDaCat.map(p => `
-                        <div class="item-linha">
-                            <div class="item-info-wrapper" onclick="abrirModalProduto('${p._id}')">
-                                <img src="${p.img || ''}" class="prod-img-min" onerror="this.style.display='none'">
-                                <div class="item-txt-container">
-                                    <span class="item-nome-txt">${p.nome}</span>
-                                    <span class="item-preco-txt">R$ ${parseFloat(p.preco).toFixed(2)}</span>
-                                </div>
-                            </div>
-                            <div class="dropdown">
-                                <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
-                                <div class="dropdown-content">
-                                    <a onclick="excluirProduto('${p._id}')">Excluir</a>
-                                    <a onclick="duplicarProduto('${p._id}')">Duplicar</a>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
+        // 1. Renderiza as Fixas primeiro
+        fixasNomes.forEach(nome => {
+            renderizarItemCategoria({ nome, fixa: true, _id: nome }, produtos);
+        });
 
-// --- FUNÇÃO QUE FALTAVA ---
-async function criarNovaCategoriaProd() {
-    const nome = prompt("Nome da nova categoria:");
-    if(!nome) return;
-    const res = await fetch('/add-categoria', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ nome: nome })
-    });
-    if(res.ok) carregarTudo();
-}
+        // 2. Renderiza as demais categorias do banco
+        categorias.forEach(cat => {
+            if (!fixasNomes.includes(cat.nome) && cat.nome !== "Todos" && cat.nome !== "Defina um nome") {
+                renderizarItemCategoria(cat, produtos);
+            }
+        });
 
-function abrirModalProduto(id = null, catNome = "") {
-    const p = id ? listaProdutosLocal.find(x => x._id === id) : { nome: "", preco: "", desc: "", categoria: catNome, status: "disponivel", adicionaisAtivos: false, categoriasVinculadas: [] };
-    
-    document.getElementById('titulo-modal-produto').innerText = id ? "Editar Produto" : "Novo Produto";
-    const body = document.getElementById('body-modal-produto');
-    
-    body.innerHTML = `
-        <input type="hidden" id="p-id" value="${id || ''}">
-        <div class="upload-area" style="text-align:center; border:2px dashed #ddd; padding:20px; border-radius:10px; margin-bottom:15px;">
-            <img id="p-preview" src="${p.img || ''}" style="width:120px; height:120px; object-fit:cover; display:${p.img ? 'block' : 'none'}; margin:0 auto 10px auto; border-radius:10px;">
-            <input type="file" id="p-file" accept="image/*" onchange="converterImagemProduto()" style="display:none;">
-            <label for="p-file" style="cursor:pointer; color:#007bff; font-weight:bold;">📷 Selecionar Foto</label>
-        </div>
-        <div class="input-group">
-            <label>Nome do Produto</label>
-            <input type="text" id="p-nome" value="${p.nome}">
-        </div>
-        <div class="input-group">
-            <label>Preço Base (R$)</label>
-            <input type="number" id="p-preco" step="0.01" value="${p.preco}">
-        </div>
-        <div class="flex-row">
-            <span>Usar sistema de Adicionais?</span>
-            <label class="switch">
-                <input type="checkbox" id="p-adicionais-toggle" ${p.adicionaisAtivos ? 'checked' : ''} onchange="toggleVisAdicionaisProd()">
-                <span class="slider"></span>
-            </label>
-        </div>
-        <div id="sessao-vinculo-adicionais" style="display:${p.adicionaisAtivos ? 'block' : 'none'}; margin-top:15px;">
-            <small>Escolha as categorias de adicionais para este produto:</small>
-            ${listaCategoriasAdicionais.map(ca => `
-                <div class="item-linha">
-                    <span>${ca.nome}</span>
-                    <div class="dropdown">
-                        <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
-                        <div class="dropdown-content">
-                            <a onclick="vincularCatAoProduto('${p._id}', '${ca._id}', true)">Adicionar</a>
-                            <a onclick="vincularCatAoProduto('${p._id}', '${ca._id}', false)">Excluir</a>
-                        </div>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-    document.getElementById('modal-produto').style.display = "block";
-}
-
-// --- 3. GESTÃO DE CATEGORIAS DE ADICIONAIS ---
-
-function renderizarListaAdicionais() {
-    const container = document.getElementById('lista-categorias-adicionais');
-    if(!container) return;
-    container.innerHTML = "";
-
-    listaCategoriasAdicionais.forEach(cat => {
-        const itens = cat.itens || [];
-        const div = document.createElement('div');
-        div.className = "item-categoria-container";
-        div.innerHTML = `
-            <div class="categoria-header">
-                <div class="cat-info" onclick="toggleConteudo('adic-cat-${cat._id}')">
-                    <span class="seta" id="seta-adic-cat-${cat._id}">▲</span>
-                    <span class="cat-nome">${cat.nome || "Nova Categoria"}</span>
-                </div>
-                <div class="dropdown">
-                    <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer;">⋮</button>
-                    <div class="dropdown-content">
-                        <a onclick="excluirCatAdicional('${cat._id}')">Excluir</a>
-                        <a onclick="duplicarCatAdicional('${cat._id}')">Duplicar</a>
-                        <a onclick="abrirModalEdicaoCatAdicional('${cat._id}')">Editar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="conteudo-lista" id="adic-cat-${cat._id}" style="display:none;">
-                <button class="btn-acao-interna" style="border-color:#6f42c1; color:#6f42c1;" onclick="abrirModalItemAdicional(null, '${cat._id}')">+ Criar Adicional</button>
-                <div id="itens-adicionais-de-${cat._id}">
-                    ${itens.map(it => `
-                        <div class="item-linha">
-                            <div class="item-info-wrapper" onclick="abrirModalItemAdicional('${it.id}', '${cat._id}')">
-                                <div class="item-txt-container">
-                                    <span class="item-nome-txt">${it.nome}</span>
-                                    <span class="item-preco-txt">R$ ${parseFloat(it.preco).toFixed(2)}</span>
-                                    ${it.status === 'indisponivel' ? '<span class="item-status-tag tag-indisponivel">Indisponível</span>' : ''}
-                                </div>
-                            </div>
-                            <div class="dropdown">
-                                <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
-                                <div class="dropdown-content">
-                                    <a onclick="excluirItemAdicional('${cat._id}', '${it.id}')">Excluir</a>
-                                    <a onclick="duplicarItemAdicional('${cat._id}', '${it.id}')">Duplicar</a>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-function abrirModalEdicaoCatAdicional(id) {
-    const cat = listaCategoriasAdicionais.find(x => x._id === id);
-    const body = document.getElementById('body-modal-cat-adicional');
-    
-    body.innerHTML = `
-        <input type="hidden" id="edit-cat-adic-id" value="${id}">
-        <div class="input-group">
-            <label>Nome da Categoria</label>
-            <input type="text" id="edit-cat-adic-nome" value="${cat.nome || ''}">
-        </div>
-        <div class="input-group">
-            <label>Status</label>
-            <select id="edit-cat-adic-status">
-                <option value="opcional" ${cat.status === 'opcional' ? 'selected' : ''}>Opcional</option>
-                <option value="obrigatorio" ${cat.status === 'obrigatorio' ? 'selected' : ''}>Obrigatório</option>
-            </select>
-        </div>
-
-        <div class="flex-row">
-            <span>Vincular a Produtos</span>
-            <label class="switch">
-                <input type="checkbox" id="toggle-vincular-produtos" onchange="toggleArvoreProdutos()">
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div id="arvore-produtos-vinc" style="display:none; margin-top:20px;">
-            ${listaCategoriasProdutos.map(cp => `
-                <div class="tree-categoria">
-                    <div style="font-weight:bold; padding:5px; background:#f0f0f0; cursor:pointer;" onclick="toggleConteudo('tree-cat-${cp._id}')">📁 ${cp.nome}</div>
-                    <div id="tree-cat-${cp._id}" style="display:none; padding-left:15px;">
-                        ${listaProdutosLocal.filter(p => p.categoria === cp.nome).map(prod => {
-                            const estaVinculado = cat.produtosVinculados?.includes(prod._id);
-                            return `
-                                <div class="tree-produto">
-                                    <span>${prod.nome} ${estaVinculado ? '<span class="txt-adicionado" id="txt-vinc-${prod._id}">- Adicionado</span>' : '<span class="txt-adicionado" id="txt-vinc-${prod._id}" style="display:none;">- Adicionado</span>'}</span>
-                                    <button class="btn-vinculo ${estaVinculado ? 'adicionado' : ''}" id="btn-vinc-${prod._id}" onclick="alternarVinculo('${prod._id}')">${estaVinculado ? '-' : '+'}</button>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-    document.getElementById('modal-cat-adicional').style.display = "block";
-}
-
-function abrirModalItemAdicional(itemId = null, catId) {
-    const cat = listaCategoriasAdicionais.find(x => x._id === catId);
-    const item = itemId ? cat.itens.find(i => i.id === itemId) : { nome: "", preco: "", status: "disponivel", desconto: "" };
-
-    const body = document.getElementById('body-modal-item-adicional');
-    body.innerHTML = `
-        <input type="hidden" id="item-adic-id" value="${itemId || ''}">
-        <input type="hidden" id="item-adic-parent" value="${catId}">
-        <div class="input-group">
-            <label>Nome do Adicional</label>
-            <input type="text" id="item-adic-nome" value="${item.nome}" placeholder="Ex: Bacon, Coca 2L...">
-        </div>
-        <div class="input-group">
-            <label>Preço Bruto (R$)</label>
-            <input type="number" id="item-adic-preco" step="0.01" value="${item.preco}">
-        </div>
-        <div class="input-group">
-            <label>Status</label>
-            <select id="item-adic-status">
-                <option value="disponivel" ${item.status === 'disponivel' ? 'selected' : ''}>Disponível</option>
-                <option value="indisponivel" ${item.status === 'indisponivel' ? 'selected' : ''}>Indisponível (Acabou)</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <label>Preço com Desconto (Opcional)</label>
-            <input type="number" id="item-adic-desconto" step="0.01" value="${item.desconto}" placeholder="Preço final com desconto">
-            <small style="color:gray;">Se preenchido, o preço bruto aparecerá riscado.</small>
-        </div>
-    `;
-    document.getElementById('modal-item-adicional').style.display = "block";
-}
-
-// --- 4. FUNÇÕES DE AUXÍLIO E LÓGICA DE INTERAÇÃO ---
-
-function toggleConteudo(id) {
-    const div = document.getElementById(id);
-    const seta = document.getElementById('seta-' + id);
-    if(div.style.display === "none") {
-        div.style.display = "block";
-        if(seta) seta.innerText = "▼";
-    } else {
-        div.style.display = "none";
-        if(seta) seta.innerText = "▲";
+    } catch (err) { 
+        console.error("Erro ao carregar dados:", err); 
     }
+};
+
+function renderizarItemCategoria(cat, todosProdutos) {
+    const lista = document.getElementById('lista-hierarquica');
+    const produtosDaCat = todosProdutos.filter(p => p.categoria === cat.nome);
+    
+    const div = document.createElement('div');
+    div.className = "item-categoria-container";
+    div.innerHTML = `
+        <div class="categoria-header">
+            <div class="cat-info" onclick="toggleExpandir('${cat.nome}')">
+                <span class="seta" id="seta-${cat.nome}">▲</span>
+                <span class="cat-nome">${cat.nome}</span>
+            </div>
+            <div class="dropdown">
+                <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer; padding:5px 10px;">⋮</button>
+                <div class="dropdown-content">
+                    <a href="javascript:void(0)" onclick="confirmarExclusaoCat('${cat._id}', '${cat.fixa}')">Excluir Categoria</a>
+                </div>
+            </div>
+        </div>
+        <div class="produtos-lista" id="lista-prod-${cat.nome}" style="display:none;">
+            <button class="btn-add-produto" onclick="abrirCriarProduto('${cat.nome}')">+ Novo Produto em ${cat.nome}</button>
+            <div id="itens-prod-${cat.nome}">
+                ${produtosDaCat.map(p => `
+                    <div class="produto-linha" onclick="prepararEdicao('${p._id}')">
+                        <div class="prod-info-wrapper">
+                            <img src="${p.img || ''}" class="prod-img-min" onerror="this.style.display='none'">
+                            <div class="prod-txt-container">
+                                <span class="prod-nome-txt">${p.nome || 'Produto sem nome'}</span>
+                                <span class="prod-preco-txt">R$ ${parseFloat(p.preco || 0).toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer; padding:5px;">⋮</button>
+                            <div class="dropdown-content">
+                                <a href="javascript:void(0)" onclick="excluirProduto('${p._id}')">Remover</a>
+                                <a href="javascript:void(0)" onclick="duplicarProduto('${p._id}')">Duplicar</a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    lista.appendChild(div);
 }
 
-function alternarVinculo(prodId) {
-    const btn = document.getElementById('btn-vinc-' + prodId);
-    const txt = document.getElementById('txt-vinc-' + prodId);
-    if(btn.classList.contains('adicionado')) {
-        btn.classList.remove('adicionado');
-        btn.innerText = "+";
-        txt.style.display = "none";
-    } else {
-        btn.classList.add('adicionado');
-        btn.innerText = "-";
-        txt.style.display = "inline";
-    }
-}
+// --- 3. INTERAÇÕES E UI ---
 
-function toggleArvoreProdutos() {
-    const check = document.getElementById('toggle-vincular-produtos');
-    document.getElementById('arvore-produtos-vinc').style.display = check.checked ? "block" : "none";
-}
-
-function menuClique(e) {
+window.menuClique = function(e) {
     e.stopPropagation();
+    const jaAberto = e.target.nextElementSibling.classList.contains('show');
     fecharTodosDropdowns();
-    e.target.nextElementSibling.classList.toggle('show');
-}
+    if (!jaAberto) e.target.nextElementSibling.classList.add('show');
+};
 
-function fecharTodosDropdowns() {
+window.fecharTodosDropdowns = function() {
     document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
-}
+};
 
-function fecharModal(id) {
-    const modal = document.getElementById(id);
-    if(modal) modal.style.display = "none";
-}
+window.toggleExpandir = function(catNome) {
+    const lista = document.getElementById(`lista-prod-${catNome}`);
+    const seta = document.getElementById(`seta-${catNome}`);
+    if(lista.style.display === "none") {
+        lista.style.display = "block";
+        seta.innerHTML = "▼";
+    } else {
+        lista.style.display = "none";
+        seta.innerHTML = "▲";
+    }
+};
 
-// --- 5. LÓGICA DE PERSISTÊNCIA ---
+// --- 4. GESTÃO DE PRODUTOS ---
 
-async function criarNovaCategoriaAdicional() {
-    const res = await fetch('/add-categoria-adicional', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ nome: "Nova Categoria", status: "opcional", itens: [], produtosVinculados: [] })
-    });
-    if(res.ok) carregarTudo();
-}
+window.prepararEdicao = function(id) {
+    const produto = listaProdutosLocal.find(item => item._id === id);
+    if(produto) window.abrirEdicaoProduto(id, produto);
+};
 
-async function salvarItemAdicional() {
-    const catId = document.getElementById('item-adic-parent').value;
-    const itemId = document.getElementById('item-adic-id').value;
+window.abrirCriarProduto = function(catNome) {
+    imagemBase64 = "";
+    document.getElementById('p-id').value = "";
+    document.getElementById('p-img-data').value = "";
+    document.getElementById('p-nome').value = "";
+    document.getElementById('p-desc').value = "";
+    document.getElementById('p-preco').value = "";
+    document.getElementById('p-desconto').value = "";
+    document.getElementById('p-modificador').checked = false;
+    document.getElementById('p-categoria-origem').value = catNome;
+    document.getElementById('p-preview').style.display = "none";
+    document.getElementById('modal-titulo').innerText = `Novo Produto em ${catNome}`;
+    document.getElementById('modal-produto').style.display = "block";
+};
+
+window.abrirEdicaoProduto = function(id, p) {
+    document.getElementById('p-id').value = id;
+    document.getElementById('p-nome').value = p.nome || "";
+    document.getElementById('p-desc').value = p.desc || "";
+    document.getElementById('p-preco').value = p.preco || "";
+    document.getElementById('p-status').value = p.status || "disponivel";
+    document.getElementById('p-desconto').value = p.desconto || "";
+    document.getElementById('p-modificador').checked = p.modificadoresAtivos === true;
+    document.getElementById('p-img-data').value = p.img || "";
+    document.getElementById('p-categoria-origem').value = p.categoria;
+    
+    if(p.img) {
+        document.getElementById('p-preview').src = p.img;
+        document.getElementById('p-preview').style.display = "block";
+    } else {
+        document.getElementById('p-preview').style.display = "none";
+    }
+    document.getElementById('modal-titulo').innerText = "Editar Produto";
+    document.getElementById('modal-produto').style.display = "block";
+};
+
+window.salvarProduto = async function() {
+    const id = document.getElementById('p-id').value;
     const dados = {
-        id: itemId || Date.now().toString(),
-        nome: document.getElementById('item-adic-nome').value,
-        preco: document.getElementById('item-adic-preco').value,
-        status: document.getElementById('item-adic-status').value,
-        desconto: document.getElementById('item-adic-desconto').value
+        nome: document.getElementById('p-nome').value,
+        preco: document.getElementById('p-preco').value,
+        desc: document.getElementById('p-desc').value,
+        status: document.getElementById('p-status').value,
+        desconto: document.getElementById('p-desconto').value,
+        modificadoresAtivos: document.getElementById('p-modificador').checked,
+        categoria: document.getElementById('p-categoria-origem').value,
+        img: imagemBase64 || document.getElementById('p-img-data').value
     };
 
-    const res = await fetch(`/update-item-adicional/${catId}`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ item: dados, isNew: !itemId })
-    });
-
-    if(res.ok) {
-        fecharModal('modal-item-adicional');
-        carregarTudo();
+    if(!dados.nome || !dados.preco) {
+        alert("Nome e Preço são obrigatórios!");
+        return;
     }
-}
 
-window.onclick = function(event) {
-    if (!event.target.matches('button')) fecharTodosDropdowns();
-}
+    try {
+        const url = id ? `/edit-produto/${id}` : '/add-produto';
+        const res = await fetch(url, {
+            method: id ? 'PUT' : 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(dados)
+        });
+        if(res.ok) {
+            fecharModal();
+            window.carregarDadosCompletos();
+        }
+    } catch (err) { console.error(err); }
+};
 
-// --- EXPOSIÇÃO GLOBAL (RESOLVE O ERRO DE "NOT DEFINED") ---
-window.renderizarPainelCategorias = renderizarPainelCategorias;
-window.carregarTudo = carregarTudo;
-window.criarNovaCategoriaProd = criarNovaCategoriaProd;
-window.criarNovaCategoriaAdicional = criarNovaCategoriaAdicional;
-window.abrirModalProduto = abrirModalProduto;
-window.abrirModalItemAdicional = abrirModalItemAdicional;
-window.abrirModalEdicaoCatAdicional = abrirModalEdicaoCatAdicional;
-window.fecharModal = fecharModal;
-window.salvarItemAdicional = salvarItemAdicional;
-window.toggleConteudo = toggleConteudo;
-window.menuClique = menuClique;
-window.alternarVinculo = alternarVinculo;
-window.toggleArvoreProdutos = toggleArvoreProdutos;
+window.fecharModal = function() {
+    document.getElementById('modal-produto').style.display = "none";
+};
+
+window.converterImagem = function() {
+    const file = document.getElementById('p-file').files[0];
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        imagemBase64 = reader.result;
+        document.getElementById('p-preview').src = reader.result;
+        document.getElementById('p-preview').style.display = "block";
+    }
+    if (file) reader.readAsDataURL(file);
+};
+
+// --- 5. GESTÃO DE CATEGORIAS ---
+
+window.criarNovaCategoria = async function() {
+    const nome = prompt("Nome da nova categoria:");
+    if(!nome) return;
+    try {
+        const res = await fetch('/add-categoria', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nome: nome })
+        });
+        if(res.ok) window.carregarDadosCompletos();
+    } catch(e) { console.error(e); }
+};
+
+window.confirmarExclusaoCat = function(id, fixa) {
+    if(fixa === "true" || id === "Promoção" || id === "Mais Comprados") {
+        alert("Estas categorias são automáticas do sistema e não podem ser removidas.");
+        return;
+    }
+    if(confirm("Deseja realmente excluir esta categoria e ocultar seus produtos?")) {
+        fetch('/delete-categoria/' + id, { method: 'DELETE' }).then(() => window.carregarDadosCompletos());
+    }
+};
+
+window.excluirProduto = function(id) {
+    if(confirm("Remover este produto permanentemente?")) {
+        fetch('/delete-produto/' + id, { method: 'DELETE' }).then(() => window.carregarDadosCompletos());
+    }
+};
+
+// Fecha menus ao clicar fora
+window.addEventListener('click', function(e) {
+    if (!e.target.matches('button')) window.fecharTodosDropdowns();
+});
