@@ -72,34 +72,6 @@
             font-size: 0.9rem;
         }
 
-        /* --- Tabelas --- */
-        .table-responsive { 
-            width: 100%; 
-            overflow-x: auto; 
-            background: white; 
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .admin-table { width: 100%; border-collapse: collapse; min-width: 550px; } 
-        .admin-table th { background: #f8f9fa; padding: 12px; text-align: left; font-size: 0.85rem; color: #777; }
-        .admin-table td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 0.9rem; }
-        .img-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; }
-        
-        .action-btns { display: flex; gap: 5px; }
-        .btn-edit { background: var(--info); color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
-        .btn-del { background: var(--danger); color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
-
-        /* --- Estilos Categoria --- */
-        .item-categoria-linha {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            font-size: 0.9rem;
-        }
-        .item-categoria-linha:last-child { border-bottom: none; }
-
         /* --- Chat Suporte --- */
         .suporte-container { display: flex; height: 75vh; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .chat-sidebar-list { width: 280px; background: #f8f9fa; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
@@ -327,74 +299,22 @@
             </div>
 
             <div id="aba-cardapio" class="tab-content">
-                <div class="manager-card" style="background:#fff; padding:20px; border-radius:12px; margin-bottom: 20px; border-top: 5px solid var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                    <h3 style="margin-top:0; font-size: 1.1rem;">🏷️ Gerenciar Categorias</h3>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <input type="hidden" id="cat-id">
-                        <input type="text" id="cat-nome" placeholder="Ex: Pizzas, Bebidas..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;">
-                        <button id="btn-salvar-cat" onclick="salvarCategoria()" style="background:var(--dark); color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">SALVAR</button>
-                    </div>
-                    <div id="lista-categorias" style="max-height: 150px; overflow-y: auto; background: #f9f9f9; border-radius: 8px;">
-                        </div>
-                </div>
-
-                <div class="manager-card" style="background:#fff; padding:20px; border-radius:12px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                    <h3 id="form-title" style="margin-top:0; font-size: 1.1rem;">➕ Novo Item</h3>
-                    <form id="form-produto" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <input type="hidden" id="p-id"> 
-                        <input type="text" id="p-nome" placeholder="Nome do Item" required style="padding:10px; border-radius:8px; border:1px solid #ddd;">
-                        <input type="number" id="p-preco" placeholder="Preço" step="0.01" required style="padding:10px; border-radius:8px; border:1px solid #ddd;">
-                        
-                        <select id="p-cat" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
-                            <option value="Promoções">🔥 Promoções</option>
-                            <option value="Destaque">⭐ Destaque</option>
-                            <option value="">--- Outras Categorias ---</option>
-                        </select>
-
-                        <input type="file" id="p-file" onchange="converterImagem()" style="font-size: 0.8rem;">
-                        <input type="hidden" id="p-img-data">
-                        <textarea id="p-desc" placeholder="Descrição rápida..." style="grid-column: 1 / -1; padding:10px; border:1px solid #ddd; border-radius:8px; height: 60px;"></textarea>
-                        <div style="grid-column: 1 / -1; display:flex; gap:10px;">
-                            <button type="button" onclick="salvarProduto()" id="btn-submit" style="flex:1; background:var(--success); color:#fff; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">SALVAR ITEM</button>
-                            <button type="button" onclick="limparForm()" id="btn-cancel" style="display:none; background:#888; color:#fff; padding:12px; border:none; border-radius:8px;">CANCELAR</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Foto</th>
-                                <th>Produto</th>
-                                <th>Preço</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% produtos.forEach(p => { %>
-                                <tr>
-                                    <td><img src="<%= p.img %>" class="img-thumb"></td>
-                                    <td><strong><%= p.nome %></strong><br><small style="color:#888"><%= p.categoria %></small></td>
-                                    <td>R$ <%= p.preco.toFixed(2) %></td>
-                                    <td>
-                                        <div class="action-btns">
-                                            <button class="btn-edit" onclick='prepararEdicao(<%- JSON.stringify(p) %>)'>EDITAR</button>
-                                            <button class="btn-del" onclick="excluirProduto('<%= p._id %>')">EXCLUIR</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
-                </div>
+                <div id="container-gerenciador-produtos"></div>
             </div>
+
         </div>
     </div>
 
     <script>
         const socket = io();
         let pedidoAtivoId = null;
+
+        // INICIALIZAÇÃO DO GERENCIADOR DE PRODUTOS
+        document.addEventListener('DOMContentLoaded', () => {
+            if(typeof renderizarPainelCategorias === "function") {
+                renderizarPainelCategorias('container-gerenciador-produtos');
+            }
+        });
 
         // LÓGICA DE INTERFACE (MANUTENÇÃO E HORÁRIOS)
         function abrirModalHorarios() { document.getElementById('modalHorarios').style.display = 'block'; }
