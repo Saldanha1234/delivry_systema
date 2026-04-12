@@ -34,6 +34,9 @@
         .card { cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .card.hidden { display: none; }
+        
+        /* Estilo Indisponível */
+        .card.indisponivel { opacity: 0.6; filter: grayscale(1); }
 
         /* ESTILOS DO MODAL DE MONTAGEM */
         .modal-montagem-content { width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 0 !important; }
@@ -108,7 +111,7 @@
 
     <% if (locals.categorias) { %>
         <% categorias.forEach((cat, index) => { 
-            if(cat.nome !== 'Todos') { %>
+            if(cat.nome !== 'Todos' && cat.nome !== 'Defina um nome' && cat.nome !== 'Defina um nome ') { %>
             <button class="cat-btn" onclick="filtrarCategoria('<%= cat.nome %>')">
                 <%= cat.nome %>
             </button>
@@ -118,14 +121,33 @@
 
 <div class="container" id="produtos-container">
     <% produtos.forEach(p => { %>
-        <div class="card" data-categoria="<%= p.categoria %>" 
-             onclick="abrirModalMontagem('<%= p.nome %>', '<%= p.preco %>', '<%= p.desc %>', '<%= p.img %>')">
+        <% 
+           const temDesconto = p.desconto && Number(p.desconto) > 0;
+           const valorVenda = temDesconto ? Number(p.desconto) : Number(p.preco);
+           const isIndisponivel = p.status === 'indisponivel';
+        %>
+        <div class="card <%= isIndisponivel ? 'indisponivel' : '' %>" data-categoria="<%= p.categoria %>" 
+             onclick="gerenciarCliqueProduto('<%= p.status %>', '<%= p.modificadoresAtivos %>', '<%= p.nome %>', '<%= valorVenda %>', '<%= p.desc %>', '<%= p.img %>', '<%= p.preco %>')">
+            
+            <% if(temDesconto) { %>
+                <div style="position: absolute; top: 10px; right: 10px; color: #28a745; font-weight: bold; font-size: 0.7rem; background: rgba(255,255,255,0.8); padding: 4px 8px; border-radius: 5px; z-index: 10;">
+                    🏷️ <span style="background: transparent;">Desconto Aplicado</span>
+                </div>
+            <% } %>
+
             <img src="<%= p.img %>" alt="<%= p.nome %>">
             <div class="card-content">
                 <h3><%= p.nome %></h3>
                 <p class="desc"><%= p.desc %></p>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                    <span class="price-tag">R$ <%= (p.preco ? Number(p.preco).toFixed(2) : "0.00") %></span>
+                    <div class="price-container">
+                        <% if(temDesconto) { %>
+                            <span style="text-decoration: line-through; color: #bbb; font-size: 0.8rem; margin-right: 5px;">R$ <%= Number(p.preco).toFixed(2) %></span>
+                            <span class="price-tag">R$ <%= Number(p.desconto).toFixed(2) %></span>
+                        <% } else { %>
+                            <span class="price-tag">R$ <%= (p.preco ? Number(p.preco).toFixed(2) : "0.00") %></span>
+                        <% } %>
+                    </div>
                     <span style="color: var(--primary); font-weight: bold; font-size: 0.8rem;">Ver detalhes +</span>
                 </div>
             </div>
@@ -144,9 +166,10 @@
             <h2 id="m-nome"></h2>
             <p id="m-desc" style="color:#666; font-size:0.9rem; margin-bottom: 10px;"></p>
             
-            <input type="text" class="search-box" placeholder="🔎 Pesquisar adicional..." oninput="filtrarAdicionais(this.value)">
-            
-            <div id="categorias-container"></div>
+            <div id="container-adicionais-logic">
+                <input type="text" class="search-box" placeholder="🔎 Pesquisar adicional..." oninput="filtrarAdicionais(this.value)">
+                <div id="categorias-container"></div>
+            </div>
 
             <label style="font-weight:bold; font-size:0.9rem; margin-top: 10px; display: block;">Alguma observação?</label>
             <textarea id="m-obs" class="obs-box" placeholder="Ex: tirar cebola, sem gelo..."></textarea>
@@ -156,7 +179,7 @@
                     <div style="font-size:0.8rem; color:#666;">Total do item</div>
                     <div id="m-total" style="font-size:1.3rem; font-weight:800; color:var(--primary);">R$ 0,00</div>
                 </div>
-                <button class="btn-confirm" onclick="confirmarMontagem()" style="margin:0; width:auto; padding:12px 30px;">Adicionar</button>
+                <button class="btn-confirm" id="btn-confirm-acao" onclick="confirmarMontagem()" style="margin:0; width:auto; padding:12px 30px;">Adicionar</button>
             </div>
         </div>
     </div>
@@ -242,7 +265,14 @@
 
     let configLocal = <%- JSON.stringify(estruturaAdicionais) %>;
 
-    function abrirModalMontagem(nome, preco, desc, img) {
+    // --- NOVA LÓGICA DE CLIQUE E SISTEMA DUPLO ---
+    function gerenciarCliqueProduto(status, temModificadores, nome, preco, desc, img, precoOriginal) {
+        // Trava de Indisponível
+        if (status === 'indisponivel') {
+            alert("Este produto está indisponível no momento.");
+            return;
+        }
+
         if ("<%= locals.estaAberto %>" === "false") return alert("Estamos fechados no momento!");
         
         const idAtivo = localStorage.getItem('ultimoPedidoId');
@@ -251,9 +281,20 @@
             irParaStatus();
             return;
         }
-        
-        produtoAtual = { nome, precoBase: parseFloat(preco) || 0, desc, img };
-        
+
+        // Define o produto atual (preco já vem como o valor de venda/desconto)
+        produtoAtual = { 
+            nome, 
+            precoBase: parseFloat(preco) || 0, 
+            desc, 
+            img, 
+            temModificadores: temModificadores === 'true' 
+        };
+
+        abrirModalMontagem(nome, preco, desc, img, temModificadores === 'true');
+    }
+
+    function abrirModalMontagem(nome, preco, desc, img, temModificadores) {
         if(configLocal) {
             configLocal.categorias.forEach(cat => cat.opcoes.forEach(opt => opt.qtd = 0));
         }
@@ -263,7 +304,15 @@
         document.getElementById('m-desc').innerText = desc;
         document.getElementById('m-obs').value = "";
         
-        renderizarCategorias();
+        const containerLógica = document.getElementById('container-adicionais-logic');
+        
+        if (temModificadores) {
+            containerLógica.style.display = 'block';
+            renderizarCategorias();
+        } else {
+            containerLógica.style.display = 'none';
+        }
+
         atualizarTotalModal();
         document.getElementById('modal-montagem').style.display = 'flex';
     }
@@ -323,9 +372,11 @@
 
     function atualizarTotalModal() {
         let extra = 0;
-        configLocal.categorias.forEach(cat => {
-            cat.opcoes.forEach(opt => { extra += (opt.preco * opt.qtd); });
-        });
+        if (produtoAtual.temModificadores && configLocal) {
+            configLocal.categorias.forEach(cat => {
+                cat.opcoes.forEach(opt => { extra += (opt.preco * opt.qtd); });
+            });
+        }
         const total = (produtoAtual.precoBase || 0) + extra;
         document.getElementById('m-total').innerText = `R$ ${total.toFixed(2)}`;
     }
@@ -338,14 +389,16 @@
         let selecionados = [];
         let precoFinal = produtoAtual.precoBase || 0;
 
-        configLocal.categorias.forEach(cat => {
-            cat.opcoes.forEach(opt => {
-                if(opt.qtd > 0) {
-                    selecionados.push({ nome: opt.nome, qtd: opt.qtd, preco: opt.preco });
-                    precoFinal += (opt.preco * opt.qtd);
-                }
+        if (produtoAtual.temModificadores && configLocal) {
+            configLocal.categorias.forEach(cat => {
+                cat.opcoes.forEach(opt => {
+                    if(opt.qtd > 0) {
+                        selecionados.push({ nome: opt.nome, qtd: opt.qtd, preco: opt.preco });
+                        precoFinal += (opt.preco * opt.qtd);
+                    }
+                });
             });
-        });
+        }
 
         const obs = document.getElementById('m-obs').value;
         carrinho.push({
@@ -382,7 +435,7 @@
                         <div>
                             <strong style="color: var(--dark);">${i.nome}</strong>
                             <div style="font-size:0.75rem; color:#666; margin-top:4px;">
-                                ${i.adicionais.map(a => `${a.qtd}x ${a.nome}`).join(', ')}
+                                ${i.adicionais.length > 0 ? i.adicionais.map(a => `${a.qtd}x ${a.nome}`).join(', ') : 'Sem adicionais'}
                             </div>
                             ${i.obs ? `<div style="font-size:0.75rem; color:var(--primary); font-style: italic;">Obs: ${i.obs}</div>` : ''}
                         </div>
@@ -510,7 +563,6 @@
     window.onload = function() {
         forcarLimpezaTravados();
         atualizarUI();
-        // GARANTE QUE O 'TODOS' SEJA EXIBIDO AO CARREGAR
         filtrarCategoria('Todos');
     };
 </script>
