@@ -4,11 +4,11 @@
 
 let imagemBase64 = ""; 
 
-// --- 0. INJEÇÃO DE CSS (Interface Aprimorada) ---
+// --- 0. INJEÇÃO DE CSS (Ajustes de Dropdown e Layout de Produto) ---
 const styles = `
     .painel-unico-admin { font-family: sans-serif; max-width: 800px; margin: 20px auto; background: #f4f4f4; padding: 15px; border-radius: 8px; }
     .header-painel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .btn-add-principal { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    .btn-add-principal { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
     
     .item-categoria-container { background: white; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; }
     .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid #eee; }
@@ -17,46 +17,59 @@ const styles = `
     .cat-nome { font-weight: bold; font-size: 1.1em; outline: none; }
     
     .produtos-lista { padding: 10px 15px; background: #fafafa; border-top: 1px solid #eee; }
-    .btn-add-produto { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px dashed #28a745; background: #fff; color: #28a745; cursor: pointer; border-radius: 4px; font-weight: bold; }
+    .btn-add-produto { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px dashed #ccc; background: #fff; cursor: pointer; border-radius: 4px; }
     
-    /* Produto Estilizado com Imagem ao Lado */
+    /* Layout do Produto: Foto + Nome + Preço */
     .produto-linha { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 4px; cursor: pointer; }
-    .prod-main-info { display: flex; align-items: center; flex-grow: 1; }
-    .prod-img-mini { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; margin-right: 12px; background: #eee; }
-    .prod-detalhes { display: flex; flex-direction: column; }
-    .prod-nome { font-weight: bold; font-size: 14px; }
-    .prod-preco { color: #28a745; font-size: 13px; font-weight: bold; }
+    .prod-info-wrapper { display: flex; align-items: center; flex-grow: 1; }
+    .prod-img-min { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 12px; background: #eee; }
+    .prod-txt-container { display: flex; flex-direction: column; }
+    .prod-nome-txt { font-weight: bold; }
+    .prod-preco-txt { font-size: 0.9em; color: #28a745; font-weight: bold; }
 
-    /* Dropdown - CORRIGIDO: Abre no Clique e não some atrás de nada */
-    .dropdown { position: relative; }
+    /* Dropdown de Opções (Clique para abrir e Flutuante) */
+    .dropdown { position: relative; display: inline-block; }
     .dropdown-content { 
         display: none; 
         position: absolute; 
         right: 0; 
-        top: 30px; 
+        top: 100%; 
         background: white; 
-        min-width: 160px; 
+        min-width: 150px; 
         box-shadow: 0 8px 16px rgba(0,0,0,0.3); 
-        z-index: 9999; /* Garante que fique acima de tudo */
+        z-index: 9999; 
         border-radius: 4px; 
         border: 1px solid #ddd;
     }
     .dropdown-content.show { display: block; }
-    .dropdown-content a { color: #333; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; }
+    .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; }
     .dropdown-content a:last-child { border-bottom: none; }
-    .dropdown-content a:hover { background: #f8f9fa; color: #000; }
+    .dropdown-content a:hover { background: #f1f1f1; }
 
-    /* Modal Fullscreen */
+    /* Modal Fullscreen (Original mantido) */
     .modal-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; overflow-y: auto; }
-    .modal-content header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; z-index: 10; }
+    .modal-content header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; }
     .modal-body { padding: 20px; max-width: 600px; margin: 0 auto; }
+    .upload-area { text-align: center; margin-bottom: 20px; border: 2px dashed #ddd; padding: 20px; border-radius: 10px; }
+    .input-group { margin-bottom: 15px; }
+    .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    
+    .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #28a745; }
+    input:checked + .slider:before { transform: translateX(26px); }
+    .toggle-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-top: 1px solid #eee; }
 `;
 
 const styleSheet = document.createElement("style");
 styleSheet.innerText = styles;
 document.head.appendChild(styleSheet);
 
-// --- 1. RENDERIZAÇÃO E LOGICA DE DADOS ---
+// --- 1. RENDERIZAÇÃO DO PAINEL PRINCIPAL ---
 
 function renderizarPainelCategorias(containerId) {
     const container = document.getElementById(containerId);
@@ -76,41 +89,58 @@ function renderizarPainelCategorias(containerId) {
                 <header>
                     <button onclick="fecharModal()" style="border:none; background:none; font-size:18px; cursor:pointer;">← Voltar</button>
                     <span id="modal-titulo" style="font-weight:bold;">Editar Produto</span>
-                    <button onclick="salvarProduto()" style="background:#28a745; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
+                    <button class="btn-salvar-modal" onclick="salvarProduto()" style="background:#007bff; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
                 </header>
+                
                 <div class="modal-body">
                     <input type="hidden" id="p-id">
                     <input type="hidden" id="p-img-data">
                     <input type="hidden" id="p-categoria-origem">
 
-                    <div class="upload-area" style="text-align:center; border:2px dashed #ccc; padding:20px; border-radius:10px; margin-bottom:20px;">
-                        <img id="p-preview" src="" style="width: 150px; height: 150px; object-fit: cover; border-radius:10px; margin-bottom:10px; display:none; margin: 0 auto;">
+                    <div class="upload-area">
+                        <img id="p-preview" src="" style="width: 150px; height: 150px; object-fit: cover; border-radius:10px; margin-bottom:10px; display:none;">
                         <input type="file" id="p-file" accept="image/*" onchange="converterImagem()" style="display:none;">
-                        <label for="p-file" style="cursor:pointer; color:#28a745; font-weight:bold; display:block;">📷 Selecionar Foto</label>
+                        <label for="p-file" style="cursor:pointer; color:#007bff; font-weight:bold;">📷 Selecionar Foto</label>
                     </div>
 
                     <div class="input-group">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Nome do Produto</label>
-                        <input type="text" id="p-nome" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
-                    </div><br>
+                        <label>Nome do Produto</label>
+                        <input type="text" id="p-nome" placeholder="Ex: Pizza Calabresa">
+                    </div>
 
                     <div class="input-group">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Descrição</label>
-                        <textarea id="p-desc" rows="3" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;"></textarea>
-                    </div><br>
+                        <label>Descrição</label>
+                        <textarea id="p-desc" rows="3" placeholder="Detalhes do produto..."></textarea>
+                    </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div>
-                            <label style="font-weight:bold;">Preço (R$)</label>
-                            <input type="number" id="p-preco" step="0.01" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:5px;">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Preço (R$)</label>
+                            <input type="number" id="p-preco" step="0.01">
                         </div>
-                        <div>
-                            <label style="font-weight:bold;">Status</label>
-                            <select id="p-status" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:5px;">
+                        <div class="input-group">
+                            <label>Disponibilidade</label>
+                            <select id="p-status">
                                 <option value="disponivel">Disponível</option>
                                 <option value="indisponivel">Indisponível</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="toggle-item">
+                        <span>🏷️ Preço com Desconto (R$)</span>
+                        <input type="number" id="p-desconto" style="width:120px; padding:8px;" placeholder="Ex: 25.00">
+                    </div>
+
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Adicionar Modificadores</strong><br>
+                            <small style="color:#666;">Ativar acompanhamentos e extras</small>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="p-modificador">
+                            <span class="slider"></span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -119,28 +149,34 @@ function renderizarPainelCategorias(containerId) {
     carregarDadosCompletos();
 }
 
+// --- 2. GESTÃO DE DADOS E LISTAGEM ---
+
 async function carregarDadosCompletos() {
     try {
         const [resCat, resProd] = await Promise.all([
             fetch('/get-categorias'),
             fetch('/get-produtos')
         ]);
+
         const categorias = await resCat.json();
         const produtos = await resProd.json();
 
         const lista = document.getElementById('lista-hierarquica');
         lista.innerHTML = "";
 
-        // Categorias Fixas (Sempre aparecem no topo)
-        const fixas = ["Promoção", "Mais Comprados"];
-        fixas.forEach(nome => renderizarItemCategoria({ nome, fixa: true }, produtos));
+        // Categorias Fixas (Agora com menu ⋮)
+        const fixasNomes = ["Promoção", "Mais Comprados"];
+        fixasNomes.forEach(nome => {
+            renderizarItemCategoria({ nome, fixa: true, _id: nome }, produtos);
+        });
 
-        // Categorias Dinâmicas (Apenas as criadas, sem o "Todos")
+        // Categorias Dinâmicas (Ignora o "Todos" e nomes vazios)
         categorias.forEach(cat => {
-            if (!fixas.includes(cat.nome) && cat.nome !== "Todos") {
+            if (!fixasNomes.includes(cat.nome) && cat.nome !== "Todos" && cat.nome !== "Defina um nome") {
                 renderizarItemCategoria(cat, produtos);
             }
         });
+
     } catch (err) { console.error("Erro:", err); }
 }
 
@@ -157,72 +193,79 @@ function renderizarItemCategoria(cat, todosProdutos) {
                 <span class="cat-nome">${cat.nome}</span>
             </div>
             <div class="dropdown">
-                <button onclick="toggleDropdown(event)" style="border:none; background:none; font-size:22px; cursor:pointer; padding:5px;">⋮</button>
+                <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer;">⋮</button>
                 <div class="dropdown-content">
-                    ${!cat.fixa ? `<a href="#" onclick="excluirCategoria('${cat._id}')">❌ Excluir Categoria</a>` : ''}
-                    <a href="#" onclick="criarNovoProduto('${cat.nome}')">➕ Adicionar Produto</a>
+                    <a href="#" onclick="confirmarExclusaoCat('${cat._id}', '${cat.fixa}')">Excluir</a>
+                    <a href="#" onclick="duplicarCategoria('${cat._id}')">Duplicar</a>
                 </div>
             </div>
         </div>
         <div class="produtos-lista" id="lista-prod-${cat.nome}" style="display:none;">
+            <button class="btn-add-produto" onclick="abrirCriarProduto('${cat.nome}')">+ Criar Produto em ${cat.nome}</button>
             <div id="itens-prod-${cat.nome}">
                 ${produtosDaCat.map(p => `
                     <div class="produto-linha" onclick="abrirEdicaoProduto('${p._id}', '${JSON.stringify(p).replace(/'/g, "&apos;")}')">
-                        <div class="prod-main-info">
-                            <img src="${p.img || ''}" class="prod-img-mini" onerror="this.style.display='none'">
-                            <div class="prod-detalhes">
-                                <span class="prod-nome">${p.nome || 'Sem nome'}</span>
-                                <span class="prod-preco">R$ ${parseFloat(p.preco || 0).toFixed(2)}</span>
+                        <div class="prod-info-wrapper">
+                            <img src="${p.img || ''}" class="prod-img-min" onerror="this.style.display='none'">
+                            <div class="prod-txt-container">
+                                <span class="prod-nome-txt">${p.nome || 'Sem nome'}</span>
+                                <span class="prod-preco-txt">R$ ${parseFloat(p.preco || 0).toFixed(2)}</span>
                             </div>
                         </div>
                         <div class="dropdown">
-                            <button onclick="toggleDropdown(event)" style="border:none; background:none; font-size:18px; cursor:pointer;">⋮</button>
+                            <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
                             <div class="dropdown-content">
-                                <a href="#" onclick="excluirProduto('${p._id}')">❌ Excluir</a>
+                                <a href="#" onclick="excluirProduto('${p._id}')">Excluir</a>
+                                <a href="#" onclick="duplicarProduto('${p._id}')">Duplicar</a>
                             </div>
                         </div>
                     </div>
                 `).join('')}
             </div>
-            <button class="btn-add-produto" onclick="criarNovoProduto('${cat.nome}')">+ Adicionar Produto em ${cat.nome}</button>
         </div>
     `;
     lista.appendChild(div);
 }
 
-// --- 2. CONTROLES DE INTERFACE ---
+// --- 3. LÓGICA DE INTERAÇÃO (Dropdown e Expandir) ---
 
-function toggleDropdown(e) {
+function menuClique(e) {
     e.stopPropagation();
-    const content = e.target.nextElementSibling;
-    const jaAberto = content.classList.contains('show');
     fecharTodosDropdowns();
-    if (!jaAberto) content.classList.add('show');
+    const content = e.target.nextElementSibling;
+    content.classList.toggle('show');
 }
 
-function fecharTodosDropdowns(e) {
+function fecharTodosDropdowns() {
     document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
 }
 
 function toggleExpandir(catNome) {
     const lista = document.getElementById(`lista-prod-${catNome}`);
     const seta = document.getElementById(`seta-${catNome}`);
-    const isHidden = lista.style.display === "none";
-    lista.style.display = isHidden ? "block" : "none";
-    seta.innerHTML = isHidden ? "▼" : "▲";
+    if(lista.style.display === "none") {
+        lista.style.display = "block";
+        seta.innerHTML = "▼";
+    } else {
+        lista.style.display = "none";
+        seta.innerHTML = "▲";
+    }
 }
 
-// --- 3. LOGICA DE PRODUTOS ---
+// --- 4. LÓGICA DE PRODUTOS (Original Mantida) ---
 
-function criarNovoProduto(categoria) {
+function abrirCriarProduto(catNome) {
     imagemBase64 = "";
     document.getElementById('p-id').value = "";
+    document.getElementById('p-img-data').value = "";
     document.getElementById('p-nome').value = "";
     document.getElementById('p-desc').value = "";
     document.getElementById('p-preco').value = "";
-    document.getElementById('p-categoria-origem').value = categoria;
+    document.getElementById('p-desconto').value = "";
+    document.getElementById('p-modificador').checked = false;
+    document.getElementById('p-categoria-origem').value = catNome;
     document.getElementById('p-preview').style.display = "none";
-    document.getElementById('modal-titulo').innerText = "Novo Produto em " + categoria;
+    document.getElementById('modal-titulo').innerText = "Novo Produto";
     document.getElementById('modal-produto').style.display = "block";
 }
 
@@ -232,12 +275,17 @@ function abrirEdicaoProduto(id, pJson) {
     document.getElementById('p-nome').value = p.nome;
     document.getElementById('p-desc').value = p.desc;
     document.getElementById('p-preco').value = p.preco;
-    document.getElementById('p-categoria-origem').value = p.categoria;
+    document.getElementById('p-status').value = p.status || "disponivel";
+    document.getElementById('p-desconto').value = p.desconto || "";
+    document.getElementById('p-modificador').checked = p.modificadoresAtivos || false;
     document.getElementById('p-img-data').value = p.img || "";
+    document.getElementById('p-categoria-origem').value = p.categoria;
     
     if(p.img) {
         document.getElementById('p-preview').src = p.img;
         document.getElementById('p-preview').style.display = "block";
+    } else {
+        document.getElementById('p-preview').style.display = "none";
     }
     document.getElementById('modal-titulo').innerText = "Editar Produto";
     document.getElementById('modal-produto').style.display = "block";
@@ -249,38 +297,25 @@ async function salvarProduto() {
         nome: document.getElementById('p-nome').value,
         preco: document.getElementById('p-preco').value,
         desc: document.getElementById('p-desc').value,
+        status: document.getElementById('p-status').value,
+        desconto: document.getElementById('p-desconto').value,
+        modificadoresAtivos: document.getElementById('p-modificador').checked,
         categoria: document.getElementById('p-categoria-origem').value,
         img: imagemBase64 || document.getElementById('p-img-data').value
     };
 
-    const url = id ? `/edit-produto/${id}` : '/add-produto';
-    const res = await fetch(url, {
-        method: id ? 'PUT' : 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(dados)
-    });
-
-    if(res.ok) {
-        fecharModal();
-        carregarDadosCompletos();
-    }
-}
-
-async function criarNovaCategoria() {
-    const nome = prompt("Nome da nova categoria:");
-    if(!nome) return;
-    const res = await fetch('/add-categoria', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ nome })
-    });
-    if(res.ok) carregarDadosCompletos();
-}
-
-async function excluirProduto(id) {
-    if(!confirm("Deseja excluir este produto?")) return;
-    await fetch(`/delete-produto/${id}`, { method: 'DELETE' });
-    carregarDadosCompletos();
+    try {
+        const url = id ? `/edit-produto/${id}` : '/add-produto';
+        const res = await fetch(url, {
+            method: id ? 'PUT' : 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(dados)
+        });
+        if(res.ok) {
+            fecharModal();
+            carregarDadosCompletos();
+        }
+    } catch (err) { console.error(err); }
 }
 
 function fecharModal() {
@@ -294,11 +329,34 @@ function converterImagem() {
         imagemBase64 = reader.result;
         document.getElementById('p-preview').src = reader.result;
         document.getElementById('p-preview').style.display = "block";
-    };
+    }
     if (file) reader.readAsDataURL(file);
 }
 
-// Inicializar ao clicar fora
+// --- 5. CATEGORIAS ---
+
+async function criarNovaCategoria() {
+    const nome = prompt("Nome da nova categoria:");
+    if(!nome) return;
+    const res = await fetch('/add-categoria', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ nome: nome })
+    });
+    if(res.ok) carregarDadosCompletos();
+}
+
+function confirmarExclusaoCat(id, fixa) {
+    if(fixa === "true") {
+        alert("Categorias fixas não podem ser excluídas.");
+        return;
+    }
+    if(confirm("Excluir esta categoria?")) {
+        // fetch('/delete-categoria/' + id, { method: 'DELETE' }).then(() => carregarDadosCompletos());
+    }
+}
+
+// Fecha dropdowns se clicar fora
 window.onclick = function(event) {
     if (!event.target.matches('button')) fecharTodosDropdowns();
 }
