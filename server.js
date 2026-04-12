@@ -170,6 +170,15 @@ app.use(async (req, res, next) => {
     }
 });
 
+// --- ROTA PARA ADICIONAIS ---
+app.get('/get-adicionais', (req, res) => {
+    try {
+        res.json(ConfigEstrutura);
+    } catch (err) {
+        res.status(500).json({ error: "Erro ao carregar adicionais" });
+    }
+});
+
 // --- ROTAS DE VENDAS MENSAL ---
 app.get('/get-vendas-mensal', async (req, res) => {
     try {
