@@ -23,7 +23,6 @@ const styles = `
     .conteudo-lista { padding: 10px 15px; background: #fafafa; border-top: 1px solid #eee; }
     .btn-acao-interna { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px dashed #ccc; background: #fff; cursor: pointer; border-radius: 4px; font-weight: bold; }
     
-    /* Linha de Produto/Adicional */
     .item-linha { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 4px; }
     .item-info-wrapper { display: flex; align-items: center; flex-grow: 1; }
     .prod-img-min { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 12px; background: #eee; }
@@ -33,26 +32,22 @@ const styles = `
     .item-status-tag { font-size: 0.7em; padding: 2px 5px; border-radius: 3px; margin-top: 3px; width: fit-content; }
     .tag-indisponivel { background: #ff4d4d; color: white; }
 
-    /* Dropdown */
     .dropdown { position: relative; display: inline-block; }
     .dropdown-content { display: none; position: absolute; right: 0; top: 100%; background: white; min-width: 150px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); z-index: 999; border-radius: 4px; border: 1px solid #ddd; }
     .dropdown-content.show { display: block; }
     .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; cursor: pointer; }
     .dropdown-content a:hover { background: #f1f1f1; }
 
-    /* Modais Fullscreen */
     .modal-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; overflow-y: auto; display: none; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; z-index: 10; }
     .modal-body { padding: 20px; max-width: 600px; margin: 0 auto; }
     
-    /* Vínculo de Produtos no Modal */
     .tree-categoria { margin-top: 15px; border: 1px solid #eee; border-radius: 5px; padding: 10px; }
     .tree-produto { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #f9f9f9; }
     .btn-vinculo { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: bold; }
     .btn-vinculo.adicionado { background: #28a745; color: white; border-color: #28a745; }
     .txt-adicionado { color: #28a745; font-size: 0.8em; font-weight: bold; margin-left: 10px; }
 
-    /* Estilos de Switch e Inputs */
     .input-group { margin-bottom: 15px; }
     .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
     .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
@@ -98,8 +93,7 @@ function renderizarPainelCategorias(containerId) {
                 <span id="titulo-modal-produto" style="font-weight:bold;">Produto</span>
                 <button onclick="salvarProduto()" style="background:#007bff; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
             </div>
-            <div class="modal-body" id="body-modal-produto">
-                </div>
+            <div class="modal-body" id="body-modal-produto"></div>
         </div>
 
         <div id="modal-cat-adicional" class="modal-fullscreen">
@@ -108,8 +102,7 @@ function renderizarPainelCategorias(containerId) {
                 <span style="font-weight:bold;">Configurar Categoria de Adicional</span>
                 <button onclick="salvarCatAdicional()" style="background:#6f42c1; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
             </div>
-            <div class="modal-body" id="body-modal-cat-adicional">
-                </div>
+            <div class="modal-body" id="body-modal-cat-adicional"></div>
         </div>
 
         <div id="modal-item-adicional" class="modal-fullscreen">
@@ -118,8 +111,7 @@ function renderizarPainelCategorias(containerId) {
                 <span style="font-weight:bold;">Adicional</span>
                 <button onclick="salvarItemAdicional()" style="background:#28a745; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
             </div>
-            <div class="modal-body" id="body-modal-item-adicional">
-                </div>
+            <div class="modal-body" id="body-modal-item-adicional"></div>
         </div>
     `;
     carregarTudo();
@@ -133,14 +125,11 @@ async function carregarTudo() {
             fetch('/get-categorias-adicionais')
         ]);
 
-        // Função auxiliar que protege o código do erro 'Unexpected token <'
-        // Ela verifica se o conteúdo é realmente JSON antes de tentar ler.
         const extrairJson = async (res) => {
             if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
                 return await res.json();
             }
-            console.warn(`Aviso: Falha ao carregar dados de ${res.url} (Provável rota ausente/404). Retornando lista vazia.`);
-            return []; // Retorna lista vazia para evitar que a tela quebre
+            return [];
         };
 
         listaCategoriasProdutos = await extrairJson(resCatP);
@@ -205,6 +194,18 @@ function renderizarListaProdutos() {
         `;
         container.appendChild(div);
     });
+}
+
+// --- FUNÇÃO QUE FALTAVA ---
+async function criarNovaCategoriaProd() {
+    const nome = prompt("Nome da nova categoria:");
+    if(!nome) return;
+    const res = await fetch('/add-categoria', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ nome: nome })
+    });
+    if(res.ok) carregarTudo();
 }
 
 function abrirModalProduto(id = null, catNome = "") {
@@ -436,7 +437,7 @@ function fecharModal(id) {
     if(modal) modal.style.display = "none";
 }
 
-// --- 5. LÓGICA DE PERSISTÊNCIA (PARA O SERVER.JS) ---
+// --- 5. LÓGICA DE PERSISTÊNCIA ---
 
 async function criarNovaCategoriaAdicional() {
     const res = await fetch('/add-categoria-adicional', {
@@ -470,12 +471,21 @@ async function salvarItemAdicional() {
     }
 }
 
-// Bloqueio de cliques externos no dropdown
 window.onclick = function(event) {
     if (!event.target.matches('button')) fecharTodosDropdowns();
 }
 
-// --- EXPOSIÇÃO GLOBAL PARA O ADMIN.EJS ---
+// --- EXPOSIÇÃO GLOBAL (RESOLVE O ERRO DE "NOT DEFINED") ---
 window.renderizarPainelCategorias = renderizarPainelCategorias;
-// window.renderizarPainelAdmin = renderizarPainelAdmin; // <-- CORRIGIDO: Linha comentada para evitar o "Uncaught ReferenceError"
 window.carregarTudo = carregarTudo;
+window.criarNovaCategoriaProd = criarNovaCategoriaProd;
+window.criarNovaCategoriaAdicional = criarNovaCategoriaAdicional;
+window.abrirModalProduto = abrirModalProduto;
+window.abrirModalItemAdicional = abrirModalItemAdicional;
+window.abrirModalEdicaoCatAdicional = abrirModalEdicaoCatAdicional;
+window.fecharModal = fecharModal;
+window.salvarItemAdicional = salvarItemAdicional;
+window.toggleConteudo = toggleConteudo;
+window.menuClique = menuClique;
+window.alternarVinculo = alternarVinculo;
+window.toggleArvoreProdutos = toggleArvoreProdutos;
