@@ -238,6 +238,7 @@
         ativarTrava: <%= locals.config?.limitarArea || false %>
     };
 
+    // Função para obter o horário atual em formato HH:mm
     function obterHorarioAtual() {
         const agora = new Date();
         return agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -246,11 +247,18 @@
     async function buscarCEP(valor) {
         const cep = valor.replace(/\D/g, '');
         if (cep.length !== 8) return;
+
         document.getElementById('cep-loading').style.display = 'inline';
+        
         try {
             const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
             const data = await response.json();
-            if (data.erro) { alert("CEP não encontrado!"); return; }
+
+            if (data.erro) {
+                alert("CEP não encontrado!");
+                return;
+            }
+
             if (settingsEmpresa.ativarTrava && settingsEmpresa.cidadeAtiva) {
                 if (data.localidade.toLowerCase() !== settingsEmpresa.cidadeAtiva.toLowerCase()) {
                     alert(`Desculpe! Atendemos apenas na cidade de ${settingsEmpresa.cidadeAtiva}.`);
@@ -258,30 +266,63 @@
                     return;
                 }
             }
+
             document.getElementById('cliente-rua').value = data.logradouro;
             document.getElementById('cliente-bairro').value = data.bairro;
             document.getElementById('cliente-complemento').focus();
-        } catch (error) { console.error("Erro ao buscar CEP", error); } finally { document.getElementById('cep-loading').style.display = 'none'; }
+
+        } catch (error) {
+            console.error("Erro ao buscar CEP", error);
+        } finally {
+            document.getElementById('cep-loading').style.display = 'none';
+        }
     }
 
     function gerenciarCliqueProduto(status, temModificadores, nome, preco, desc, img, precoOriginal) {
-        if (status === 'indisponivel') { alert("Este produto está indisponível no momento."); return; }
+        if (status === 'indisponivel') {
+            alert("Este produto está indisponível no momento.");
+            return;
+        }
+
         if ("<%= locals.estaAberto %>" === "false") return alert("Estamos fechados no momento!");
+        
         const idAtivo = localStorage.getItem('ultimoPedidoId');
-        if (idAtivo) { alert("Você já possui um pedido em andamento!"); irParaStatus(); return; }
-        produtoAtual = { nome, precoBase: parseFloat(preco) || 0, desc, img, temModificadores: temModificadores === 'true' };
+        if (idAtivo) {
+            alert("Você já possui um pedido em andamento! Finalize-o ou aguarde a conclusão para fazer um novo.");
+            irParaStatus();
+            return;
+        }
+
+        produtoAtual = { 
+            nome, 
+            precoBase: parseFloat(preco) || 0, 
+            desc, 
+            img, 
+            temModificadores: temModificadores === 'true' 
+        };
+
         abrirModalMontagem(nome, preco, desc, img, temModificadores === 'true');
     }
 
     function abrirModalMontagem(nome, preco, desc, img, temModificadores) {
-        if(configLocal) { configLocal.categorias.forEach(cat => cat.opcoes.forEach(opt => opt.qtd = 0)); }
+        if(configLocal) {
+            configLocal.categorias.forEach(cat => cat.opcoes.forEach(opt => opt.qtd = 0));
+        }
+        
         document.getElementById('m-img').src = img;
         document.getElementById('m-nome').innerText = nome;
         document.getElementById('m-desc').innerText = desc;
         document.getElementById('m-obs').value = "";
+        
         const containerLógica = document.getElementById('container-adicionais-logic');
-        if (temModificadores) { containerLógica.style.display = 'block'; renderizarCategorias(); } 
-        else { containerLógica.style.display = 'none'; }
+        
+        if (temModificadores) {
+            containerLógica.style.display = 'block';
+            renderizarCategorias();
+        } else {
+            containerLógica.style.display = 'none';
+        }
+
         atualizarTotalModal();
         document.getElementById('modal-montagem').style.display = 'flex';
     }
@@ -293,25 +334,13 @@
 
         configLocal.categorias.forEach(cat => {
             let htmlOpcoes = "";
-            let categoriaTemDesconto = false;
-
             cat.opcoes.forEach(opt => {
-                const temDesc = opt.desconto && Number(opt.desconto) > 0;
-                if(temDesc) categoriaTemDesconto = true;
-
                 if (filtro === "" || opt.nome.toLowerCase().includes(filtro.toLowerCase())) {
-                    let precoHtml = "";
-                    if(temDesc) {
-                        precoHtml = `<span style="text-decoration: line-through; color: #bbb;">R$ ${Number(opt.preco).toFixed(2)}</span> R$ ${Number(opt.desconto).toFixed(2)}`;
-                    } else {
-                        precoHtml = opt.preco > 0 ? '+ R$ '+opt.preco.toFixed(2) : 'Incluso';
-                    }
-
                     htmlOpcoes += `
                         <div class="item-add">
                             <div>
                                 <div style="font-weight: 500;">${opt.nome}</div>
-                                <div style="font-size:0.75rem; color:var(--primary);">${precoHtml}</div>
+                                <div style="font-size:0.75rem; color:var(--primary);">${opt.preco > 0 ? '+ R$ '+opt.preco.toFixed(2) : 'Incluso'}</div>
                             </div>
                             <div class="item-controls">
                                 <button class="btn-qty" onclick="alterarQtd('${cat.id}', '${opt.id}', -1)">-</button>
@@ -323,11 +352,10 @@
             });
 
             if (htmlOpcoes !== "") {
-                const tagDesconto = categoriaTemDesconto ? '<span style="color: #007bff; font-size: 0.7rem; margin-left: 5px;">🏷️ Desconto aplicado</span>' : '';
                 container.innerHTML += `
                     <div class="cat-section">
                         <div class="cat-header">
-                            <div style="font-weight:bold; color: var(--dark); display: flex; align-items: center;">${cat.nome} ${tagDesconto}</div>
+                            <div style="font-weight:bold; color: var(--dark);">${cat.nome}</div>
                             <div style="font-size:0.7rem; color:#888;">${cat.descricao}</div>
                         </div>
                         ${htmlOpcoes}
@@ -340,7 +368,11 @@
         const categoria = configLocal.categorias.find(c => c.id === catId);
         const opcao = categoria.opcoes.find(o => o.id === optId);
         const totalNaCategoria = categoria.opcoes.reduce((acc, curr) => acc + curr.qtd, 0);
-        if (delta > 0 && totalNaCategoria >= categoria.limite) { return alert(`Limite máximo atingido para ${categoria.nome}.`); }
+
+        if (delta > 0 && totalNaCategoria >= categoria.limite) {
+            return alert(`Limite máximo atingido para ${categoria.nome} (${categoria.limite} itens).`);
+        }
+
         if (opcao.qtd + delta >= 0) {
             opcao.qtd += delta;
             document.getElementById(`qtd-${optId}`).innerText = opcao.qtd;
@@ -352,10 +384,7 @@
         let extra = 0;
         if (produtoAtual.temModificadores && configLocal) {
             configLocal.categorias.forEach(cat => {
-                cat.opcoes.forEach(opt => { 
-                    const precoEfetivo = (opt.desconto && Number(opt.desconto) > 0) ? Number(opt.desconto) : Number(opt.preco);
-                    extra += (precoEfetivo * opt.qtd); 
-                });
+                cat.opcoes.forEach(opt => { extra += (opt.preco * opt.qtd); });
             });
         }
         const total = (produtoAtual.precoBase || 0) + extra;
@@ -363,39 +392,53 @@
     }
 
     function filtrarAdicionais(val) { renderizarCategorias(val); }
+
     function fecharModalMontagem() { document.getElementById('modal-montagem').style.display = 'none'; }
 
     function confirmarMontagem() {
         let selecionados = [];
-        let extra = 0;
+        let precoFinal = produtoAtual.precoBase || 0;
+
         if (produtoAtual.temModificadores && configLocal) {
             configLocal.categorias.forEach(cat => {
                 cat.opcoes.forEach(opt => {
                     if(opt.qtd > 0) {
-                        const precoEfetivo = (opt.desconto && Number(opt.desconto) > 0) ? Number(opt.desconto) : Number(opt.preco);
-                        selecionados.push({ nome: opt.nome, qtd: opt.qtd, preco: precoEfetivo });
-                        extra += (precoEfetivo * opt.qtd);
+                        selecionados.push({ nome: opt.nome, qtd: opt.qtd, preco: opt.preco });
+                        precoFinal += (opt.preco * opt.qtd);
                     }
                 });
             });
         }
-        const precoFinal = (produtoAtual.precoBase || 0) + extra;
+
         const obs = document.getElementById('m-obs').value;
-        carrinho.push({ id_temp: Date.now(), nome: produtoAtual.nome, preco: precoFinal, adicionais: selecionados, obs: obs });
+        carrinho.push({
+            id_temp: Date.now(),
+            nome: produtoAtual.nome,
+            preco: precoFinal,
+            adicionais: selecionados,
+            obs: obs
+        });
+
         atualizarUI();
         fecharModalMontagem();
     }
 
-    function removerDoCarrinho(id_temp) { carrinho = carrinho.filter(item => item.id_temp !== id_temp); atualizarUI(); }
+    function removerDoCarrinho(id_temp) {
+        carrinho = carrinho.filter(item => item.id_temp !== id_temp);
+        atualizarUI();
+    }
 
     function atualizarUI() {
         const cartCount = document.getElementById('cart-count');
         const btnFinalizar = document.getElementById('btn-finalizar');
         const idAtivo = localStorage.getItem('ultimoPedidoId');
+
         cartCount.innerText = carrinho.length;
         const lista = document.getElementById('cart-items');
-        if(carrinho.length === 0) { lista.innerHTML = "<p style='text-align:center; color:#888; padding:20px;'>Seu carrinho está vazio.</p>"; } 
-        else {
+        
+        if(carrinho.length === 0) {
+            lista.innerHTML = "<p style='text-align:center; color:#888; padding:20px;'>Seu carrinho está vazio.</p>";
+        } else {
             lista.innerHTML = carrinho.map(i => `
                 <div class="cart-item-row">
                     <div style="display:flex; justify-content:space-between; align-items: flex-start;">
@@ -411,16 +454,23 @@
                             <i class="fa-solid fa-trash-can remove-product" onclick="removerDoCarrinho(${i.id_temp})"></i>
                         </div>
                     </div>
-                </div>`).join('');
+                </div>
+            `).join('');
         }
+        
         const total = carrinho.reduce((acc, i) => acc + i.preco, 0);
         document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
+
         if (idAtivo && btnFinalizar) {
-            btnFinalizar.disabled = true; btnFinalizar.innerText = "Você tem um pedido ativo";
-            btnFinalizar.classList.add('btn-disabled'); document.getElementById('status-alerta').style.display = 'block';
+            btnFinalizar.disabled = true;
+            btnFinalizar.innerText = "Você tem um pedido ativo";
+            btnFinalizar.classList.add('btn-disabled');
+            document.getElementById('status-alerta').style.display = 'block';
         } else if (btnFinalizar) {
-            btnFinalizar.disabled = false; btnFinalizar.innerText = "Finalizar Pedido";
-            btnFinalizar.classList.remove('btn-disabled'); document.getElementById('status-alerta').style.display = 'none';
+            btnFinalizar.disabled = false;
+            btnFinalizar.innerText = "Finalizar Pedido";
+            btnFinalizar.classList.remove('btn-disabled');
+            document.getElementById('status-alerta').style.display = 'none';
         }
     }
 
@@ -450,30 +500,55 @@
         const complemento = document.getElementById('cliente-complemento').value;
         const pagto = document.getElementById('cliente-pagto').value;
         const btnFinalizar = document.getElementById('btn-finalizar');
-        if (localStorage.getItem('ultimoPedidoId')) return alert("Você já possui um pedido ativo.");
-        if(!nome || !cep || !rua || !bairro) return alert("Preencha o endereço completo!");
-        if(carrinho.length === 0) return alert("Carrinho vazio!");
-        btnFinalizar.disabled = true; btnFinalizar.innerText = "Processando...";
+        
+        if (localStorage.getItem('ultimoPedidoId')) return alert("Ação bloqueada: Você já possui um pedido ativo.");
+        if(!nome || !cep || !rua || !bairro) return alert("Por favor, preencha o endereço completo!");
+        if(carrinho.length === 0) return alert("Seu carrinho está vazio!");
+
+        btnFinalizar.disabled = true;
+        btnFinalizar.innerText = "Processando...";
+        btnFinalizar.classList.add('btn-disabled');
+
         const enderecoMontado = `${rua}, Bairro: ${bairro}, CEP: ${cep} - ${complemento}`;
+
         try {
             const res = await fetch('/enviar-pedido', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    cliente: nome, endereco: enderecoMontado, pagamento: pagto,
-                    itens: carrinho, total: carrinho.reduce((acc, i) => acc + i.preco, 0),
+                    cliente: nome, 
+                    endereco: enderecoMontado, 
+                    pagamento: pagto,
+                    itens: carrinho, 
+                    total: carrinho.reduce((acc, i) => acc + i.preco, 0),
                     horario: obterHorarioAtual()
                 })
             });
+            
             if(res.ok) {
                 const data = await res.json();
                 localStorage.setItem('ultimoPedidoId', data.id);
                 location.href = '/status/' + data.id;
+            } else if (res.status === 400) {
+                const erroData = await res.json();
+                document.getElementById('mensagem-erro-endereco').innerText = erroData.message || "Não entregamos neste endereço.";
+                document.getElementById('modal-erro-endereco').style.display = 'block';
+                
+                btnFinalizar.disabled = false;
+                btnFinalizar.innerText = "Finalizar Pedido";
+                btnFinalizar.classList.remove('btn-disabled');
             } else {
-                alert("Erro ao processar pedido.");
-                btnFinalizar.disabled = false; btnFinalizar.innerText = "Finalizar Pedido";
+                alert("Ocorreu um erro ao processar seu pedido.");
+                btnFinalizar.disabled = false;
+                btnFinalizar.innerText = "Finalizar Pedido";
+                btnFinalizar.classList.remove('btn-disabled');
             }
-        } catch (error) { console.error(error); btnFinalizar.disabled = false; }
+        } catch (error) {
+            console.error(error);
+            btnFinalizar.disabled = false;
+            btnFinalizar.innerText = "Finalizar Pedido";
+            btnFinalizar.classList.remove('btn-disabled');
+        }
     }
 
     async function forcarLimpezaTravados() {
@@ -482,22 +557,38 @@
             try {
                 const res = await fetch('/api/pedido/' + idSalvo);
                 const data = await res.json();
-                if (!data.status || ['Finalizado', 'Concluído', 'Cancelado'].includes(data.status)) {
-                    localStorage.removeItem('ultimoPedidoId'); atualizarUI();
-                } else { document.getElementById('status-alerta').style.display = 'block'; socket.emit('join', idSalvo); }
-            } catch (e) { console.log("Erro ao verificar status."); }
+                
+                if (!data.status || data.status === 'Finalizado' || data.status === 'Concluído' || data.status === 'Cancelado') {
+                    localStorage.removeItem('ultimoPedidoId');
+                    atualizarUI();
+                } else {
+                    document.getElementById('status-alerta').style.display = 'block';
+                    socket.emit('join', idSalvo);
+                }
+            } catch (e) {
+                console.log("Erro ao verificar status.");
+            }
         }
     }
 
-    function irParaStatus() { const id = localStorage.getItem('ultimoPedidoId'); if (id) window.location.href = '/status/' + id; }
+    function irParaStatus() {
+        const id = localStorage.getItem('ultimoPedidoId');
+        if (id) window.location.href = '/status/' + id;
+    }
+
     socket.on('statusAtualizado', (data) => {
         const idSalvo = localStorage.getItem('ultimoPedidoId');
-        if (idSalvo && data.id == idSalvo && ['Finalizado', 'Cancelado', 'Concluído'].includes(data.novoStatus)) {
-            localStorage.removeItem('ultimoPedidoId'); atualizarUI();
+        if (idSalvo && data.id == idSalvo && (data.novoStatus === 'Finalizado' || data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
+            localStorage.removeItem('ultimoPedidoId');
+            atualizarUI();
         }
     });
 
-    window.onload = function() { forcarLimpezaTravados(); atualizarUI(); filtrarCategoria('Todos'); };
+    window.onload = function() {
+        forcarLimpezaTravados();
+        atualizarUI();
+        filtrarCategoria('Todos');
+    };
 </script>
 </body>
 </html>

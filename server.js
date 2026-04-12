@@ -3,10 +3,10 @@ const path = require('path');
 const http = require('http'); 
 const { Server } = require('socket.io'); 
 const mongoose = require('mongoose');
-const mercury = require('mercadopago'); 
 require('dotenv').config(); 
 
-// Importação da configuração de adicionais (Estrutura base)
+// Importação da configuração de adicionais
+// Certifique-se que o arquivo estrutura-produtos.js use module.exports = { ConfigEstrutura };
 const { ConfigEstrutura } = require('./public/js/estrutura-produtos');
 
 const app = express();
@@ -34,9 +34,7 @@ const ConfigSchema = new mongoose.Schema({
     cidadeAtiva: { type: Boolean, default: false },
     cidadeNome: { type: String, default: '' },
     cidadeEstado: { type: String, default: '' },
-    cidadePais: { type: String, default: 'Brasil' },
-    // NOVO: Persistência para categorias de adicionais dinâmicas
-    categoriasAdicionais: { type: Array, default: [] }
+    cidadePais: { type: String, default: 'Brasil' }
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
@@ -53,7 +51,7 @@ const ProdutoSchema = new mongoose.Schema({
     categoria: String,
     desconto: { type: Number, default: null },
     status: { type: String, default: 'disponivel' },
-    modificadores: { type: Array, default: [] } 
+    modificadoresAtivos: { type: Boolean, default: false }
 });
 const Produto = mongoose.model('Produto', ProdutoSchema);
 
@@ -66,9 +64,6 @@ const PedidoSchema = new mongoose.Schema({
     total: Number,
     status: { type: String, default: "Pendente" },
     hora: String,
-    pixId: String, 
-    pixCopiaCola: String,
-    pixQrCode: String,
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
@@ -84,13 +79,14 @@ const MensagemSchema = new mongoose.Schema({
 });
 const Mensagem = mongoose.model('Mensagem', MensagemSchema);
 
+// NOVO SCHEMA PARA VALOR MENSAL
 const VendaMensalSchema = new mongoose.Schema({
-    mesAno: String, 
+    mesAno: String, // Formato "MM/YYYY"
     totalAcumulado: { type: Number, default: 0 }
 });
 const VendaMensal = mongoose.model('VendaMensal', VendaMensalSchema);
 
-// --- SISTEMA DE LIMPEZA E ACUMULADO MENSAL ---
+// --- SISTEMA DE LIMPEZA E ACUMULADO MENSAL (VIRADA DO DIA) ---
 setInterval(async () => {
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
@@ -98,24 +94,29 @@ setInterval(async () => {
 
     if (horaTratada === 0) {
         try {
+            // 1. Calcular total do dia antes de deletar
             const pedidosDoDia = await Pedido.find({ status: { $in: ['Finalizado', 'Concluído'] } });
             const totalDia = pedidosDoDia.reduce((acc, p) => acc + (p.total || 0), 0);
+
+            // 2. Identificar Mês/Ano atual para o acumulador
             const mesAnoAtual = (agora.getMonth() + 1).toString().padStart(2, '0') + '/' + agora.getFullYear();
 
+            // 3. Atualizar ou Criar o registro mensal
             await VendaMensal.findOneAndUpdate(
                 { mesAno: mesAnoAtual },
                 { $inc: { totalAcumulado: totalDia } },
                 { upsert: true }
             );
 
+            // 4. Faxina original
             await Pedido.deleteMany({ status: { $in: ['Finalizado', 'Cancelado', 'Concluído'] } });
             const pedidosAtivos = await Pedido.find().distinct('id');
             const stringIdsAtivos = pedidosAtivos.map(id => id.toString());
             await Mensagem.deleteMany({ pedidoId: { $nin: stringIdsAtivos } });
             
-            console.log(`♻️ Faxina concluída. Total hoje: R$ ${totalDia}`);
+            console.log(`♻️ Faxina e Acúmulo de Vendas (${mesAnoAtual}) concluídos. Total hoje: R$ ${totalDia}`);
         } catch (err) {
-            console.error("❌ Erro na limpeza:", err);
+            console.error("❌ Erro na limpeza/acumulado:", err);
         }
     }
 }, 3600000); 
@@ -131,7 +132,8 @@ app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 const checarAberta = async () => {
     try {
         const config = await Config.findOne({ chave: 'global' });
-        if (!config || config.manutencao) return false; 
+        if (!config) return false;
+        if (config.manutencao === true) return false; 
 
         const fuso = config.fusoHorario || 'America/Sao_Paulo';
         const agora = new Date();
@@ -168,32 +170,12 @@ app.use(async (req, res, next) => {
     }
 });
 
-// --- NOVAS ROTAS DO SISTEMA DE ADICIONAIS (RESOLVENDO ERRO 404) ---
-
+// --- ROTA PARA ADICIONAIS ---
 app.get('/get-adicionais', (req, res) => {
-    res.json(ConfigEstrutura);
-});
-
-app.get('/get-categorias-adicionais', async (req, res) => {
     try {
-        const config = await Config.findOne({ chave: 'global' });
-        res.json(config.categoriasAdicionais || []);
+        res.json(ConfigEstrutura);
     } catch (err) {
-        res.status(500).json([]);
-    }
-});
-
-app.post('/add-categoria-adicional', async (req, res) => {
-    try {
-        const { nome } = req.body;
-        const config = await Config.findOneAndUpdate(
-            { chave: 'global' },
-            { $push: { categoriasAdicionais: { nome, id: Date.now().toString() } } },
-            { upsert: true, new: true }
-        );
-        res.json({ success: true, categorias: config.categoriasAdicionais });
-    } catch (err) {
-        res.status(500).json({ success: false });
+        res.status(500).json({ error: "Erro ao carregar adicionais" });
     }
 });
 
@@ -205,7 +187,7 @@ app.get('/get-vendas-mensal', async (req, res) => {
     } catch (err) { res.status(500).json([]); }
 });
 
-// --- ROTAS DE CATEGORIAS E PRODUTOS ---
+// --- ROTAS DE CATEGORIAS E PRODUTOS (MANTIDAS) ---
 
 app.get('/get-categorias', async (req, res) => {
     try { const categorias = await Categoria.find(); res.json(categorias); } catch (err) { res.status(500).json([]); }
@@ -252,11 +234,14 @@ app.post('/update-config-site', async (req, res) => {
             { chave: 'global' },
             { 
                 manutencao: (manutencao === true || manutencao === 'true'), 
-                nomeSite, whatsapp,
+                nomeSite,
+                whatsapp,
                 taxaEntrega: parseFloat(taxaEntrega) || 0,
                 tempoEntrega,
                 cidadeAtiva: (cidadeAtiva === true || cidadeAtiva === 'true'),
-                cidadeNome, cidadeEstado, cidadePais
+                cidadeNome,
+                cidadeEstado,
+                cidadePais
             },
             { upsert: true }
         );
@@ -267,7 +252,11 @@ app.post('/update-config-site', async (req, res) => {
 app.post('/update-horarios', async (req, res) => {
     try {
         const { fusoHorario, agenda } = req.body;
-        await Config.findOneAndUpdate({ chave: 'global' }, { fusoHorario, agenda }, { upsert: true });
+        await Config.findOneAndUpdate(
+            { chave: 'global' },
+            { fusoHorario, agenda },
+            { upsert: true }
+        );
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
 });
@@ -287,7 +276,10 @@ app.get('/', async (req, res) => {
         const categoriasDoBanco = await Categoria.find();
         const categoriasFixas = [{ nome: 'Promoção' }, { nome: 'Destaques' }];
         const categorias = [...categoriasFixas, ...categoriasDoBanco];
-        let config = await Config.findOne({ chave: 'global' }) || { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
+
+        let config = await Config.findOne({ chave: 'global' });
+        if (!config) config = { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
+        
         res.render('index', { produtos, categorias, config, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { res.status(500).send("Erro interno."); }
 });
@@ -298,7 +290,9 @@ app.get('/admin', async (req, res) => {
         const pedidos = await Pedido.find().sort({ createdAt: -1 }); 
         const categorias = await Categoria.find(); 
         const vendasMensais = await VendaMensal.find().sort({ _id: -1 });
-        let config = await Config.findOne({ chave: 'global' }) || await Config.create({ chave: 'global' });
+        let config = await Config.findOne({ chave: 'global' });
+        if (!config) config = await Config.create({ chave: 'global' });
+
         res.render('admin', { pedidos, produtos, config, categorias, vendasMensais, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
@@ -312,63 +306,48 @@ app.get('/operacao', async (req, res) => {
     } catch (err) { res.status(500).send("Erro no painel."); }
 });
 
-// --- LÓGICA MERCADO PAGO ---
-async function gerarPixMercadoPago(valor, email, config) {
-    if (!config.pixToken) return null;
-    const client = new mercury.MercadoPagoConfig({ accessToken: config.pixToken });
-    const payment = new mercury.Payment(client);
-    const body = {
-        transaction_amount: valor,
-        description: `Pedido ${config.nomeSite}`,
-        payment_method_id: 'pix',
-        payer: { email: email || 'cliente@email.com' }
-    };
-    const result = await payment.create({ body });
-    return {
-        id: result.id,
-        copiaCola: result.point_of_interaction.transaction_data.qr_code,
-        qrCode: result.point_of_interaction.transaction_data.qr_code_base64
-    };
-}
-
 app.post('/enviar-pedido', async (req, res) => {
     const aberta = await checarAberta();
     if (!aberta) return res.status(403).json({ success: false, message: "A loja está fechada agora!" });
     
     try {
         const config = await Config.findOne({ chave: 'global' });
+        
         if (config && config.cidadeAtiva) {
             const enderecoCliente = (req.body.endereco || "").toLowerCase();
-            if (!enderecoCliente.includes(config.cidadeNome.toLowerCase()) || !enderecoCliente.includes(config.cidadeEstado.toLowerCase())) {
+            const cidadeConfig = (config.cidadeNome || "").toLowerCase();
+            const estadoConfig = (config.cidadeEstado || "").toLowerCase();
+
+            const contemCidade = enderecoCliente.includes(cidadeConfig);
+            const contemEstado = enderecoCliente.includes(estadoConfig);
+
+            if (!contemCidade || !contemEstado) {
                 return res.status(400).json({ 
                     success: false, 
-                    message: `Endereço Inválido! Aceitamos apenas ${config.cidadeNome} - ${config.cidadeEstado}.` 
+                    message: `Endereço Inválido! Aceitamos apenas pedidos da cidade de ${config.cidadeNome} - ${config.cidadeEstado}.` 
                 });
             }
         }
 
-        const dadosPedido = {
+        const novoPedido = new Pedido({
             ...req.body,
             id: Math.floor(Math.random() * 9000) + 1000,
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        };
-
-        if (req.body.pagamento === 'PIX' && config.pixToken) {
-            try {
-                const pix = await gerarPixMercadoPago(req.body.total, 'cliente@email.com', config);
-                if (pix) {
-                    dadosPedido.pixId = pix.id;
-                    dadosPedido.pixCopiaCola = pix.copiaCola;
-                    dadosPedido.pixQrCode = pix.qrCode;
-                }
-            } catch (e) { console.error("Erro Pix:", e); }
-        }
-
-        const novoPedido = new Pedido(dadosPedido);
+        });
+        
         await novoPedido.save(); 
         io.emit('novoPedido', novoPedido);
-        res.json({ success: true, id: novoPedido.id, pixCopiaCola: novoPedido.pixCopiaCola, pixQrCode: novoPedido.pixQrCode });
-    } catch (error) { res.status(500).json({ success: false }); }
+        res.json({ success: true, id: novoPedido.id });
+    } catch (error) { 
+        res.status(500).json({ success: false }); 
+    }
+});
+
+app.get('/api/pedido/:id', async (req, res) => {
+    try {
+        const pedido = await Pedido.findOne({ id: req.params.id });
+        res.json({ status: pedido ? pedido.status : null });
+    } catch (err) { res.json({ status: null }); }
 });
 
 app.post('/update-status', async (req, res) => {
