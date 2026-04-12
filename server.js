@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 require('dotenv').config(); 
 
 // Importação da configuração de adicionais
+// Certifique-se que o arquivo estrutura-produtos.js use module.exports = { ConfigEstrutura };
 const { ConfigEstrutura } = require('./public/js/estrutura-produtos');
 
 const app = express();
@@ -270,7 +271,6 @@ app.get('/', async (req, res) => {
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = { nomeSite: 'Meu Delivery', agenda: [], taxaEntrega: 0, tempoEntrega: '30-50' };
         
-        // Passamos ConfigEstrutura para o index.ejs renderizar os adicionais corretamente
         res.render('index', { produtos, categorias, config, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { res.status(500).send("Erro interno."); }
 });
@@ -284,7 +284,6 @@ app.get('/admin', async (req, res) => {
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
 
-        // Passamos ConfigEstrutura também para o admin caso precise gerenciar adicionais
         res.render('admin', { pedidos, produtos, config, categorias, vendasMensais, estruturaAdicionais: ConfigEstrutura });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
