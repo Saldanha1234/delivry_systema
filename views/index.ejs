@@ -22,8 +22,6 @@
 </head>
 <body>
 
-<audio id="notificacao-som" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
-
 <div id="modal-erro-endereco" class="modal-erro-endereco">
     <h2>Ops! 📍</h2>
     <p id="mensagem-erro-endereco">Infelizmente não entregamos neste endereço ou bairro.</p>
@@ -234,22 +232,18 @@
     let produtoAtual = null;
     let configLocal = <%- JSON.stringify(estruturaAdicionais) %>;
     
-    // Objeto para armazenar configurações globais vindas do admin
     const settingsEmpresa = {
         travaCidade: "<%= locals.config?.travaCidade || '' %>",
         cidadeAtiva: "<%= locals.config?.cidadeSede || '' %>",
         ativarTrava: <%= locals.config?.limitarArea || false %>
     };
 
-    // Lógica de som ao receber mensagem
-    socket.on('novaMensagem', () => {
-        const som = document.getElementById('notificacao-som');
-        if (som) {
-            som.play().catch(e => console.log("Interação do usuário necessária para tocar som."));
-        }
-    });
+    // Função para obter o horário atual em formato HH:mm
+    function obterHorarioAtual() {
+        const agora = new Date();
+        return agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
 
-    // Função para buscar CEP
     async function buscarCEP(valor) {
         const cep = valor.replace(/\D/g, '');
         if (cep.length !== 8) return;
@@ -265,7 +259,6 @@
                 return;
             }
 
-            // Validação de cidade sede (se ativado no admin)
             if (settingsEmpresa.ativarTrava && settingsEmpresa.cidadeAtiva) {
                 if (data.localidade.toLowerCase() !== settingsEmpresa.cidadeAtiva.toLowerCase()) {
                     alert(`Desculpe! Atendemos apenas na cidade de ${settingsEmpresa.cidadeAtiva}.`);
@@ -527,7 +520,8 @@
                     endereco: enderecoMontado, 
                     pagamento: pagto,
                     itens: carrinho, 
-                    total: carrinho.reduce((acc, i) => acc + i.preco, 0)
+                    total: carrinho.reduce((acc, i) => acc + i.preco, 0),
+                    horario: obterHorarioAtual()
                 })
             });
             
@@ -536,7 +530,6 @@
                 localStorage.setItem('ultimoPedidoId', data.id);
                 location.href = '/status/' + data.id;
             } else if (res.status === 400) {
-                // NOVO: TRATAMENTO PARA ENDEREÇO BLOQUEADO PELO SERVER
                 const erroData = await res.json();
                 document.getElementById('mensagem-erro-endereco').innerText = erroData.message || "Não entregamos neste endereço.";
                 document.getElementById('modal-erro-endereco').style.display = 'block';
