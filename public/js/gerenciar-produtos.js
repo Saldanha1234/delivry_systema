@@ -3,6 +3,7 @@
  */
 
 let imagemBase64 = ""; 
+let listaProdutosLocal = []; // Variável auxiliar para evitar erros de sintaxe no HTML
 
 // --- 0. INJEÇÃO DE CSS (Ajustes de Dropdown e Layout de Produto) ---
 const styles = `
@@ -160,17 +161,18 @@ async function carregarDadosCompletos() {
 
         const categorias = await resCat.json();
         const produtos = await resProd.json();
+        
+        // Salva produtos na memória para acesso seguro por ID
+        listaProdutosLocal = produtos;
 
         const lista = document.getElementById('lista-hierarquica');
         lista.innerHTML = "";
 
-        // Categorias Fixas (Agora com menu ⋮)
         const fixasNomes = ["Promoção", "Mais Comprados"];
         fixasNomes.forEach(nome => {
             renderizarItemCategoria({ nome, fixa: true, _id: nome }, produtos);
         });
 
-        // Categorias Dinâmicas (Ignora o "Todos" e nomes vazios)
         categorias.forEach(cat => {
             if (!fixasNomes.includes(cat.nome) && cat.nome !== "Todos" && cat.nome !== "Defina um nome") {
                 renderizarItemCategoria(cat, produtos);
@@ -204,7 +206,7 @@ function renderizarItemCategoria(cat, todosProdutos) {
             <button class="btn-add-produto" onclick="abrirCriarProduto('${cat.nome}')">+ Criar Produto em ${cat.nome}</button>
             <div id="itens-prod-${cat.nome}">
                 ${produtosDaCat.map(p => `
-                    <div class="produto-linha" onclick="abrirEdicaoProduto('${p._id}', '${JSON.stringify(p).replace(/'/g, "&apos;")}')">
+                    <div class="produto-linha" onclick="prepararEdicao('${p._id}')">
                         <div class="prod-info-wrapper">
                             <img src="${p.img || ''}" class="prod-img-min" onerror="this.style.display='none'">
                             <div class="prod-txt-container">
@@ -252,7 +254,15 @@ function toggleExpandir(catNome) {
     }
 }
 
-// --- 4. LÓGICA DE PRODUTOS (Original Mantida) ---
+// --- 4. LÓGICA DE PRODUTOS ---
+
+// Busca o produto no array da memória pelo ID para evitar erro de Token/JSON no HTML
+function prepararEdicao(id) {
+    const produto = listaProdutosLocal.find(item => item._id === id);
+    if(produto) {
+        abrirEdicaoProduto(id, produto);
+    }
+}
 
 function abrirCriarProduto(catNome) {
     imagemBase64 = "";
@@ -269,12 +279,11 @@ function abrirCriarProduto(catNome) {
     document.getElementById('modal-produto').style.display = "block";
 }
 
-function abrirEdicaoProduto(id, pJson) {
-    const p = JSON.parse(pJson);
+function abrirEdicaoProduto(id, p) {
     document.getElementById('p-id').value = id;
-    document.getElementById('p-nome').value = p.nome;
-    document.getElementById('p-desc').value = p.desc;
-    document.getElementById('p-preco').value = p.preco;
+    document.getElementById('p-nome').value = p.nome || "";
+    document.getElementById('p-desc').value = p.desc || "";
+    document.getElementById('p-preco').value = p.preco || "";
     document.getElementById('p-status').value = p.status || "disponivel";
     document.getElementById('p-desconto').value = p.desconto || "";
     document.getElementById('p-modificador').checked = p.modificadoresAtivos || false;
