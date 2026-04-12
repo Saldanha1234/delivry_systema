@@ -30,7 +30,6 @@ const ConfigSchema = new mongoose.Schema({
     whatsapp: { type: String, default: '' },
     taxaEntrega: { type: Number, default: 0 },
     tempoEntrega: { type: String, default: '30-50' },
-    // NOVOS CAMPOS DE LOCALIDADE SOLICITADOS
     cidadeAtiva: { type: Boolean, default: false },
     cidadeNome: { type: String, default: '' },
     cidadeEstado: { type: String, default: '' },
@@ -79,7 +78,14 @@ const MensagemSchema = new mongoose.Schema({
 });
 const Mensagem = mongoose.model('Mensagem', MensagemSchema);
 
-// --- SISTEMA DE LIMPEZA AUTOMÁTICA (VIRADA DO DIA) ---
+// NOVO SCHEMA PARA VALOR MENSAL
+const VendaMensalSchema = new mongoose.Schema({
+    mesAno: String, // Formato "MM/YYYY"
+    totalAcumulado: { type: Number, default: 0 }
+});
+const VendaMensal = mongoose.model('VendaMensal', VendaMensalSchema);
+
+// --- SISTEMA DE LIMPEZA E ACUMULADO MENSAL (VIRADA DO DIA) ---
 setInterval(async () => {
     const agora = new Date();
     const horaBrasilia = agora.getUTCHours() - 3;
@@ -87,13 +93,29 @@ setInterval(async () => {
 
     if (horaTratada === 0) {
         try {
+            // 1. Calcular total do dia antes de deletar
+            const pedidosDoDia = await Pedido.find({ status: { $in: ['Finalizado', 'Concluído'] } });
+            const totalDia = pedidosDoDia.reduce((acc, p) => acc + (p.total || 0), 0);
+
+            // 2. Identificar Mês/Ano atual para o acumulador
+            const mesAnoAtual = (agora.getMonth() + 1).toString().padStart(2, '0') + '/' + agora.getFullYear();
+
+            // 3. Atualizar ou Criar o registro mensal
+            await VendaMensal.findOneAndUpdate(
+                { mesAno: mesAnoAtual },
+                { $inc: { totalAcumulado: totalDia } },
+                { upsert: true }
+            );
+
+            // 4. Faxina original
             await Pedido.deleteMany({ status: { $in: ['Finalizado', 'Cancelado', 'Concluído'] } });
             const pedidosAtivos = await Pedido.find().distinct('id');
             const stringIdsAtivos = pedidosAtivos.map(id => id.toString());
             await Mensagem.deleteMany({ pedidoId: { $nin: stringIdsAtivos } });
-            console.log(`♻️ Faxina de Meia-Noite concluída.`);
+            
+            console.log(`♻️ Faxina e Acúmulo de Vendas (${mesAnoAtual}) concluídos. Total hoje: R$ ${totalDia}`);
         } catch (err) {
-            console.error("❌ Erro na limpeza:", err);
+            console.error("❌ Erro na limpeza/acumulado:", err);
         }
     }
 }, 3600000); 
@@ -118,7 +140,7 @@ const checarAberta = async () => {
         
         const diaSemana = dataLocal.getDay(); 
         const horaAtual = dataLocal.getHours().toString().padStart(2, '0') + ':' + 
-                          dataLocal.getMinutes().toString().padStart(2, '0');
+                        dataLocal.getMinutes().toString().padStart(2, '0');
 
         const agendaHoje = config.agenda && config.agenda[diaSemana];
 
@@ -145,6 +167,14 @@ app.use(async (req, res, next) => {
         res.locals.nomeSite = "Meu Delivery";
         next();
     }
+});
+
+// --- ROTAS DE VENDAS MENSAL ---
+app.get('/get-vendas-mensal', async (req, res) => {
+    try {
+        const vendas = await VendaMensal.find().sort({ _id: -1 });
+        res.json(vendas);
+    } catch (err) { res.status(500).json([]); }
 });
 
 // --- ROTAS DE CATEGORIAS E PRODUTOS (MANTIDAS) ---
@@ -249,9 +279,10 @@ app.get('/admin', async (req, res) => {
         const produtos = await Produto.find();
         const pedidos = await Pedido.find().sort({ createdAt: -1 }); 
         const categorias = await Categoria.find(); 
+        const vendasMensais = await VendaMensal.find().sort({ _id: -1 }); // Adicionado para o admin
         let config = await Config.findOne({ chave: 'global' });
         if (!config) config = await Config.create({ chave: 'global' });
-        res.render('admin', { pedidos, produtos, config, categorias });
+        res.render('admin', { pedidos, produtos, config, categorias, vendasMensais });
     } catch (err) { res.status(500).send("Erro ao carregar admin."); }
 });
 
@@ -264,7 +295,6 @@ app.get('/operacao', async (req, res) => {
     } catch (err) { res.status(500).send("Erro no painel."); }
 });
 
-// --- ROTA DE ENVIO COM VALIDAÇÃO REFEITA ---
 app.post('/enviar-pedido', async (req, res) => {
     const aberta = await checarAberta();
     if (!aberta) return res.status(403).json({ success: false, message: "A loja está fechada agora!" });
@@ -272,7 +302,6 @@ app.post('/enviar-pedido', async (req, res) => {
     try {
         const config = await Config.findOne({ chave: 'global' });
         
-        // Lógica de Validação: Se ativado, barra endereços fora da cidade
         if (config && config.cidadeAtiva) {
             const enderecoCliente = (req.body.endereco || "").toLowerCase();
             const cidadeConfig = (config.cidadeNome || "").toLowerCase();
@@ -282,7 +311,6 @@ app.post('/enviar-pedido', async (req, res) => {
             const contemEstado = enderecoCliente.includes(estadoConfig);
 
             if (!contemCidade || !contemEstado) {
-                // Retorna exatamente o erro para o front-end disparar o alerta
                 return res.status(400).json({ 
                     success: false, 
                     message: `Endereço Inválido! Aceitamos apenas pedidos da cidade de ${config.cidadeNome} - ${config.cidadeEstado}.` 

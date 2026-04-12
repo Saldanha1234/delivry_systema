@@ -188,49 +188,58 @@
 
             <div id="aba-financeiro" class="tab-content">
                 <% 
-                    const hoje = new Date().toLocaleDateString('pt-BR');
-                    let totalMes = pedidos.filter(p => p.status === 'Concluído').reduce((acc, p) => acc + p.total, 0);
-                    let entregasMes = pedidos.filter(p => p.status === 'Concluído').length;
-                    let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hoje);
+                    const dataAtual = new Date();
+                    const hojeStr = dataAtual.toLocaleDateString('pt-BR');
+                    const nomeMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                    const mesAtualNome = nomeMeses[dataAtual.getMonth()];
+
+                    // Vendas do Dia (Calculadas em tempo real dos pedidos de hoje)
+                    let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hojeStr);
                     let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
                     let entregasDia = pedidosHoje.length;
+
+                    // Totais do Mês (Puxando do objeto de configuração/banco de dados acumulado)
+                    let totalMesAcumulado = config.vendasMes || 0;
+                    let entregasMesAcumulado = config.entregasMes || 0;
                 %>
                 <div class="finance-grid">
                     <div class="stat-card" style="border-left-color: var(--success);">
                         <h4>💰 Vendas do Dia</h4>
                         <div class="value" id="val-venda-dia">R$ <%= totalDia.toFixed(2) %></div>
-                        <span class="date-label">HOJE: <%= hoje %></span>
+                        <span class="date-label">HOJE: <%= hojeStr %></span>
                     </div>
                     <div class="stat-card" style="border-left-color: var(--info);">
                         <h4>📦 Entregas do Dia</h4>
                         <div class="value" id="val-entrega-dia"><%= entregasDia %></div>
-                        <span class="date-label">DATA: <%= hoje %></span>
+                        <span class="date-label">STATUS: Aguardando Reset</span>
                     </div>
-                    <div class="stat-card">
-                        <h4>📊 Total Acumulado (Mês)</h4>
-                        <div class="value">R$ <%= totalMes.toFixed(2) %></div>
+                    <div class="stat-card" style="border-left-color: var(--dark);">
+                        <h4>📊 Total Acumulado (<%= mesAtualNome %>)</h4>
+                        <div class="value">R$ <%= totalMesAcumulado.toFixed(2) %></div>
+                        <p style="font-size: 0.65rem; color: #999; margin: 5px 0 0 0;">Soma dos dias encerrados</p>
                     </div>
                     <div class="stat-card" style="border-left-color: #3498db;">
-                        <h4>🚚 Entregas Totais</h4>
-                        <div class="value"><%= entregasMes %></div>
+                        <h4>🚚 Entregas Totais no Mês</h4>
+                        <div class="value"><%= entregasMesAcumulado %></div>
+                        <p style="font-size: 0.65rem; color: #999; margin: 5px 0 0 0;">Volume mensal</p>
                     </div>
                 </div>
 
                 <div class="config-card" style="background:white; padding:20px; border-radius:12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                    <h3 style="margin-top:0; font-size: 1.1rem;">⚡ Configuração de Recebimento</h3>
+                    <h3 style="margin-top:0; font-size: 1.1rem;">⚡ Configuração de Recebimento Pix</h3>
                     <form id="form-config-pix" style="display:grid; gap:12px; margin-top:10px;">
                         <div style="display:flex; flex-direction:column; gap:5px;">
-                            <label style="font-size:0.8rem; font-weight:bold; color:#555;">Provedor Pix</label>
+                            <label style="font-size:0.8rem; font-weight:bold; color:#555;">Provedor de Pagamento</label>
                             <select id="conf-pixProvedor" style="padding:10px; border-radius:6px; border:1px solid #ddd;">
                                 <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
-                                <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
+                                <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank (Antiga GerenciaNet)</option>
                             </select>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:5px;">
-                            <label style="font-size:0.8rem; font-weight:bold; color:#555;">Chave Secreta de Integração</label>
-                            <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" style="padding:10px; border-radius:6px; border:1px solid #ddd;">
+                            <label style="font-size:0.8rem; font-weight:bold; color:#555;">Access Token / Chave de API</label>
+                            <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" placeholder="Insira o token de integração" style="padding:10px; border-radius:6px; border:1px solid #ddd;">
                         </div>
-                        <button type="button" onclick="salvarConfigPix()" style="background:var(--dark); color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:5px;">ATUALIZAR CHAVES</button>
+                        <button type="button" onclick="salvarConfigPix()" style="background:var(--dark); color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:5px;">SALVAR CONFIGURAÇÕES PIX</button>
                     </form>
                 </div>
             </div>
@@ -411,7 +420,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
-            if (res.ok) alert("✅ Chaves atualizadas!");
+            if (res.ok) alert("✅ Chaves de pagamento atualizadas com sucesso!");
         }
 
         // CHAT LOGIC
