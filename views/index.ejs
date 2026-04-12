@@ -125,7 +125,7 @@
                 <h3><%= p.nome %></h3>
                 <p class="desc"><%= p.desc %></p>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                    <span class="price-tag">R$ <%= p.preco.toFixed(2) %></span>
+                    <span class="price-tag">R$ <%= (p.preco ? Number(p.preco).toFixed(2) : "0.00") %></span>
                     <span style="color: var(--primary); font-weight: bold; font-size: 0.8rem;">Ver detalhes +</span>
                 </div>
             </div>
@@ -252,7 +252,7 @@
             return;
         }
         
-        produtoAtual = { nome, precoBase: parseFloat(preco), desc, img };
+        produtoAtual = { nome, precoBase: parseFloat(preco) || 0, desc, img };
         
         if(configLocal) {
             configLocal.categorias.forEach(cat => cat.opcoes.forEach(opt => opt.qtd = 0));
@@ -326,7 +326,7 @@
         configLocal.categorias.forEach(cat => {
             cat.opcoes.forEach(opt => { extra += (opt.preco * opt.qtd); });
         });
-        const total = produtoAtual.precoBase + extra;
+        const total = (produtoAtual.precoBase || 0) + extra;
         document.getElementById('m-total').innerText = `R$ ${total.toFixed(2)}`;
     }
 
@@ -336,7 +336,7 @@
 
     function confirmarMontagem() {
         let selecionados = [];
-        let precoFinal = produtoAtual.precoBase;
+        let precoFinal = produtoAtual.precoBase || 0;
 
         configLocal.categorias.forEach(cat => {
             cat.opcoes.forEach(opt => {
