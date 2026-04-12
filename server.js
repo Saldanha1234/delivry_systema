@@ -175,6 +175,14 @@ app.delete('/delete-categoria/:id', async (req, res) => {
 
 // --- ROTAS DE PRODUTOS ---
 
+// NOVA ROTA: Obter todos os produtos (Necessária para o gerenciar-produtos.js)
+app.get('/get-produtos', async (req, res) => {
+    try {
+        const produtos = await Produto.find();
+        res.json(produtos);
+    } catch (err) { res.status(500).json([]); }
+});
+
 app.post('/add-produto', async (req, res) => {
     try {
         const novoProduto = new Produto(req.body);
