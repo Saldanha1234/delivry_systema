@@ -1,31 +1,32 @@
 /**
- * LÓGICA DE GERENCIAMENTO DE PRODUTOS E CATEGORIAS - COM GESTÃO DE ADICIONAIS
+ * LÓGICA DE GERENCIAMENTO DE PRODUTOS E CATEGORIAS - CORRIGIDO
  */
 
 let imagemBase64 = ""; 
 let listaProdutosLocal = []; 
 
-// --- 0. INJEÇÃO DE CSS ---
+// --- 0. INJEÇÃO DE CSS (Executa ao carregar o script) ---
 const styles = `
-    .painel-unico-admin { font-family: sans-serif; max-width: 800px; margin: 20px auto; background: #f4f4f4; padding: 15px; border-radius: 8px; }
+    .painel-unico-admin { font-family: sans-serif; max-width: 100%; margin: 10px auto; background: var(--bg); padding: 15px; border-radius: 8px; }
     .header-painel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .btn-add-principal { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+    .btn-add-principal { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
     
-    .item-categoria-container { background: white; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; }
-    .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid #eee; }
+    .item-categoria-container { background: var(--white); margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; border: 1px solid var(--border-color); overflow: hidden; }
+    .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--white); border-bottom: 1px solid var(--border-color); }
     .cat-info { display: flex; align-items: center; cursor: pointer; flex-grow: 1; }
-    .seta { margin-right: 15px; font-weight: bold; transition: 0.3s; }
-    .cat-nome { font-weight: bold; font-size: 1.1em; outline: none; }
+    .seta { margin-right: 15px; font-weight: bold; transition: 0.3s; color: var(--primary); }
+    .cat-nome { font-weight: bold; font-size: 1.1em; color: var(--text-main); }
     
-    .produtos-lista { padding: 10px 15px; background: #fafafa; border-top: 1px solid #eee; }
-    .btn-add-produto { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px dashed #ccc; background: #fff; cursor: pointer; border-radius: 4px; }
+    .produtos-lista { padding: 10px 15px; background: var(--chat-bg); border-top: 1px solid var(--border-color); }
+    .btn-add-produto { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px dashed var(--border-color); background: var(--white); cursor: pointer; border-radius: 6px; color: var(--text-main); font-weight: bold; }
     
-    .produto-linha { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 4px; cursor: pointer; }
+    .produto-linha { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border-color); background: var(--white); margin-bottom: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    .produto-linha:hover { transform: scale(1.01); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     .prod-info-wrapper { display: flex; align-items: center; flex-grow: 1; }
-    .prod-img-min { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 12px; background: #eee; }
+    .prod-img-min { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; margin-right: 15px; background: #eee; }
     .prod-txt-container { display: flex; flex-direction: column; }
-    .prod-nome-txt { font-weight: bold; }
-    .prod-preco-txt { font-size: 0.9em; color: #28a745; font-weight: bold; }
+    .prod-nome-txt { font-weight: bold; color: var(--text-main); }
+    .prod-preco-txt { font-size: 0.9em; color: #2ecc71; font-weight: bold; }
 
     .dropdown { position: relative; display: inline-block; }
     .dropdown-content { 
@@ -35,64 +36,50 @@ const styles = `
         top: 100%; 
         background: white; 
         min-width: 150px; 
-        box-shadow: 0 8px 16px rgba(0,0,0,0.3); 
-        z-index: 9999; 
-        border-radius: 4px; 
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2); 
+        z-index: 999; 
+        border-radius: 6px; 
         border: 1px solid #ddd;
     }
     .dropdown-content.show { display: block; }
-    .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; }
-    .dropdown-content a:hover { background: #f1f1f1; }
+    .dropdown-content a { color: #333; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; }
+    .dropdown-content a:hover { background: #f8f9fa; }
 
-    .modal-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; overflow-y: auto; }
-    .modal-content header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; }
+    .modal-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--white); z-index: 10000; overflow-y: auto; color: var(--text-main); }
+    .modal-content header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--white); z-index: 10; }
     .modal-body { padding: 20px; max-width: 600px; margin: 0 auto; }
-    .upload-area { text-align: center; margin-bottom: 20px; border: 2px dashed #ddd; padding: 20px; border-radius: 10px; }
-    .input-group { margin-bottom: 15px; }
-    .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-    .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    
-    .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
-    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-    input:checked + .slider { background-color: #28a745; }
-    input:checked + .slider:before { transform: translateX(26px); }
-    .toggle-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-top: 1px solid #eee; }
-
-    /* Estilos do Painel de Adicionais */
-    #area-adicionais { margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
-    .adicional-item { display: grid; grid-template-columns: 1fr 100px auto; gap: 10px; margin-bottom: 8px; align-items: center; }
-    .btn-remover-adicional { color: #dc3545; background: none; border: none; font-size: 20px; cursor: pointer; }
-    .btn-novo-adicional { background: #6c757d; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 10px; }
 `;
 
 const styleSheet = document.createElement("style");
 styleSheet.innerText = styles;
 document.head.appendChild(styleSheet);
 
-// --- 1. RENDERIZAÇÃO DO PAINEL PRINCIPAL ---
+// --- 1. RENDERIZAÇÃO E EXPOSIÇÃO GLOBAL ---
 
-function renderizarPainelCategorias(containerId) {
+window.renderizarPainelCategorias = function(containerId) {
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) {
+        console.error("Container não encontrado:", containerId);
+        return;
+    }
 
     container.innerHTML = `
         <div class="painel-unico-admin" onclick="fecharTodosDropdowns(event)">
             <div class="header-painel">
-                <h3>Gerenciar Itens</h3>
-                <button class="btn-add-principal" onclick="criarNovaCategoria()">+ Adicionar Categoria</button>
+                <h3 style="margin:0;">Gerenciar Cardápio</h3>
+                <button class="btn-add-principal" onclick="criarNovaCategoria()">+ Categoria</button>
             </div>
-            <div id="lista-hierarquica"></div>
+            <div id="lista-hierarquica">
+                <p style="text-align:center; padding:20px; color:#888;">Carregando categorias e produtos...</p>
+            </div>
         </div>
 
         <div id="modal-produto" class="modal-fullscreen" style="display:none;">
             <div class="modal-content">
                 <header>
-                    <button onclick="fecharModal()" style="border:none; background:none; font-size:18px; cursor:pointer;">← Voltar</button>
-                    <span id="modal-titulo" style="font-weight:bold;">Editar Produto</span>
-                    <button class="btn-salvar-modal" onclick="salvarProduto()" style="background:#007bff; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">SALVAR</button>
+                    <button onclick="fecharModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-main);">✕</button>
+                    <span id="modal-titulo" style="font-weight:900; text-transform:uppercase;">Editar Produto</span>
+                    <button onclick="salvarProduto()" style="background:var(--success); color:white; border:none; padding:10px 25px; border-radius:6px; cursor:pointer; font-weight:bold;">SALVAR</button>
                 </header>
                 
                 <div class="modal-body">
@@ -100,45 +87,45 @@ function renderizarPainelCategorias(containerId) {
                     <input type="hidden" id="p-img-data">
                     <input type="hidden" id="p-categoria-origem">
 
-                    <div class="upload-area">
-                        <img id="p-preview" src="" style="width: 150px; height: 150px; object-fit: cover; border-radius:10px; margin-bottom:10px; display:none;">
+                    <div class="upload-area" style="text-align: center; padding: 20px; border: 2px dashed var(--border-color); border-radius: 12px; margin-bottom: 20px;">
+                        <img id="p-preview" src="" style="width: 180px; height: 180px; object-fit: cover; border-radius:12px; margin-bottom:15px; display:none; margin-left:auto; margin-right:auto;">
                         <input type="file" id="p-file" accept="image/*" onchange="converterImagem()" style="display:none;">
-                        <label for="p-file" style="cursor:pointer; color:#007bff; font-weight:bold;">📷 Selecionar Foto</label>
+                        <label for="p-file" style="cursor:pointer; color:var(--info); font-weight:bold; display:block;">📷 Alterar Foto do Produto</label>
                     </div>
 
                     <div class="input-group">
-                        <label>Nome do Produto</label>
-                        <input type="text" id="p-nome" placeholder="Ex: Pizza Calabresa">
+                        <label>Nome do Item</label>
+                        <input type="text" id="p-nome" placeholder="Ex: X-Salada Especial">
                     </div>
 
                     <div class="input-group">
-                        <label>Descrição</label>
-                        <textarea id="p-desc" rows="3" placeholder="Detalhes do produto..."></textarea>
+                        <label>Descrição / Ingredientes</label>
+                        <textarea id="p-desc" rows="3" placeholder="Pão, carne 180g, queijo..."></textarea>
                     </div>
 
                     <div class="input-row">
                         <div class="input-group">
-                            <label>Preço (R$)</label>
+                            <label>Preço Base (R$)</label>
                             <input type="number" id="p-preco" step="0.01">
                         </div>
                         <div class="input-group">
-                            <label>Disponibilidade</label>
+                            <label>Status</label>
                             <select id="p-status">
-                                <option value="disponivel">Disponível</option>
-                                <option value="indisponivel">Indisponível</option>
+                                <option value="disponivel">✅ Disponível</option>
+                                <option value="indisponivel">❌ Indisponível</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="toggle-item">
-                        <span>🏷️ Preço com Desconto (R$)</span>
-                        <input type="number" id="p-desconto" style="width:120px; padding:8px;" placeholder="Ex: 25.00">
+                        <span>🏷️ Preço Promocional (Opcional)</span>
+                        <input type="number" id="p-desconto" style="width:120px; padding:8px;" placeholder="0.00">
                     </div>
 
-                    <div class="toggle-item">
+                    <div class="toggle-item" style="margin-top:20px; padding-top:20px;">
                         <div>
-                            <strong>Adicionar Modificadores</strong><br>
-                            <small style="color:#666;">Ativar acompanhamentos e extras</small>
+                            <strong>Permitir Adicionais?</strong><br>
+                            <small style="color:#888;">Habilita a escolha de extras pelo cliente</small>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="p-modificador" onchange="togglePainelAdicionais()">
@@ -146,19 +133,19 @@ function renderizarPainelCategorias(containerId) {
                         </label>
                     </div>
 
-                    <div id="area-adicionais" style="display:none;">
-                        <label style="font-weight:bold; display:block; margin-bottom:10px;">Personalizar Adicionais</label>
+                    <div id="area-adicionais" style="display:none; background: var(--bg); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                        <label style="font-weight:bold; display:block; margin-bottom:10px;">Lista de Extras/Adicionais</label>
                         <div id="lista-adicionais-editavel"></div>
-                        <button type="button" class="btn-novo-adicional" onclick="adicionarLinhaAdicional()">+ Novo Adicional</button>
+                        <button type="button" class="btn-novo-adicional" onclick="adicionarLinhaAdicional()" style="background:var(--dark); color:white; border:none; padding:10px; border-radius:6px; width:100%; cursor:pointer; margin-top:10px;">+ Adicionar Opção</button>
                     </div>
                 </div>
             </div>
         </div>
     `;
     carregarDadosCompletos();
-}
+};
 
-// --- 2. GESTÃO DE DADOS E LISTAGEM ---
+// --- 2. GESTÃO DE DADOS ---
 
 async function carregarDadosCompletos() {
     try {
@@ -166,21 +153,32 @@ async function carregarDadosCompletos() {
             fetch('/get-categorias'),
             fetch('/get-produtos')
         ]);
+        
         const categorias = await resCat.json();
         const produtos = await resProd.json();
         listaProdutosLocal = produtos;
-        const lista = document.getElementById('lista-hierarquica');
-        lista.innerHTML = "";
+
+        const listaContainer = document.getElementById('lista-hierarquica');
+        if(!listaContainer) return;
+        listaContainer.innerHTML = "";
+
+        // Categorias Fixas de Sistema
         const fixasNomes = ["Promoção", "Mais Comprados"];
         fixasNomes.forEach(nome => {
             renderizarItemCategoria({ nome, fixa: true, _id: nome }, produtos);
         });
+
+        // Categorias do Usuário
         categorias.forEach(cat => {
             if (!fixasNomes.includes(cat.nome) && cat.nome !== "Todos" && cat.nome !== "Defina um nome") {
                 renderizarItemCategoria(cat, produtos);
             }
         });
-    } catch (err) { console.error("Erro:", err); }
+    } catch (err) { 
+        console.error("Erro ao carregar dados:", err); 
+        const lista = document.getElementById('lista-hierarquica');
+        if(lista) lista.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar cardápio. Verifique a conexão.</p>`;
+    }
 }
 
 function renderizarItemCategoria(cat, todosProdutos) {
@@ -188,37 +186,38 @@ function renderizarItemCategoria(cat, todosProdutos) {
     const produtosDaCat = todosProdutos.filter(p => p.categoria === cat.nome);
     const div = document.createElement('div');
     div.className = "item-categoria-container";
+    
     div.innerHTML = `
         <div class="categoria-header">
             <div class="cat-info" onclick="toggleExpandir('${cat.nome}')">
                 <span class="seta" id="seta-${cat.nome}">▲</span>
                 <span class="cat-nome">${cat.nome}</span>
+                <small style="margin-left:10px; color:#888;">(${produtosDaCat.length})</small>
             </div>
             <div class="dropdown">
-                <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer;">⋮</button>
+                <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer; color:var(--text-main);">⋮</button>
                 <div class="dropdown-content">
-                    <a href="#" onclick="confirmarExclusaoCat('${cat._id}', '${cat.fixa}')">Excluir</a>
-                    <a href="#" onclick="duplicarCategoria('${cat._id}')">Duplicar</a>
+                    <a href="javascript:void(0)" onclick="confirmarExclusaoCat('${cat._id}', '${cat.fixa}')" style="color:red;">Excluir Categoria</a>
                 </div>
             </div>
         </div>
         <div class="produtos-lista" id="lista-prod-${cat.nome}" style="display:none;">
-            <button class="btn-add-produto" onclick="abrirCriarProduto('${cat.nome}')">+ Criar Produto em ${cat.nome}</button>
+            <button class="btn-add-produto" onclick="abrirCriarProduto('${cat.nome}')">+ Novo Produto em ${cat.nome}</button>
             <div id="itens-prod-${cat.nome}">
                 ${produtosDaCat.map(p => `
                     <div class="produto-linha" onclick="prepararEdicao('${p._id}')">
                         <div class="prod-info-wrapper">
-                            <img src="${p.img || ''}" class="prod-img-min" onerror="this.style.display='none'">
+                            <img src="${p.img || ''}" class="prod-img-min" onerror="this.src='https://placehold.co/100x100?text=Sem+Foto'">
                             <div class="prod-txt-container">
                                 <span class="prod-nome-txt">${p.nome || 'Sem nome'}</span>
                                 <span class="prod-preco-txt">R$ ${parseFloat(p.preco || 0).toFixed(2)}</span>
                             </div>
                         </div>
                         <div class="dropdown">
-                            <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
+                            <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer; padding:10px;">⋮</button>
                             <div class="dropdown-content">
-                                <a href="#" onclick="excluirProduto('${p._id}')">Excluir</a>
-                                <a href="#" onclick="duplicarProduto('${p._id}')">Duplicar</a>
+                                <a href="javascript:void(0)" onclick="excluirProduto('${p._id}')">Excluir</a>
+                                <a href="javascript:void(0)" onclick="duplicarProduto('${p._id}')">Duplicar</a>
                             </div>
                         </div>
                     </div>
@@ -229,24 +228,25 @@ function renderizarItemCategoria(cat, todosProdutos) {
     lista.appendChild(div);
 }
 
-// --- 3. LÓGICA DE ADICIONAIS (NOVO) ---
+// --- 3. LÓGICA DE ADICIONAIS ---
 
-function togglePainelAdicionais() {
+window.togglePainelAdicionais = function() {
     const isChecked = document.getElementById('p-modificador').checked;
     document.getElementById('area-adicionais').style.display = isChecked ? 'block' : 'none';
-}
+};
 
-function adicionarLinhaAdicional(nome = "", preco = "") {
+window.adicionarLinhaAdicional = function(nome = "", preco = "") {
     const container = document.getElementById('lista-adicionais-editavel');
     const div = document.createElement('div');
     div.className = "adicional-item";
+    div.style = "display: grid; grid-template-columns: 1fr 100px 40px; gap: 10px; margin-bottom: 10px;";
     div.innerHTML = `
-        <input type="text" placeholder="Nome do adicional" value="${nome}" class="add-nome-input">
-        <input type="number" placeholder="Preço" value="${preco}" step="0.01" class="add-preco-input">
-        <button type="button" class="btn-remover-adicional" onclick="this.parentElement.remove()">×</button>
+        <input type="text" placeholder="Nome (Ex: Bacon)" value="${nome}" class="add-nome-input" style="padding:8px;">
+        <input type="number" placeholder="Preço" value="${preco}" step="0.01" class="add-preco-input" style="padding:8px;">
+        <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; color:red; font-size:20px; cursor:pointer;">&times;</button>
     `;
     container.appendChild(div);
-}
+};
 
 function obterAdicionaisDaTela() {
     const nomes = document.querySelectorAll('.add-nome-input');
@@ -256,7 +256,7 @@ function obterAdicionaisDaTela() {
         if(el.value.trim() !== "") {
             adicionais.push({
                 nome: el.value,
-                preco: precos[i].value || 0
+                preco: parseFloat(precos[i].value) || 0
             });
         }
     });
@@ -265,7 +265,7 @@ function obterAdicionaisDaTela() {
 
 // --- 4. LÓGICA DE PRODUTOS ---
 
-function abrirCriarProduto(catNome) {
+window.abrirCriarProduto = function(catNome) {
     imagemBase64 = "";
     document.getElementById('p-id').value = "";
     document.getElementById('p-nome').value = "";
@@ -273,15 +273,15 @@ function abrirCriarProduto(catNome) {
     document.getElementById('p-preco').value = "";
     document.getElementById('p-desconto').value = "";
     document.getElementById('p-modificador').checked = false;
-    document.getElementById('lista-adicionais-editavel').innerHTML = ""; // Limpa adicionais
+    document.getElementById('lista-adicionais-editavel').innerHTML = "";
     togglePainelAdicionais();
     document.getElementById('p-categoria-origem').value = catNome;
     document.getElementById('p-preview').style.display = "none";
     document.getElementById('modal-titulo').innerText = "Novo Produto";
     document.getElementById('modal-produto').style.display = "block";
-}
+};
 
-function prepararEdicao(id) {
+window.prepararEdicao = function(id) {
     const produto = listaProdutosLocal.find(item => item._id === id);
     if(produto) {
         document.getElementById('p-id').value = id;
@@ -291,12 +291,10 @@ function prepararEdicao(id) {
         document.getElementById('p-status').value = produto.status || "disponivel";
         document.getElementById('p-desconto').value = produto.desconto || "";
         
-        // Ativa checkbox e painel se houver modificadores
         const temMod = produto.modificadoresAtivos === true;
         document.getElementById('p-modificador').checked = temMod;
         togglePainelAdicionais();
 
-        // Carrega adicionais existentes no produto
         const container = document.getElementById('lista-adicionais-editavel');
         container.innerHTML = "";
         if(produto.adicionais && produto.adicionais.length > 0) {
@@ -315,9 +313,9 @@ function prepararEdicao(id) {
         document.getElementById('modal-titulo').innerText = "Editar Produto";
         document.getElementById('modal-produto').style.display = "block";
     }
-}
+};
 
-async function salvarProduto() {
+window.salvarProduto = async function() {
     const id = document.getElementById('p-id').value;
     const dados = {
         nome: document.getElementById('p-nome').value,
@@ -326,10 +324,12 @@ async function salvarProduto() {
         status: document.getElementById('p-status').value,
         desconto: document.getElementById('p-desconto').value,
         modificadoresAtivos: document.getElementById('p-modificador').checked,
-        adicionais: obterAdicionaisDaTela(), // Salva a lista customizada
+        adicionais: obterAdicionaisDaTela(),
         categoria: document.getElementById('p-categoria-origem').value,
         img: imagemBase64 || document.getElementById('p-img-data').value
     };
+
+    if(!dados.nome || !dados.preco) return alert("Nome e Preço são obrigatórios!");
 
     try {
         const url = id ? `/edit-produto/${id}` : '/add-produto';
@@ -343,22 +343,29 @@ async function salvarProduto() {
             carregarDadosCompletos();
         }
     } catch (err) { console.error(err); }
-}
+};
 
-// --- 5. FUNÇÕES AUXILIARES (Mantidas do original) ---
+window.excluirProduto = function(id) {
+    if(confirm("Tem certeza que deseja excluir este produto?")) {
+        fetch(`/delete-produto/${id}`, { method: 'DELETE' })
+        .then(() => carregarDadosCompletos());
+    }
+};
 
-function menuClique(e) {
+// --- 5. UTILITÁRIOS ---
+
+window.menuClique = function(e) {
     e.stopPropagation();
     fecharTodosDropdowns();
     const content = e.target.nextElementSibling;
-    content.classList.toggle('show');
-}
+    if(content) content.classList.toggle('show');
+};
 
-function fecharTodosDropdowns() {
+window.fecharTodosDropdowns = function() {
     document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
-}
+};
 
-function toggleExpandir(catNome) {
+window.toggleExpandir = function(catNome) {
     const lista = document.getElementById(`lista-prod-${catNome}`);
     const seta = document.getElementById(`seta-${catNome}`);
     if(lista.style.display === "none") {
@@ -368,13 +375,13 @@ function toggleExpandir(catNome) {
         lista.style.display = "none";
         seta.innerHTML = "▲";
     }
-}
+};
 
-function fecharModal() {
+window.fecharModal = function() {
     document.getElementById('modal-produto').style.display = "none";
-}
+};
 
-function converterImagem() {
+window.converterImagem = function() {
     const file = document.getElementById('p-file').files[0];
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -383,9 +390,9 @@ function converterImagem() {
         document.getElementById('p-preview').style.display = "block";
     }
     if (file) reader.readAsDataURL(file);
-}
+};
 
-async function criarNovaCategoria() {
+window.criarNovaCategoria = async function() {
     const nome = prompt("Nome da nova categoria:");
     if(!nome) return;
     const res = await fetch('/add-categoria', {
@@ -394,18 +401,19 @@ async function criarNovaCategoria() {
         body: JSON.stringify({ nome: nome })
     });
     if(res.ok) carregarDadosCompletos();
-}
+};
 
-function confirmarExclusaoCat(id, fixa) {
-    if(fixa === "true") {
-        alert("Categorias fixas não podem ser excluídas.");
+window.confirmarExclusaoCat = function(id, fixa) {
+    if(fixa === "true" || fixa === true) {
+        alert("Categorias do sistema não podem ser removidas.");
         return;
     }
-    if(confirm("Excluir esta categoria?")) {
+    if(confirm("Excluir esta categoria e todos os produtos dela?")) {
         fetch('/delete-categoria/' + id, { method: 'DELETE' }).then(() => carregarDadosCompletos());
     }
-}
+};
 
-window.onclick = function(event) {
+// Fecha menus ao clicar fora
+window.addEventListener('click', function(event) {
     if (!event.target.matches('button')) fecharTodosDropdowns();
-}
+});
