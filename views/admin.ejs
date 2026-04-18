@@ -7,170 +7,160 @@
     <title>Admin | Gestão Total</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root { --primary: #ffca2c; --dark: #181818; --bg: #f0f2f5; --success: #2ecc71; --danger: #ff4757; --info: #1e90ff; }
+        /* DESIGN LIMPO E PROFISSIONAL */
+        :root { 
+            --primary: #ffca2c; 
+            --dark: #181818; 
+            --bg: #f8f9fa; 
+            --success: #2ecc71; 
+            --danger: #ff4757; 
+            --info: #3498db;
+            --white: #ffffff;
+        }
         
         * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; }
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg); 
+            color: #333;
+        }
 
-        .admin-layout { display: flex; flex-direction: column; height: 100vh; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .admin-layout { display: flex; flex-direction: column; height: 100vh; }
         .admin-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
 
-        /* --- Sistema de Abas --- */
+        /* --- Nav e Tabs --- */
+        .admin-nav { 
+            background: var(--white); 
+            padding: 12px 25px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
         .tab-container { 
             display: flex; 
-            background: #fff; 
-            border-bottom: 2px solid #ddd; 
-            padding: 0 10px; 
-            gap: 5px; 
+            background: var(--white); 
+            border-bottom: 1px solid #ddd; 
+            padding: 0 15px; 
+            gap: 10px; 
             overflow-x: auto; 
-            white-space: nowrap; 
             position: sticky; 
             top: 0; 
             z-index: 100;
-            scrollbar-width: none; 
         }
-        .tab-container::-webkit-scrollbar { display: none; }
-
         .tab-btn { 
-            padding: 15px 18px; 
+            padding: 16px 20px; 
             border: none; 
             background: none; 
             cursor: pointer; 
-            font-weight: bold; 
-            color: #666; 
-            transition: 0.3s; 
+            font-weight: 700; 
+            color: #888; 
+            transition: 0.2s; 
             border-bottom: 3px solid transparent;
-            font-size: 0.9rem;
-            flex-shrink: 0; 
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .tab-btn.active { color: var(--dark); border-bottom-color: var(--primary); }
 
-        .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        .tab-content { display: none; padding: 25px; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
 
-        /* --- COMPORTAMENTO FULL SCREEN SÓ PARA O FINANCEIRO --- */
-        #aba-financeiro.active {
-            display: block;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #121212; /* Fundo escuro estilo banco */
-            z-index: 5000;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .btn-voltar-financeiro {
-            background: none;
-            border: 1px solid #333;
-            color: #fff;
-            padding: 8px 15px;
-            border-radius: 8px;
+        /* --- Cards e Boxes --- */
+        .card-box { 
+            background: var(--white); 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
             margin-bottom: 20px;
-            cursor: pointer;
-            font-size: 0.8rem;
+            border: 1px solid #eee;
         }
 
+        /* --- Financeiro (Arrumado) --- */
+        .finance-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 25px; 
+        }
+        .stat-card { 
+            background: var(--white); 
+            padding: 25px; 
+            border-radius: 12px; 
+            border-left: 6px solid var(--primary); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-card h4 { margin: 0 0 8px 0; font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 1px;}
+        .stat-card .value { font-size: 1.6rem; font-weight: 800; color: var(--dark); }
+        .stat-card .date-label { font-size: 0.75rem; color: var(--info); font-weight: 600; display: block; margin-top: 5px; }
+
+        /* --- Banner Operação --- */
         .banner-operacao {
             background: var(--dark);
             color: white;
-            padding: 25px;
+            padding: 30px;
             border-radius: 12px;
-            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-left: 10px solid var(--primary);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
         .btn-abrir-kds {
             background: var(--primary);
             color: var(--dark);
-            padding: 12px 20px;
+            padding: 14px 25px;
             border-radius: 8px;
             text-decoration: none;
             font-weight: 900;
-            transition: 0.3s;
-            text-align: center;
             font-size: 0.9rem;
+            transition: 0.2s;
         }
+        .btn-abrir-kds:hover { opacity: 0.9; transform: scale(1.02); }
 
-        /* --- Chat Suporte --- */
-        .suporte-container { display: flex; height: 75vh; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .chat-sidebar-list { width: 280px; background: #f8f9fa; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
-        .chat-main-area { flex: 1; display: flex; flex-direction: column; background: #fff; }
-        
+        /* --- Suporte / Chat --- */
+        .suporte-container { display: flex; height: 70vh; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #ddd; }
+        .chat-sidebar-list { width: 300px; background: #fcfcfc; border-right: 1px solid #eee; display: flex; flex-direction: column; }
         .chat-selector { flex: 1; overflow-y: auto; padding: 10px; }
-        .chat-item { padding: 12px; color: #444; cursor: pointer; border-radius: 8px; margin-bottom: 8px; font-size: 0.85rem; border: 1px solid #eee; background: white; transition: 0.3s; }
-        .chat-item.active { border-color: var(--primary); background: #fff9e6; font-weight: bold; }
+        .chat-item { padding: 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s; }
+        .chat-item.active { background: #fff9e6; border-color: var(--primary); }
+        .chat-item.has-new { border-left: 5px solid var(--danger); animation: pulse 1.5s infinite; }
         
-        .chat-item.has-new { 
-            background: #333 !important; 
-            color: #fff !important; 
-            border-left: 5px solid var(--primary);
-            animation: pulse 1.5s infinite; 
-        }
+        .chat-main-area { flex: 1; display: flex; flex-direction: column; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; background: #f0f2f5; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 12px 16px; border-radius: 12px; font-size: 0.9rem; max-width: 80%; line-height: 1.4; }
+        .msg.cliente { background: white; align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .msg.admin { background: var(--primary); align-self: flex-end; font-weight: 600; }
 
-        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #f0f2f5; }
-        .msg { padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; max-width: 85%; line-height: 1.4; position: relative; }
-        .msg.cliente { background: white; align-self: flex-start; color: #333; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .msg.admin { background: var(--primary); color: #000; align-self: flex-end; font-weight: 500; }
+        .chat-input-area { padding: 15px; display: flex; gap: 10px; border-top: 1px solid #eee; }
+        .chat-input-area input { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
+        .chat-input-area button { background: var(--dark); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; }
 
-        .chat-input-area { padding: 12px; display: flex; gap: 8px; border-top: 1px solid #ddd; background: white; }
-        .chat-input-area input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 0.9rem; }
-        .chat-input-area button { background: var(--dark); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-        /* --- ESTILOS EXCLUSIVOS DO FINANCEIRO (BANCO) --- */
-        .bank-interface { background: #1e1e1e; color: white; border-radius: 25px; padding: 30px; border: 1px solid #333; }
-        .bank-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
-        .bank-balance-label { color: #888; font-size: 0.9rem; }
-        .bank-balance-value { font-size: 2.5rem; font-weight: 800; margin: 10px 0; color: var(--primary); }
-        .bank-rendimento { color: #2ecc71; font-size: 0.85rem; font-weight: bold; }
+        /* --- Config e Modais --- */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .modal-content { background: #fff; margin: 5% auto; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; }
         
-        .bank-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--primary); overflow: hidden; }
-        .bank-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-        .bank-actions-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 30px 0; }
-        .bank-action-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; }
-        .bank-icon-circle { width: 65px; height: 65px; background: #2a2a2a; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; transition: 0.3s; border: 1px solid #333; }
-        .bank-icon-circle:hover { background: #333; transform: translateY(-3px); }
-        .bank-action-label { font-size: 0.8rem; color: #ccc; text-align: center; font-weight: 500; }
-
-        .bank-transactions-section { margin-top: 40px; }
-        .bank-trans-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; border-bottom: 1px solid #2a2a2a; cursor: pointer; }
-        .bank-trans-info strong { display: block; font-size: 0.95rem; color: #fff; }
-        .bank-trans-info small { color: #777; font-size: 0.8rem; }
-        .bank-trans-amount { font-weight: bold; font-size: 1rem; }
-        .bank-trans-amount.positive { color: #2ecc71; }
-        .bank-trans-amount.negative { color: #ff4757; }
-
-        /* Modais Full Screen */
-        .modal-full { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 9999; padding: 25px; overflow-y: auto; animation: fadeIn 0.3s; }
-        .modal-full-header { display: flex; align-items: center; margin-bottom: 30px; }
-        .btn-close-modal { background: none; border: none; color: #fff; font-size: 1.8rem; cursor: pointer; margin-right: 15px; }
-        .bank-input-group { margin-bottom: 20px; }
-        .bank-input-group label { display: block; color: #888; font-size: 0.85rem; margin-bottom: 8px; font-weight: bold; }
-        .bank-input-field { width: 100%; background: #1e1e1e; border: 1px solid #333; padding: 18px; border-radius: 12px; color: #fff; outline: none; font-size: 1rem; }
-        .btn-bank-confirm { width: 100%; background: var(--primary); color: #000; border: none; padding: 20px; border-radius: 15px; font-weight: 800; cursor: pointer; margin-top: 10px; font-size: 1rem; }
-
-        /* Switch Toggle */
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--success); }
-        input:checked + .slider:before { transform: translateX(26px); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background: var(--success); }
+        input:checked + .slider:before { transform: translateX(24px); }
 
-        .config-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
-        
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .dia-config { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #f5f5f5; }
+        .horarios-inputs { display: flex; gap: 8px; }
+        .horarios-inputs input { padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
 
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 768px) {
             .suporte-container { flex-direction: column; height: 80vh; }
-            .chat-sidebar-list { width: 100%; height: 180px; }
+            .chat-sidebar-list { width: 100%; height: 150px; }
         }
     </style>
 </head>
@@ -178,101 +168,41 @@
 
     <div class="admin-layout">
         <div class="admin-main">
-            <nav class="admin-nav" style="background:#fff; padding:15px 25px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd;">
-                <div class="logo" style="color:var(--dark); font-weight:800; font-size: 1.2rem;">ADMIN<span style="color:var(--primary)">PANEL</span></div>
-                <button onclick="location.reload()" style="padding: 6px 12px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: white; font-weight: bold; font-size: 0.8rem;">🔄 Atualizar</button>
+            <nav class="admin-nav">
+                <div class="logo" style="font-weight:900; font-size: 1.3rem;">ADMIN<span style="color:var(--primary)">PANEL</span></div>
+                <button onclick="location.reload()" style="padding: 8px 15px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: #fff; font-weight: bold;">🔄 Sincronizar</button>
             </nav>
 
             <div class="tab-container">
-                <button class="tab-btn active" onclick="openTab(event, 'aba-suporte')">💬 Suporte Cliente</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">📋 Gestão de Pedidos</button>
+                <button class="tab-btn active" onclick="openTab(event, 'aba-suporte')">💬 Suporte</button>
+                <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">📋 Operação</button>
                 <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">🍔 Cardápio</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Financeiro & Pix</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">⚙️ Configuração</button>
+                <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Financeiro</button>
+                <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">⚙️ Ajustes</button>
             </div>
 
             <div id="aba-suporte" class="tab-content active">
                 <div class="suporte-container">
                     <div class="chat-sidebar-list">
-                        <div style="padding:12px; font-weight:bold; background:#eee; font-size:0.75rem; color:#666; letter-spacing: 1px;">PEDIDOS EM ABERTO</div>
+                        <div style="padding:15px; font-weight:bold; background:#f0f0f0; font-size:0.7rem; letter-spacing:1px;">CHATS ATIVOS</div>
                         <div class="chat-selector" id="lista-pedidos-chat">
                             <% let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
                                ativosNoChat.forEach(p => { %>
                                  <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
-                                    <strong>#<%= p.id %></strong><br><small><%= p.cliente %></small>
-                                 </div>
+                                    <strong>#<%= p.id %> - <%= p.cliente %></strong>
+                                </div>
                             <% }) %>
                         </div>
                     </div>
                     <div class="chat-main-area">
                         <div class="chat-messages" id="chat-box">
-                            <div style="text-align:center; color:#999; margin-top:50px; padding: 20px;">
-                                <h3>Central de Suporte</h3>
-                                <p style="font-size: 0.9rem;">Responda seus clientes em tempo real.</p>
+                            <div style="text-align:center; margin-top:100px; color:#aaa;">
+                                <h3>Selecione um cliente para conversar</h3>
                             </div>
                         </div>
                         <div class="chat-input-area">
-                            <input type="text" id="admin-msg" placeholder="Digite sua mensagem...">
+                            <input type="text" id="admin-msg" placeholder="Digite sua resposta...">
                             <button onclick="enviarParaCliente()">➤</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="aba-financeiro" class="tab-content">
-                <button class="btn-voltar-financeiro" onclick="fecharFinanceiro()">← Voltar ao Painel</button>
-                
-                <% 
-                    const dataAtual = new Date();
-                    const hojeStr = dataAtual.toLocaleDateString('pt-BR');
-                    let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hojeStr);
-                    let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
-                %>
-                
-                <div class="bank-interface">
-                    <div class="bank-header">
-                        <div>
-                            <span class="bank-balance-label">Saldo em conta</span>
-                            <div class="bank-balance-value">R$ <%= totalDia.toFixed(2) %></div>
-                            <div class="bank-rendimento">Ativo • <span id="bank-clock"></span></div>
-                        </div>
-                        <div class="bank-avatar">
-                            <img src="/foto-admin.png" onerror="this.src='https://ui-avatars.com/api/?name=Admin&background=ffca2c&color=181818'">
-                        </div>
-                    </div>
-
-                    <div class="bank-actions-grid">
-                        <div class="bank-action-item" onclick="abrirModalBank('modal-mes-full')">
-                            <div class="bank-icon-circle">🗓️</div>
-                            <span class="bank-action-label">Ver Mês</span>
-                        </div>
-                        <div class="bank-action-item" onclick="abrirModalBank('modal-reembolso-full')">
-                            <div class="bank-icon-circle">💸</div>
-                            <span class="bank-action-label">Estornar</span>
-                        </div>
-                        <div class="bank-action-item" onclick="abrirModalBank('modal-cadastrar-pix-full')">
-                            <div class="bank-icon-circle">🔑</div>
-                            <span class="bank-action-label">Config Pix</span>
-                        </div>
-                    </div>
-
-                    <div class="bank-transactions-section">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 20px; color: #fff;">Últimas Transações</h3>
-                        <div id="lista-logs-financeiro">
-                            <% 
-                                let logs = pedidos.filter(p => p.status === 'Concluído' || p.reembolsado === true).slice(-10).reverse();
-                                logs.forEach(log => {
-                            %>
-                                <div class="bank-trans-item">
-                                    <div class="bank-trans-info">
-                                        <strong><%= log.reembolsado ? 'Reembolso Efetuado' : 'Pedido Concluído' %></strong>
-                                        <small>#<%= log.id %> - <%= log.cliente %></small>
-                                    </div>
-                                    <div class="bank-trans-amount <%= log.reembolsado ? 'negative' : 'positive' %>">
-                                        <%= log.reembolsado ? '-' : '+' %> R$ <%= log.total.toFixed(2) %>
-                                    </div>
-                                </div>
-                            <% }) %>
                         </div>
                     </div>
                 </div>
@@ -281,101 +211,144 @@
             <div id="aba-pedidos" class="tab-content">
                 <div class="banner-operacao">
                     <div>
-                        <h1 style="margin:0; color:var(--primary); font-size: 1.3rem;">Operação</h1>
-                        <p style="margin:5px 0 0 0; opacity:0.9; font-size: 0.85rem;">Gerencie a cozinha.</p>
+                        <h2 style="margin:0;">Painel de Produção</h2>
+                        <p style="margin:5px 0 0 0; opacity:0.8;">Gerencie os pedidos na cozinha em tempo real.</p>
                     </div>
-                    <a href="/operacao" target="_blank" class="btn-abrir-kds">ABRIR COMANDAS ➔</a>
+                    <a href="/operacao" target="_blank" class="btn-abrir-kds">ABRIR COMANDAS (KDS) ➔</a>
                 </div>
             </div>
 
             <div id="aba-cardapio" class="tab-content">
-                <div id="container-gerenciador-produtos"></div>
+                <div class="card-box">
+                    <div id="container-gerenciador-produtos"></div>
+                </div>
+            </div>
+
+            <div id="aba-financeiro" class="tab-content">
+                <% 
+                    const dataAtual = new Date();
+                    const hojeStr = dataAtual.toLocaleDateString('pt-BR');
+                    const nomeMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                    
+                    let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hojeStr);
+                    let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
+                    let entregasDia = pedidosHoje.length;
+                %>
+                <div class="finance-grid">
+                    <div class="stat-card" style="border-left-color: var(--success);">
+                        <h4>💰 Vendas de Hoje</h4>
+                        <div class="value">R$ <%= totalDia.toFixed(2) %></div>
+                        <span class="date-label"><%= hojeStr %></span>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--info);">
+                        <h4>📦 Pedidos Concluídos</h4>
+                        <div class="value"><%= entregasDia %></div>
+                        <span class="date-label">Hoje</span>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--dark);">
+                        <h4>📊 Acumulado (<%= nomeMeses[dataAtual.getMonth()] %>)</h4>
+                        <div class="value">R$ <%= (config.vendasMes || 0).toFixed(2) %></div>
+                        <span class="date-label">Total do mês</span>
+                    </div>
+                </div>
+
+                <div class="card-box">
+                    <h3 style="margin-top:0;">⚡ Configuração de Pix (Automático)</h3>
+                    <form id="form-config-pix" style="display:grid; gap:15px; max-width: 500px;">
+                        <div>
+                            <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:5px;">Provedor</label>
+                            <select id="conf-pixProvedor" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ddd;">
+                                <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
+                                <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:5px;">Chave de API / Token</label>
+                            <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ddd;">
+                        </div>
+                        <button type="button" onclick="salvarConfigPix()" style="background:var(--dark); color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ATUALIZAR CREDENCIAIS</button>
+                    </form>
+                </div>
             </div>
 
             <div id="aba-configuracao" class="tab-content">
-                <div class="config-card" style="background:white; padding:20px; border-radius:12px;">
-                    <h3>⚙️ Configurações</h3>
-                    <div class="config-item">
-                        <div><strong>Modo Manutenção</strong></div>
+                <div class="card-box">
+                    <h3 style="margin-top:0;">⚙️ Configurações Gerais</h3>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #eee;">
+                        <div>
+                            <strong>Modo Manutenção (Forçar Fechado)</strong><br>
+                            <small style="color:#888;">Desativa o checkout imediatamente.</small>
+                        </div>
                         <label class="switch">
                             <input type="checkbox" id="conf-manutencao" onchange="salvarConfigSite()" <%= config.manutencao ? 'checked' : '' %>>
                             <span class="slider"></span>
                         </label>
                     </div>
+
+                    <div style="padding:15px 0; border-bottom:1px solid #eee;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <strong>Limitar por Cidade</strong>
+                            <label class="switch">
+                                <input type="checkbox" id="conf-cidadeAtiva" onchange="toggleCamposCidade(); salvarConfigSite();" <%= config.cidadeAtiva ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div id="container-campos-cidade" style="display: <%= config.cidadeAtiva ? 'grid' : 'none' %>; grid-template-columns: 1fr 80px; gap:10px;">
+                            <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" style="padding:8px; border:1px solid #ddd;">
+                            <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" style="padding:8px; border:1px solid #ddd;">
+                        </div>
+                    </div>
+
+                    <div style="padding:15px 0; display:flex; justify-content:space-between; align-items:center;">
+                        <strong>Horários de Funcionamento</strong>
+                        <button onclick="abrirModalHorarios()" style="background:var(--info); color:white; padding:8px 15px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">DEFINIR AGENDA</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="modalHorarios" class="modal">
+                <div class="modal-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin:0;">Horários de Atendimento</h2>
+                        <span onclick="fecharModalHorarios()" style="cursor:pointer; font-size: 2rem;">&times;</span>
+                    </div>
+                    <div id="lista-dias-funcionamento">
+                        <% const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                           diasSemana.forEach((dia, i) => { 
+                           const agendaDia = (config.agenda && config.agenda[i]) || { aberto: false, inicio: '18:00', fim: '23:00' }; %>
+                            <div class="dia-config">
+                                <span style="font-weight: bold; width: 80px;"><%= dia %></span>
+                                <div class="horarios-inputs" id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>;">
+                                    <input type="time" class="input-inicio" value="<%= agendaDia.inicio %>">
+                                    <input type="time" class="input-fim" value="<%= agendaDia.fim %>">
+                                </div>
+                                <label class="switch" style="transform: scale(0.8);">
+                                    <input type="checkbox" class="check-dia" onchange="toggleDia(<%= i %>)" <%= agendaDia.aberto ? 'checked' : '' %>>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        <% }) %>
+                    </div>
+                    <button onclick="salvarHorarios()" style="width: 100%; background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor:pointer;">SALVAR ALTERAÇÕES</button>
                 </div>
             </div>
 
         </div>
-    </div>
-
-    <div id="modal-mes-full" class="modal-full">
-        <div class="modal-full-header">
-            <button class="btn-close-modal" onclick="fecharModalBank('modal-mes-full')">✕</button>
-            <h2 style="margin:0; color: #fff;">Faturamento do Mês</h2>
-        </div>
-        <div style="background:#1e1e1e; padding:40px; border-radius:25px; text-align:center; border: 1px solid #333;">
-            <span style="color:#888;">Receita Total</span>
-            <h1 style="font-size: 3rem; margin: 15px 0; color: var(--primary);">R$ <%= config.vendasMes ? config.vendasMes.toFixed(2) : '0.00' %></h1>
-            <div style="color:#2ecc71; font-weight:bold;"><%= config.entregasMes || 0 %> Pedidos Concluídos</div>
-        </div>
-    </div>
-
-    <div id="modal-reembolso-full" class="modal-full">
-        <div class="modal-full-header">
-            <button class="btn-close-modal" onclick="fecharModalBank('modal-reembolso-full')">✕</button>
-            <h2 style="margin:0; color:#fff">Novo Estorno</h2>
-        </div>
-        <div class="bank-input-group">
-            <label>ID DO PEDIDO</label>
-            <input type="text" id="reembolso-id" class="bank-input-field" placeholder="Ex: 1050">
-        </div>
-        <div class="bank-input-group">
-            <label>VALOR DO ESTORNO</label>
-            <input type="number" id="reembolso-valor" class="bank-input-field" placeholder="0.00">
-        </div>
-        <button class="btn-bank-confirm" onclick="processarReembolso()">EFETUAR ESTORNO</button>
-    </div>
-
-    <div id="modal-cadastrar-pix-full" class="modal-full">
-        <div class="modal-full-header">
-            <button class="btn-close-modal" onclick="fecharModalBank('modal-cadastrar-pix-full')">✕</button>
-            <h2 style="margin:0; color:#fff">Configuração Pix</h2>
-        </div>
-        <div class="bank-input-group">
-            <label>PROVEDOR</label>
-            <select id="conf-pixProvedor" class="bank-input-field">
-                <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
-                <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
-            </select>
-        </div>
-        <div class="bank-input-group">
-            <label>TOKEN DE ACESSO</label>
-            <input type="password" id="conf-pixToken" class="bank-input-field" value="<%= config.pixToken || '' %>">
-        </div>
-        <button class="btn-bank-confirm" onclick="salvarConfigPix()">SALVAR CREDENCIAIS</button>
     </div>
 
     <script>
         const socket = io();
         let pedidoAtivoId = null;
 
-        function updateBankClock() {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('pt-BR');
-            const el = document.getElementById('bank-clock');
-            if(el) el.innerText = timeStr;
-        }
-        setInterval(updateBankClock, 1000);
+        // INICIALIZAÇÃO
+        document.addEventListener('DOMContentLoaded', () => {
+            if(typeof renderizarPainelCategorias === "function") {
+                renderizarPainelCategorias('container-gerenciador-produtos');
+            }
+        });
 
-        function abrirModalBank(id) { document.getElementById(id).style.display = 'block'; }
-        function fecharModalBank(id) { document.getElementById(id).style.display = 'none'; }
-
-        // Fecha o modo Full Screen do Financeiro
-        function fecharFinanceiro() {
-            document.getElementById('aba-financeiro').classList.remove('active');
-            document.querySelector('.tab-btn').click(); // Volta para a primeira aba
-        }
-
+        // TABS
         function openTab(evt, tabName) {
             const contents = document.getElementsByClassName("tab-content");
             for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
@@ -385,11 +358,41 @@
             if(evt) evt.currentTarget.classList.add("active");
         }
 
-        // --- AS LÓGICAS ORIGINAIS CONTINUAM ABAIXO ---
+        // LÓGICA DE HORÁRIOS
+        function abrirModalHorarios() { document.getElementById('modalHorarios').style.display = 'block'; }
+        function fecharModalHorarios() { document.getElementById('modalHorarios').style.display = 'none'; }
+        function toggleDia(index) {
+            const isChecked = document.querySelectorAll('.check-dia')[index].checked;
+            document.getElementById(`box-horario-${index}`).style.display = isChecked ? 'flex' : 'none';
+        }
+        function toggleCamposCidade() {
+            const isChecked = document.getElementById('conf-cidadeAtiva').checked;
+            document.getElementById('container-campos-cidade').style.display = isChecked ? 'grid' : 'none';
+        }
+
+        // SALVAMENTOS (FETCH)
+        async function salvarHorarios() {
+            const agenda = [];
+            const checks = document.querySelectorAll('.check-dia');
+            const incios = document.querySelectorAll('.input-inicio');
+            const fins = document.querySelectorAll('.input-fim');
+            checks.forEach((check, i) => {
+                agenda.push({ aberto: check.checked, inicio: incios[i].value, fim: fins[i].value });
+            });
+            const res = await fetch('/update-horarios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agenda })
+            });
+            if (res.ok) { alert("✅ Horários atualizados!"); fecharModalHorarios(); }
+        }
+
         async function salvarConfigSite() {
             const dados = {
                 manutencao: document.getElementById('conf-manutencao').checked,
-                nomeSite: document.getElementById('conf-nomeSite').value
+                cidadeAtiva: document.getElementById('conf-cidadeAtiva').checked,
+                cidadeNome: document.getElementById('conf-cidadeNome').value,
+                cidadeEstado: document.getElementById('conf-cidadeEstado').value
             };
             await fetch('/update-config-site', {
                 method: 'POST',
@@ -398,33 +401,52 @@
             });
         }
 
-        async function processarReembolso() {
-            const id = document.getElementById('reembolso-id').value;
-            const valor = document.getElementById('reembolso-valor').value;
-            const res = await fetch('/registrar-reembolso', {
+        async function salvarConfigPix() {
+            const dados = {
+                pixProvedor: document.getElementById('conf-pixProvedor').value,
+                pixToken: document.getElementById('conf-pixToken').value
+            };
+            const res = await fetch('/update-config-pix', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pedidoId: id, valor: valor })
+                body: JSON.stringify(dados)
             });
-            if(res.ok) { alert("Sucesso!"); location.reload(); }
+            if (res.ok) alert("✅ Pix configurado!");
         }
 
+        // CHAT (SOCKET.IO)
         function selecionarChat(id, cliente) {
             pedidoAtivoId = id;
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
-            document.getElementById(`chat-item-${id}`).classList.add('active');
+            const target = document.getElementById(`chat-item-${id}`);
+            if(target) target.classList.add('active');
             socket.emit('join', id);
+            socket.emit('lerMensagens', id);
         }
+
+        socket.on('historico', (h) => {
+            const box = document.getElementById('chat-box');
+            box.innerHTML = '';
+            h.forEach(renderizarMensagem);
+        });
 
         socket.on('novaMensagem', (msg) => {
             if (msg.pedidoId === pedidoAtivoId) {
-                const div = document.createElement('div');
-                div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
-                div.innerHTML = `<span>${msg.texto}</span>`;
-                document.getElementById('chat-box').appendChild(div);
-                document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+                renderizarMensagem(msg);
+            } else {
+                const item = document.getElementById(`chat-item-${msg.pedidoId}`);
+                if(item) item.classList.add('has-new');
             }
         });
+
+        function renderizarMensagem(msg) {
+            const div = document.createElement('div');
+            div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
+            div.innerHTML = `<small style="display:block; font-size:10px; opacity:0.6;">${msg.usuario}</small>${msg.texto}`;
+            const box = document.getElementById('chat-box');
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
 
         function enviarParaCliente() {
             const input = document.getElementById('admin-msg');
@@ -433,6 +455,7 @@
             input.value = '';
         }
     </script>
+
     <script src="/js/gerenciar-produtos.js"></script>
 </body>
 </html>
