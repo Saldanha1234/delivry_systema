@@ -1,11 +1,11 @@
 /**
- * LÓGICA DE GERENCIAMENTO DE PRODUTOS E CATEGORIAS - VERSÃO CORRIGIDA
+ * LÓGICA DE GERENCIAMENTO DE PRODUTOS E CATEGORIAS - COM GESTÃO DE ADICIONAIS
  */
 
 let imagemBase64 = ""; 
-let listaProdutosLocal = []; // Variável auxiliar para evitar erros de sintaxe no HTML
+let listaProdutosLocal = []; 
 
-// --- 0. INJEÇÃO DE CSS (Ajustes de Dropdown e Layout de Produto) ---
+// --- 0. INJEÇÃO DE CSS ---
 const styles = `
     .painel-unico-admin { font-family: sans-serif; max-width: 800px; margin: 20px auto; background: #f4f4f4; padding: 15px; border-radius: 8px; }
     .header-painel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -20,7 +20,6 @@ const styles = `
     .produtos-lista { padding: 10px 15px; background: #fafafa; border-top: 1px solid #eee; }
     .btn-add-produto { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px dashed #ccc; background: #fff; cursor: pointer; border-radius: 4px; }
     
-    /* Layout do Produto: Foto + Nome + Preço */
     .produto-linha { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 4px; cursor: pointer; }
     .prod-info-wrapper { display: flex; align-items: center; flex-grow: 1; }
     .prod-img-min { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 12px; background: #eee; }
@@ -28,7 +27,6 @@ const styles = `
     .prod-nome-txt { font-weight: bold; }
     .prod-preco-txt { font-size: 0.9em; color: #28a745; font-weight: bold; }
 
-    /* Dropdown de Opções (Clique para abrir e Flutuante) */
     .dropdown { position: relative; display: inline-block; }
     .dropdown-content { 
         display: none; 
@@ -44,10 +42,8 @@ const styles = `
     }
     .dropdown-content.show { display: block; }
     .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #eee; }
-    .dropdown-content a:last-child { border-bottom: none; }
     .dropdown-content a:hover { background: #f1f1f1; }
 
-    /* Modal Fullscreen (Original mantido) */
     .modal-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; overflow-y: auto; }
     .modal-content header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; }
     .modal-body { padding: 20px; max-width: 600px; margin: 0 auto; }
@@ -64,6 +60,12 @@ const styles = `
     input:checked + .slider { background-color: #28a745; }
     input:checked + .slider:before { transform: translateX(26px); }
     .toggle-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-top: 1px solid #eee; }
+
+    /* Estilos do Painel de Adicionais */
+    #area-adicionais { margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
+    .adicional-item { display: grid; grid-template-columns: 1fr 100px auto; gap: 10px; margin-bottom: 8px; align-items: center; }
+    .btn-remover-adicional { color: #dc3545; background: none; border: none; font-size: 20px; cursor: pointer; }
+    .btn-novo-adicional { background: #6c757d; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 10px; }
 `;
 
 const styleSheet = document.createElement("style");
@@ -139,9 +141,15 @@ function renderizarPainelCategorias(containerId) {
                             <small style="color:#666;">Ativar acompanhamentos e extras</small>
                         </div>
                         <label class="switch">
-                            <input type="checkbox" id="p-modificador">
+                            <input type="checkbox" id="p-modificador" onchange="togglePainelAdicionais()">
                             <span class="slider"></span>
                         </label>
+                    </div>
+
+                    <div id="area-adicionais" style="display:none;">
+                        <label style="font-weight:bold; display:block; margin-bottom:10px;">Personalizar Adicionais</label>
+                        <div id="lista-adicionais-editavel"></div>
+                        <button type="button" class="btn-novo-adicional" onclick="adicionarLinhaAdicional()">+ Novo Adicional</button>
                     </div>
                 </div>
             </div>
@@ -158,33 +166,26 @@ async function carregarDadosCompletos() {
             fetch('/get-categorias'),
             fetch('/get-produtos')
         ]);
-
         const categorias = await resCat.json();
         const produtos = await resProd.json();
-        
         listaProdutosLocal = produtos;
-
         const lista = document.getElementById('lista-hierarquica');
         lista.innerHTML = "";
-
         const fixasNomes = ["Promoção", "Mais Comprados"];
         fixasNomes.forEach(nome => {
             renderizarItemCategoria({ nome, fixa: true, _id: nome }, produtos);
         });
-
         categorias.forEach(cat => {
             if (!fixasNomes.includes(cat.nome) && cat.nome !== "Todos" && cat.nome !== "Defina um nome") {
                 renderizarItemCategoria(cat, produtos);
             }
         });
-
     } catch (err) { console.error("Erro:", err); }
 }
 
 function renderizarItemCategoria(cat, todosProdutos) {
     const lista = document.getElementById('lista-hierarquica');
     const produtosDaCat = todosProdutos.filter(p => p.categoria === cat.nome);
-    
     const div = document.createElement('div');
     div.className = "item-categoria-container";
     div.innerHTML = `
@@ -228,7 +229,123 @@ function renderizarItemCategoria(cat, todosProdutos) {
     lista.appendChild(div);
 }
 
-// --- 3. LÓGICA DE INTERAÇÃO (Dropdown e Expandir) ---
+// --- 3. LÓGICA DE ADICIONAIS (NOVO) ---
+
+function togglePainelAdicionais() {
+    const isChecked = document.getElementById('p-modificador').checked;
+    document.getElementById('area-adicionais').style.display = isChecked ? 'block' : 'none';
+}
+
+function adicionarLinhaAdicional(nome = "", preco = "") {
+    const container = document.getElementById('lista-adicionais-editavel');
+    const div = document.createElement('div');
+    div.className = "adicional-item";
+    div.innerHTML = `
+        <input type="text" placeholder="Nome do adicional" value="${nome}" class="add-nome-input">
+        <input type="number" placeholder="Preço" value="${preco}" step="0.01" class="add-preco-input">
+        <button type="button" class="btn-remover-adicional" onclick="this.parentElement.remove()">×</button>
+    `;
+    container.appendChild(div);
+}
+
+function obterAdicionaisDaTela() {
+    const nomes = document.querySelectorAll('.add-nome-input');
+    const precos = document.querySelectorAll('.add-preco-input');
+    const adicionais = [];
+    nomes.forEach((el, i) => {
+        if(el.value.trim() !== "") {
+            adicionais.push({
+                nome: el.value,
+                preco: precos[i].value || 0
+            });
+        }
+    });
+    return adicionais;
+}
+
+// --- 4. LÓGICA DE PRODUTOS ---
+
+function abrirCriarProduto(catNome) {
+    imagemBase64 = "";
+    document.getElementById('p-id').value = "";
+    document.getElementById('p-nome').value = "";
+    document.getElementById('p-desc').value = "";
+    document.getElementById('p-preco').value = "";
+    document.getElementById('p-desconto').value = "";
+    document.getElementById('p-modificador').checked = false;
+    document.getElementById('lista-adicionais-editavel').innerHTML = ""; // Limpa adicionais
+    togglePainelAdicionais();
+    document.getElementById('p-categoria-origem').value = catNome;
+    document.getElementById('p-preview').style.display = "none";
+    document.getElementById('modal-titulo').innerText = "Novo Produto";
+    document.getElementById('modal-produto').style.display = "block";
+}
+
+function prepararEdicao(id) {
+    const produto = listaProdutosLocal.find(item => item._id === id);
+    if(produto) {
+        document.getElementById('p-id').value = id;
+        document.getElementById('p-nome').value = produto.nome || "";
+        document.getElementById('p-desc').value = produto.desc || "";
+        document.getElementById('p-preco').value = produto.preco || "";
+        document.getElementById('p-status').value = produto.status || "disponivel";
+        document.getElementById('p-desconto').value = produto.desconto || "";
+        
+        // Ativa checkbox e painel se houver modificadores
+        const temMod = produto.modificadoresAtivos === true;
+        document.getElementById('p-modificador').checked = temMod;
+        togglePainelAdicionais();
+
+        // Carrega adicionais existentes no produto
+        const container = document.getElementById('lista-adicionais-editavel');
+        container.innerHTML = "";
+        if(produto.adicionais && produto.adicionais.length > 0) {
+            produto.adicionais.forEach(ad => adicionarLinhaAdicional(ad.nome, ad.preco));
+        }
+
+        document.getElementById('p-img-data').value = produto.img || "";
+        document.getElementById('p-categoria-origem').value = produto.categoria;
+        
+        if(produto.img) {
+            document.getElementById('p-preview').src = produto.img;
+            document.getElementById('p-preview').style.display = "block";
+        } else {
+            document.getElementById('p-preview').style.display = "none";
+        }
+        document.getElementById('modal-titulo').innerText = "Editar Produto";
+        document.getElementById('modal-produto').style.display = "block";
+    }
+}
+
+async function salvarProduto() {
+    const id = document.getElementById('p-id').value;
+    const dados = {
+        nome: document.getElementById('p-nome').value,
+        preco: document.getElementById('p-preco').value,
+        desc: document.getElementById('p-desc').value,
+        status: document.getElementById('p-status').value,
+        desconto: document.getElementById('p-desconto').value,
+        modificadoresAtivos: document.getElementById('p-modificador').checked,
+        adicionais: obterAdicionaisDaTela(), // Salva a lista customizada
+        categoria: document.getElementById('p-categoria-origem').value,
+        img: imagemBase64 || document.getElementById('p-img-data').value
+    };
+
+    try {
+        const url = id ? `/edit-produto/${id}` : '/add-produto';
+        const res = await fetch(url, {
+            method: id ? 'PUT' : 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(dados)
+        });
+        if(res.ok) {
+            fecharModal();
+            carregarDadosCompletos();
+        }
+    } catch (err) { console.error(err); }
+}
+
+// --- 5. FUNÇÕES AUXILIARES (Mantidas do original) ---
 
 function menuClique(e) {
     e.stopPropagation();
@@ -253,80 +370,6 @@ function toggleExpandir(catNome) {
     }
 }
 
-// --- 4. LÓGICA DE PRODUTOS ---
-
-function prepararEdicao(id) {
-    const produto = listaProdutosLocal.find(item => item._id === id);
-    if(produto) {
-        abrirEdicaoProduto(id, produto);
-    }
-}
-
-function abrirCriarProduto(catNome) {
-    imagemBase64 = "";
-    document.getElementById('p-id').value = "";
-    document.getElementById('p-img-data').value = "";
-    document.getElementById('p-nome').value = "";
-    document.getElementById('p-desc').value = "";
-    document.getElementById('p-preco').value = "";
-    document.getElementById('p-desconto').value = "";
-    document.getElementById('p-modificador').checked = false;
-    document.getElementById('p-categoria-origem').value = catNome;
-    document.getElementById('p-preview').style.display = "none";
-    document.getElementById('modal-titulo').innerText = "Novo Produto";
-    document.getElementById('modal-produto').style.display = "block";
-}
-
-function abrirEdicaoProduto(id, p) {
-    document.getElementById('p-id').value = id;
-    document.getElementById('p-nome').value = p.nome || "";
-    document.getElementById('p-desc').value = p.desc || "";
-    document.getElementById('p-preco').value = p.preco || "";
-    document.getElementById('p-status').value = p.status || "disponivel";
-    document.getElementById('p-desconto').value = p.desconto || "";
-    // CORREÇÃO: Alinhando o nome do campo com o que vem do banco
-    document.getElementById('p-modificador').checked = p.modificadoresAtivos === true;
-    document.getElementById('p-img-data').value = p.img || "";
-    document.getElementById('p-categoria-origem').value = p.categoria;
-    
-    if(p.img) {
-        document.getElementById('p-preview').src = p.img;
-        document.getElementById('p-preview').style.display = "block";
-    } else {
-        document.getElementById('p-preview').style.display = "none";
-    }
-    document.getElementById('modal-titulo').innerText = "Editar Produto";
-    document.getElementById('modal-produto').style.display = "block";
-}
-
-async function salvarProduto() {
-    const id = document.getElementById('p-id').value;
-    const dados = {
-        nome: document.getElementById('p-nome').value,
-        preco: document.getElementById('p-preco').value,
-        desc: document.getElementById('p-desc').value,
-        status: document.getElementById('p-status').value,
-        // CORREÇÃO: Garante o envio do desconto e do estado do modificador
-        desconto: document.getElementById('p-desconto').value,
-        modificadoresAtivos: document.getElementById('p-modificador').checked,
-        categoria: document.getElementById('p-categoria-origem').value,
-        img: imagemBase64 || document.getElementById('p-img-data').value
-    };
-
-    try {
-        const url = id ? `/edit-produto/${id}` : '/add-produto';
-        const res = await fetch(url, {
-            method: id ? 'PUT' : 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(dados)
-        });
-        if(res.ok) {
-            fecharModal();
-            carregarDadosCompletos();
-        }
-    } catch (err) { console.error(err); }
-}
-
 function fecharModal() {
     document.getElementById('modal-produto').style.display = "none";
 }
@@ -341,8 +384,6 @@ function converterImagem() {
     }
     if (file) reader.readAsDataURL(file);
 }
-
-// --- 5. CATEGORIAS ---
 
 async function criarNovaCategoria() {
     const nome = prompt("Nome da nova categoria:");
@@ -365,7 +406,6 @@ function confirmarExclusaoCat(id, fixa) {
     }
 }
 
-// Fecha dropdowns se clicar fora
 window.onclick = function(event) {
     if (!event.target.matches('button')) fecharTodosDropdowns();
 }
