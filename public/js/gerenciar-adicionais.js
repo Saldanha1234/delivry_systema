@@ -21,18 +21,17 @@
         .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; cursor: pointer; background: #fff; }
         .categoria-header:hover { background: #fefefe; }
         
-        .menu-dot-ad { cursor: pointer; font-size: 22px; padding: 5px 10px; color: #777; transition: 0.2s; }
+        .menu-dot-ad { cursor: pointer; font-size: 22px; padding: 5px 10px; color: #777; transition: 0.2s; position: relative; z-index: 10; }
         .menu-dot-ad:hover { color: #000; }
         
-        .dropdown-menu-ad { position: absolute; right: 10px; background: white; border: 1px solid #ddd; border-radius: 6px; display: none; z-index: 100; min-width: 150px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .dropdown-menu-ad { position: absolute; right: 10px; background: white; border: 1px solid #ddd; border-radius: 6px; display: none; z-index: 1000; min-width: 150px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
         .dropdown-menu-ad.show { display: block; }
-        .dropdown-item-ad { padding: 12px 15px; cursor: pointer; font-size: 14px; color: #333; border-bottom: 1px solid #eee; }
+        .dropdown-item-ad { padding: 12px 15px; cursor: pointer; font-size: 14px; color: #333; border-bottom: 1px solid #eee; text-align: left; }
         .dropdown-item-ad:last-child { border-bottom: none; }
         .dropdown-item-ad:hover { background: #f8f9fa; color: #27ae60; }
         
         .adicionais-lista { padding: 20px; background: #f4f7f6; border-top: 1px solid #eee; }
         
-        /* DESIGN DO BOTÃO CRIAR ADICIONAL DENTRO DA LISTA */
         .btn-novo-item-ad { 
             background: #fff; color: #27ae60; border: 2px dashed #27ae60; 
             padding: 10px; width: 100%; border-radius: 6px; cursor: pointer; 
@@ -43,11 +42,11 @@
         .adicional-item { 
             display: flex; justify-content: space-between; padding: 12px 15px; 
             background: white; margin-bottom: 8px; border-radius: 6px; 
-            border: 1px solid #e0e0e0; align-items: center; 
+            border: 1px solid #e0e0e0; align-items: center; position: relative;
         }
         
-        .modal-full-ad { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.98); z-index: 9999; padding: 40px; box-sizing: border-box; overflow-y: auto; }
-        .modal-content-ad { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .modal-full-ad { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; padding: 40px; box-sizing: border-box; overflow-y: auto; display: flex; align-items: center; justify-content: center; }
+        .modal-content-ad { width: 100%; max-width: 600px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         
         .form-group-ad { margin-bottom: 15px; }
         .form-group-ad label { font-weight: bold; display: block; margin-bottom: 5px; color: #444; }
@@ -73,7 +72,7 @@
 
     // --- CATEGORIAS ---
     window.criarCategoriaAdicional = async function() {
-        const nome = prompt("Nome da Categoria (ex: Escolha seu Molho):");
+        const nome = prompt("Nome da Categoria:");
         if (!nome) return;
         await fetch('/add-categoria-adicional', {
             method: 'POST',
@@ -102,7 +101,7 @@
                     </select>
                 </div>
                 <h3>Vincular a Produtos</h3>
-                <div style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; padding: 10px;">
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px;">
                     ${produtosDoBanco.map(prod => {
                         const vinculado = cat.produtosVinculados.includes(prod._id);
                         return `
@@ -147,7 +146,7 @@
 
     // --- ITENS (ADICIONAIS) ---
     window.adicionarItemAdicional = async function(catId) {
-        const nome = prompt("Nome do Adicional (ex: Bacon):");
+        const nome = prompt("Nome do Adicional:");
         if (!nome) return;
         const cat = categoriasAdicionais.find(c => c._id === catId);
         cat.adicionais.push({ nome, valor: 0, desconto: 0, status: 'disponivel' });
@@ -175,10 +174,6 @@
                     <label>Preço (R$)</label>
                     <input type="number" step="0.01" id="edit-item-valor" value="${item.valor}">
                 </div>
-                <div class="form-group-ad">
-                    <label>Desconto (R$)</label>
-                    <input type="number" step="0.01" id="edit-item-desc" value="${item.desconto || 0}">
-                </div>
                 <div style="margin-top:25px;">
                     <button class="btn-principal-ad" onclick="salvarItemReal('${catId}', ${index})">Atualizar Item</button>
                     <button class="btn-principal-ad" style="background:#ccc" onclick="this.closest('.modal-full-ad').remove()">Fechar</button>
@@ -192,7 +187,6 @@
         const cat = categoriasAdicionais.find(c => c._id === catId);
         cat.adicionais[index].nome = document.getElementById('edit-item-nome').value;
         cat.adicionais[index].valor = parseFloat(document.getElementById('edit-item-valor').value);
-        cat.adicionais[index].desconto = parseFloat(document.getElementById('edit-item-desc').value);
         
         await fetch(`/edit-categoria-adicional/${catId}`, {
             method: 'PUT',
@@ -242,7 +236,7 @@
                     ${cat.adicionais.map((ad, idx) => `
                         <div class="adicional-item">
                             <span>${ad.nome} <b style="margin-left:10px; color:#27ae60">R$ ${ad.valor.toFixed(2)}</b></span>
-                            <div class="categoria-acoes">
+                            <div class="categoria-acoes" onclick="event.stopPropagation()">
                                 <span class="menu-dot-ad" onclick="showDropAd(event)">⋮</span>
                                 <div class="dropdown-menu-ad">
                                     <div class="dropdown-item-ad" onclick="abrirModalEditarItem('${cat._id}', ${idx})">Editar Item</div>
@@ -259,12 +253,19 @@
 
     window.toggleAdLista = id => {
         const el = document.getElementById(`box-${id}`);
-        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
     };
 
     window.showDropAd = e => {
+        e.stopPropagation();
+        const menu = e.target.nextElementSibling;
+        const estaAberto = menu.classList.contains('show');
+        
         document.querySelectorAll('.dropdown-menu-ad').forEach(d => d.classList.remove('show'));
-        e.target.nextElementSibling.classList.add('show');
+        
+        if (!estaAberto) {
+            menu.classList.add('show');
+        }
     };
 
     window.excluirCatReal = async id => {
@@ -273,6 +274,9 @@
         carregarDados();
     };
 
-    window.onclick = () => document.querySelectorAll('.dropdown-menu-ad').forEach(d => d.classList.remove('show'));
+    window.addEventListener('click', () => {
+        document.querySelectorAll('.dropdown-menu-ad').forEach(d => d.classList.remove('show'));
+    });
+
     carregarDados();
 }
