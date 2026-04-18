@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Meu Banco Premium</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f5f5f5; --card: white; --text: #333; --sub: #999; --header: white;
+            --green: #11c76f; --red: #ff4444; --border: #eee;
+        }
+        .dark-mode {
+            --bg: #121212; --card: #1e1e1e; --text: #f5f5f5; --sub: #aaa; --header: #1e1e1e;
+            --border: #333;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; transition: background 0.3s; }
+        body { background-color: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+
+        /* NOTIFICAÇÃO ESTILO IPHONE */
+        #notification {
+            position: fixed; top: -100px; left: 5%; right: 5%; background: var(--card); 
+            padding: 15px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 5000; display: flex; align-items: center; gap: 15px; transition: 0.5s;
+            border: 1px solid var(--border);
+        }
+        #notification.show { top: 20px; }
+
+        /* TELA DE LOGIN */
+        #login-screen {
+            position: fixed; inset: 0; background: white; z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .logo-placeholder { width: 80px; height: 80px; background: #11c76f; border-radius: 20px; margin-bottom: 40px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        input { padding: 15px; width: 80%; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 18px; outline: none; }
+        .btn-green { background: #11c76f; color: white; border: none; padding: 15px 50px; border-radius: 25px; font-weight: bold; font-size: 16px; width: 80%; cursor: pointer; }
+
+        /* TELA PRINCIPAL */
+        #main-app { display: none; flex-direction: column; height: 100vh; }
+        header { background: var(--header); padding: 20px 20px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .tabs { display: flex; gap: 20px; font-weight: bold; color: var(--sub); }
+        .tab { cursor: pointer; padding-bottom: 5px; }
+        .tab.active { color: #11c76f; border-bottom: 2px solid #11c76f; }
+
+        .profile-area { display: flex; align-items: center; gap: 10px; }
+        .profile-pic { width: 35px; height: 35px; border-radius: 50%; background: #ccc; overflow: hidden; border: 2px solid var(--green); cursor: pointer; }
+        .profile-pic img { width: 100%; height: 100%; object-fit: cover; }
+
+        .content { padding: 20px; flex: 1; overflow-y: auto; padding-bottom: 100px; }
+        .acc-info { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; font-weight: bold; color: var(--sub); }
+
+        .balance-card { background: #11c76f; border-radius: 15px; padding: 20px; color: white; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(17,199,111,0.3); }
+        .balance-amount { font-size: 28px; font-weight: bold; margin: 10px 0; cursor: pointer; }
+
+        .actions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 30px; }
+        .action-item { display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; }
+        .icon-box { background: var(--card); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); font-size: 20px; color: #11c76f; }
+        .action-item p { font-size: 10px; font-weight: bold; color: var(--text); margin-top: 8px; }
+
+        /* LISTA DE TRANSAÇÕES */
+        .summary-box { display: flex; justify-content: space-around; background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .t-card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); border-left: 5px solid; display: flex; justify-content: space-between; align-items: center; }
+        .t-card.in { border-left-color: var(--green); }
+        .t-card.out { border-left-color: var(--red); }
+
+        /* TELA COMPROVANTE (ESTILO ITAÚ) */
+        #receipt-screen {
+            display: none; position: fixed; inset: 0; background: white; z-index: 2000;
+            padding: 40px 25px; overflow-y: auto; color: #333;
+        }
+        .check-icon { width: 60px; height: 60px; border: 2px solid #11c76f; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #11c76f; font-size: 30px; margin: 0 auto 20px; }
+        .receipt-title { font-size: 22px; font-weight: bold; text-align: center; margin-bottom: 5px; }
+        .receipt-date { font-size: 14px; color: #666; text-align: center; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        .receipt-label { font-size: 12px; color: #888; margin-top: 15px; }
+        .receipt-value { font-size: 16px; font-weight: bold; margin-top: 3px; }
+        .btn-back { margin-top: 30px; background: #f0f0f0; padding: 15px; text-align: center; border-radius: 8px; font-weight: bold; border: none; width: 100%; cursor: pointer; }
+
+        /* NAV BAR */
+        nav { background: var(--card); height: 70px; border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--sub); }
+        .pay-btn { background: #11c76f; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-top: -30px; border: 5px solid var(--bg); font-size: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="notification">
+        <div class="logo-placeholder" style="width:40px; height:40px; margin:0; font-size:10px;">BANCO</div>
+        <div>
+            <b id="notif-title">Aviso</b><br>
+            <span id="notif-body" style="font-size: 12px; color: #666;">Operação realizada.</span>
+        </div>
+    </div>
+
+    <div id="login-screen">
+        <div class="logo-placeholder">LOGO</div>
+        <input type="password" id="pass" placeholder="Senha de acesso">
+        <button class="btn-green" onclick="app.entrar()">Entrar</button>
+    </div>
+
+    <div id="main-app">
+        <header>
+            <div class="profile-area">
+                <div class="profile-pic" onclick="document.getElementById('file-input').click()">
+                    <img id="user-img" src="https://via.placeholder.com/150">
+                    <input type="file" id="file-input" style="display:none" onchange="app.mudarFoto(this)">
+                </div>
+            </div>
+            <div class="tabs">
+                <span class="tab active" id="tab-wallet" onclick="app.switchTab('wallet')">Carteira</span>
+                <span class="tab" id="tab-trans" onclick="app.switchTab('trans')">Transações</span>
+            </div>
+            <div style="display: flex; gap: 15px; color: #11c76f; align-items: center;">
+                <i class="fa-solid fa-moon" onclick="app.toggleDark()" style="cursor:pointer"></i>
+                <i class="fa-solid fa-gear"></i>
+            </div>
+        </header>
+
+        <div class="content">
+            <div id="view-wallet">
+                <div class="acc-info">
+                    <span>Minha conta</span>
+                    <span>Ag 001 • Cc 6409774-1</span>
+                </div>
+
+                <div class="balance-card">
+                    <span>Saldo disponível</span>
+                    <div class="balance-amount" id="main-balance" onclick="app.editarSaldo()">R$ 0,00</div>
+                    <div style="font-size: 12px; opacity: 0.8;">Rendimento: <b>+R$ 23,25</b></div>
+                </div>
+
+                <div class="actions-grid">
+                    <div class="action-item" onclick="app.fazerPix()">
+                        <div class="icon-box"><i class="fa-solid fa-bolt"></i></div>
+                        <p>Pix</p>
+                    </div>
+                    <div class="action-item"><div class="icon-box"><i class="fa-solid fa-barcode"></i></div><p>Pagar</p></div>
+                    <div class="action-item"><div class="icon-box"><i class="fa-solid fa-mobile-screen"></i></div><p>Recarga</p></div>
+                    <div class="action-item"><div class="icon-box"><i class="fa-solid fa-ellipsis"></i></div><p>Mais</p></div>
+                </div>
+            </div>
+
+            <div id="view-trans" style="display:none">
+                <div class="summary-box">
+                    <div style="text-align:center"><small style="color:var(--sub)">Entradas</small><br><b style="color:var(--green)" id="sum-in">R$ 0,00</b></div>
+                    <div style="text-align:center"><small style="color:var(--sub)">Saídas</small><br><b style="color:var(--red)" id="sum-out">R$ 0,00</b></div>
+                </div>
+                <div id="history-list"></div>
+            </div>
+        </div>
+
+        <nav>
+            <div class="nav-item"><i class="fa-solid fa-house"></i><span>Início</span></div>
+            <div class="nav-item"><i class="fa-solid fa-wallet"></i><span>Carteira</span></div>
+            <div class="pay-btn"><i class="fa-solid fa-dollar-sign"></i></div>
+            <div style="width: 50px;"></div>
+            <div class="nav-item"><i class="fa-solid fa-bag-shopping"></i><span>Loja</span></div>
+            <div class="nav-item"><i class="fa-solid fa-comment-dots"></i><span>Mensagens</span></div>
+        </nav>
+    </div>
+
+    <div id="receipt-screen">
+        <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+        <h2 class="receipt-title" id="r-title">transferência Pix realizada</h2>
+        <p class="receipt-date" id="r-date"></p>
+
+        <div class="receipt-label">valor</div>
+        <div class="receipt-value" id="r-value"></div>
+
+        <div class="receipt-label">de</div>
+        <div class="receipt-value" id="r-from">Roberto Encarnacao Proenca</div>
+
+        <div class="receipt-label">para</div>
+        <div class="receipt-value" id="r-to"></div>
+
+        <div class="receipt-label">ID da transação</div>
+        <div style="font-size: 11px; word-break: break-all;">E6070119020220108103078215153145</div>
+
+        <button class="btn-back" onclick="app.fecharComprovante()">Voltar ao início</button>
+    </div>
+
+    <script>
+        const app = {
+            data: JSON.parse(localStorage.getItem('banco_premium_db')) || { saldo: 0, historico: [], dark: false, pic: '' },
+
+            save: () => {
+                localStorage.setItem('banco_premium_db', JSON.stringify(app.data));
+                app.render();
+            },
+
+            fmt: (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+
+            render: () => {
+                document.getElementById('main-balance').innerText = app.fmt(app.data.saldo);
+                document.getElementById('user-img').src = app.data.pic || 'https://via.placeholder.com/150';
+                if(app.data.dark) document.body.classList.add('dark-mode');
+                else document.body.classList.remove('dark-mode');
+
+                let tin = 0, tout = 0;
+                const list = document.getElementById('history-list');
+                list.innerHTML = app.data.historico.map((t, i) => {
+                    t.type === 'in' ? tin += t.v : tout += t.v;
+                    return `
+                        <div class="t-card ${t.type}" onclick="app.abrirReciboAntigo(${i})">
+                            <div><b>${t.n}</b><br><small style="color:var(--sub)">${t.d}</small></div>
+                            <b style="color:var(--${t.type === 'in' ? 'green' : 'red'})">${t.type === 'in' ? '+' : '-'} ${app.fmt(t.v)}</b>
+                        </div>
+                    `;
+                }).reverse().join('');
+                document.getElementById('sum-in').innerText = app.fmt(tin);
+                document.getElementById('sum-out').innerText = app.fmt(tout);
+            },
+
+            notificar: (t, b) => {
+                const n = document.getElementById('notification');
+                document.getElementById('notif-title').innerText = t;
+                document.getElementById('notif-body').innerText = b;
+                n.classList.add('show');
+                setTimeout(() => n.classList.remove('show'), 4000);
+            },
+
+            entrar: () => {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                app.render();
+            },
+
+            editarSaldo: () => {
+                const n = prompt("Quanto você 'recebeu' para o saldo?");
+                if (n) {
+                    const v = parseFloat(n.replace(',', '.'));
+                    app.data.saldo += v;
+                    app.data.historico.push({ type: 'in', n: 'Pix Recebido', v: v, d: new Date().toLocaleString('pt-BR') });
+                    app.save();
+                    app.notificar("Pix Recebido", "Valor de " + app.fmt(v) + " caiu na conta.");
+                }
+            },
+
+            fazerPix: () => {
+                const nome = prompt("Para quem?");
+                const valor = prompt("Qual o valor?");
+                if (nome && valor) {
+                    const v = parseFloat(valor.replace(',', '.'));
+                    if (v > app.data.saldo) return alert("Saldo insuficiente!");
+                    app.data.saldo -= v;
+                    const trans = { type: 'out', n: nome, v: v, d: new Date().toLocaleString('pt-BR') };
+                    app.data.historico.push(trans);
+                    app.save();
+                    app.mostrarComprovante(trans);
+                    app.notificar("Pix Realizado", "Você enviou " + app.fmt(v));
+                }
+            },
+
+            mostrarComprovante: (t) => {
+                document.getElementById('r-title').innerText = t.type === 'in' ? "Pix recebido com sucesso" : "transferência Pix realizada";
+                document.getElementById('r-date').innerText = t.d + ", via app Itaú";
+                document.getElementById('r-value').innerText = app.fmt(t.v);
+                document.getElementById('r-to').innerText = t.type === 'in' ? 'Roberto E. Proenca' : t.n;
+                document.getElementById('r-from').innerText = t.type === 'in' ? t.n : 'Roberto E. Proenca';
+                document.getElementById('main-app').style.display = 'none';
+                document.getElementById('receipt-screen').style.display = 'block';
+            },
+
+            abrirReciboAntigo: (i) => app.mostrarComprovante(app.data.historico[i]),
+
+            fecharComprovante: () => {
+                document.getElementById('receipt-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+            },
+
+            switchTab: (tab) => {
+                const isW = tab === 'wallet';
+                document.getElementById('view-wallet').style.display = isW ? 'block' : 'none';
+                document.getElementById('view-trans').style.display = isW ? 'none' : 'block';
+                document.getElementById('tab-wallet').classList.toggle('active', isW);
+                document.getElementById('tab-trans').classList.toggle('active', !isW);
+            },
+
+            toggleDark: () => { app.data.dark = !app.data.dark; app.save(); },
+
+            mudarFoto: (input) => {
+                const reader = new FileReader();
+                reader.onload = (e) => { app.data.pic = e.target.result; app.save(); };
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+
+        app.render();
+    </script>
+</body>
+</html>

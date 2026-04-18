@@ -65,7 +65,13 @@ nav {
     border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
-.logo { font-size: 1.5rem; font-weight: 800; color: var(--dark); cursor: default; }
+.logo { 
+    font-size: 1.5rem; 
+    font-weight: 800; 
+    color: var(--dark); 
+    cursor: default;
+    white-space: nowrap; /* Garante que o nome não quebre linha */
+}
 .logo span { color: var(--logo-span-color); }
 
 #status-alerta {
@@ -398,11 +404,11 @@ input:focus, select:focus { border-color: var(--input-focus-color); outline: non
 .delivery { border-left-color: var(--success); }
 
 /* =========================================
-   RESPONSIVIDADE MOBILE
+   RESPONSIVIDADE MOBILE (CORREÇÃO DA LOGO)
    ========================================= */
 @media (max-width: 768px) {
     nav { padding: 15px 5%; }
-    .logo { font-size: 1.2rem; }
+    .logo { font-size: 1.1rem; } /* Ajuste fino para não cortar */
     .cart-btn { padding: 8px 16px; font-size: 0.9rem; }
 
     .container {
@@ -426,5 +432,7 @@ input:focus, select:focus { border-color: var(--input-focus-color); outline: non
 @media (max-width: 480px) {
     .container { grid-template-columns: 1fr; }
     .card img { height: 200px; }
-    .logo span { display: none; }
+    /* CORREÇÃO: Removido display:none para a logo aparecer completa */
+    .logo span { display: inline; } 
+    .logo { font-size: 1rem; }
 }
