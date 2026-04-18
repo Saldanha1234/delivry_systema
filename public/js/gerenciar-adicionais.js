@@ -1,6 +1,6 @@
 /**
- * SISTEMA DE GERENCIAMENTO DE ADICIONAIS - PRO-LEVEL
- * Lógica de Desconto, Status de Disponibilidade e UI Flutuante
+ * SISTEMA DE GERENCIAMENTO DE ADICIONAIS - CLIENT-SIDE
+ * Versão Corrigida: Categorias e Adicionais funcionando de forma independente.
  */
 
 {
@@ -19,45 +19,32 @@
         .categoria-card { background: white; margin-top: 15px; border-radius: 10px; border-left: 6px solid #27ae60; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: visible; position: relative; }
         .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; cursor: pointer; }
         
-        /* BOTÕES FLUTUANTES / SEMPRE VISÍVEIS */
         .categoria-acoes { position: relative; display: flex; align-items: center; z-index: 100; }
         .menu-dot-ad { cursor: pointer; font-size: 24px; padding: 5px 12px; color: #888; transition: 0.2s; border-radius: 50%; }
         .menu-dot-ad:hover { background: #eee; color: #000; }
         
         .dropdown-menu-ad { position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ddd; border-radius: 8px; display: none; z-index: 1000; min-width: 180px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
         .dropdown-menu-ad.show { display: block; }
-        .dropdown-item-ad { padding: 12px 16px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #f0f0f0; transition: 0.2s; }
+        .dropdown-item-ad { padding: 12px 16px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #f0f0f0; transition: 0.2s; text-align: left; }
         .dropdown-item-ad:hover { background: #f8f9fa; color: #27ae60; }
         
         .adicionais-lista { padding: 20px; background: #f9fbfb; border-top: 1px solid #eee; border-radius: 0 0 10px 10px; }
         
-        .btn-novo-item-ad { 
-            background: #fff; color: #27ae60; border: 2px dashed #27ae60; 
-            padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; 
-            font-weight: bold; margin-bottom: 20px; transition: 0.3s;
-        }
+        .btn-novo-item-ad { background: #fff; color: #27ae60; border: 2px dashed #27ae60; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; }
         .btn-novo-item-ad:hover { background: #e8f5e9; }
 
-        /* ITEM ADICIONAL E LÓGICA DE PREÇO */
-        .adicional-item { 
-            display: flex; justify-content: space-between; padding: 15px; 
-            background: white; margin-bottom: 10px; border-radius: 8px; 
-            border: 1px solid #e0e0e0; align-items: center; position: relative;
-        }
+        .adicional-item { display: flex; justify-content: space-between; padding: 15px; background: white; margin-bottom: 10px; border-radius: 8px; border: 1px solid #e0e0e0; align-items: center; position: relative; }
         .item-indisponivel { opacity: 0.5; background: #f0f0f0; cursor: not-allowed; }
         .badge-indisponivel { background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px; }
         
         .preco-bruto { text-decoration: line-through; color: #999; font-size: 13px; margin-right: 8px; }
         .preco-final { color: #27ae60; font-weight: bold; font-size: 15px; }
 
-        /* MODAL */
         .modal-full-ad { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-content-ad { width: 95%; max-width: 550px; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         .form-group-ad { margin-bottom: 20px; }
         .form-group-ad label { font-weight: 600; display: block; margin-bottom: 8px; color: #555; }
         .form-group-ad input, .form-group-ad select { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
-        
-        .row-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     `;
     document.head.appendChild(styleSheetAd);
 
@@ -70,10 +57,74 @@
             categoriasAdicionais = await resAds.json();
             produtosDoBanco = await resProds.json();
             window.renderizarPainelAdicionais();
-        } catch (err) { console.error("Erro fatal ao carregar:", err); }
+        } catch (err) { console.error("Erro ao carregar:", err); }
     }
 
-    // --- MODAL DE EDIÇÃO DE ITEM (ADICIONAL) ---
+    // --- LÓGICA DE CATEGORIAS (CORRIGIDA) ---
+    window.abrirModalEditarCat = function(id) {
+        const cat = categoriasAdicionais.find(c => c._id === id);
+        const modal = document.createElement('div');
+        modal.className = 'modal-full-ad';
+        modal.innerHTML = `
+            <div class="modal-content-ad">
+                <h2>⚙️ Configurar Categoria: ${cat.nome}</h2>
+                <div class="form-group-ad">
+                    <label>Nome da Categoria</label>
+                    <input type="text" id="edit-cat-nome" value="${cat.nome}">
+                </div>
+                <div class="form-group-ad">
+                    <label>Tipo de Seleção</label>
+                    <select id="edit-cat-status">
+                        <option value="opcional" ${cat.status === 'opcional' ? 'selected' : ''}>Opcional</option>
+                        <option value="obrigatorio" ${cat.status === 'obrigatorio' ? 'selected' : ''}>Obrigatório</option>
+                    </select>
+                </div>
+                <h3>Vincular a Produtos</h3>
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius:8px;">
+                    ${produtosDoBanco.map(prod => {
+                        const vinculado = cat.produtosVinculados.includes(prod._id);
+                        return `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #f9f9f9;">
+                                <span>${prod.nome}</span>
+                                <button class="btn-principal-ad" style="padding:5px 10px; margin:0; background:${vinculado ? '#e74c3c' : '#27ae60'}" 
+                                    onclick="vincularProdutoLocal('${cat._id}', '${prod._id}', ${vinculado})">
+                                    ${vinculado ? 'Remover' : 'Adicionar'}
+                                </button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div style="margin-top:25px; display:flex; gap:10px;">
+                    <button class="btn-principal-ad" style="flex:1" onclick="salvarCategoriaLocal('${cat._id}')">Salvar</button>
+                    <button class="btn-principal-ad" style="background:#888; flex:1" onclick="this.closest('.modal-full-ad').remove()">Fechar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    };
+
+    window.vincularProdutoLocal = function(catId, prodId, jaVinc) {
+        const cat = categoriasAdicionais.find(c => c._id === catId);
+        if (jaVinc) cat.produtosVinculados = cat.produtosVinculados.filter(id => id !== prodId);
+        else cat.produtosVinculados.push(prodId);
+        document.querySelector('.modal-full-ad').remove();
+        window.abrirModalEditarCat(catId);
+    };
+
+    window.salvarCategoriaLocal = async function(id) {
+        const cat = categoriasAdicionais.find(c => c._id === id);
+        cat.nome = document.getElementById('edit-cat-nome').value;
+        cat.status = document.getElementById('edit-cat-status').value;
+        await fetch(`/edit-categoria-adicional/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cat)
+        });
+        document.querySelector('.modal-full-ad').remove();
+        carregarDados();
+    };
+
+    // --- LÓGICA DE ITENS ADICIONAIS ---
     window.abrirModalEditarItem = function(catId, index) {
         const cat = categoriasAdicionais.find(c => c._id === catId);
         const item = cat.adicionais[index];
@@ -81,31 +132,30 @@
         modal.className = 'modal-full-ad';
         modal.innerHTML = `
             <div class="modal-content-ad">
-                <h2 style="margin-top:0">📝 Editar Adicional: ${item.nome}</h2>
+                <h2>📝 Editar Adicional: ${item.nome}</h2>
                 <div class="form-group-ad">
                     <label>Nome do Adicional</label>
                     <input type="text" id="edit-item-nome" value="${item.nome}">
                 </div>
-                <div class="row-form">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
                     <div class="form-group-ad">
                         <label>Preço Bruto (R$)</label>
                         <input type="number" step="0.01" id="edit-item-valor" value="${item.valor}">
                     </div>
                     <div class="form-group-ad">
-                        <label>Valor com Desconto (R$)</label>
+                        <label>Com Desconto (R$)</label>
                         <input type="number" step="0.01" id="edit-item-desc" value="${item.desconto || item.valor}">
                     </div>
                 </div>
                 <div class="form-group-ad">
-                    <label>Status de Disponibilidade</label>
+                    <label>Status</label>
                     <select id="edit-item-status">
                         <option value="disponivel" ${item.status === 'disponivel' ? 'selected' : ''}>✅ Disponível</option>
-                        <option value="indisponivel" ${item.status === 'indisponivel' ? 'selected' : ''}>❌ Indisponível (Pausar)</option>
+                        <option value="indisponivel" ${item.status === 'indisponivel' ? 'selected' : ''}>❌ Indisponível</option>
                     </select>
                 </div>
-                <p style="font-size:12px; color:#666">* Se o valor com desconto for menor que o preço bruto, o sistema riscará o preço original automaticamente.</p>
-                <div style="margin-top:30px; display:flex; gap:10px;">
-                    <button class="btn-principal-ad" style="flex:1" onclick="salvarItemPro('${catId}', ${index})">Salvar Alterações</button>
+                <div style="margin-top:25px; display:flex; gap:10px;">
+                    <button class="btn-principal-ad" style="flex:1" onclick="salvarItemLocal('${catId}', ${index})">Atualizar</button>
                     <button class="btn-principal-ad" style="background:#888; flex:1" onclick="this.closest('.modal-full-ad').remove()">Cancelar</button>
                 </div>
             </div>
@@ -113,10 +163,9 @@
         document.body.appendChild(modal);
     };
 
-    window.salvarItemPro = async function(catId, index) {
+    window.salvarItemLocal = async function(catId, index) {
         const cat = categoriasAdicionais.find(c => c._id === catId);
         const item = cat.adicionais[index];
-        
         item.nome = document.getElementById('edit-item-nome').value;
         item.valor = parseFloat(document.getElementById('edit-item-valor').value);
         item.desconto = parseFloat(document.getElementById('edit-item-desc').value);
@@ -131,11 +180,11 @@
         carregarDados();
     };
 
-    // --- RENDERIZAÇÃO COM LÓGICA DE PREÇO ---
+    // --- RENDERIZAÇÃO ---
     window.renderizarPainelAdicionais = function(contId = 'container-gerenciador-adicionais') {
         const target = document.getElementById(contId);
         if (!target) return;
-        target.innerHTML = `<button class="btn-principal-ad" onclick="criarCategoriaAdicional()">+ Criar Categoria de Adicionais</button>
+        target.innerHTML = `<button class="btn-principal-ad" onclick="criarCategoriaAdicional()">+ Nova Categoria de Adicionais</button>
                             <div id="lista-ads-montada"></div>`;
         
         const lista = target.querySelector('#lista-ads-montada');
@@ -145,7 +194,7 @@
             card.innerHTML = `
                 <div class="categoria-header" onclick="toggleAdLista('${cat._id}')">
                     <div>
-                        <strong style="font-size:16px">${cat.nome}</strong> 
+                        <strong>${cat.nome}</strong> 
                         <span style="color:#27ae60; margin-left:10px; font-size:12px; border:1px solid #27ae60; padding:2px 6px; border-radius:4px;">${cat.status.toUpperCase()}</span>
                     </div>
                     <div class="categoria-acoes" onclick="event.stopPropagation()">
@@ -157,7 +206,7 @@
                     </div>
                 </div>
                 <div id="box-${cat._id}" class="adicionais-lista" style="display:none">
-                    <button class="btn-novo-item-ad" onclick="adicionarItemAdicional('${cat._id}')">+ Adicionar novo item em ${cat.nome}</button>
+                    <button class="btn-novo-item-ad" onclick="adicionarItemAdicional('${cat._id}')">+ Novo item em ${cat.nome}</button>
                     ${cat.adicionais.map((ad, idx) => {
                         const temDesconto = ad.desconto && ad.desconto < ad.valor;
                         const indisponivel = ad.status === 'indisponivel';
@@ -187,7 +236,7 @@
         });
     };
 
-    // --- AUXILIARES E EVENTOS ---
+    // --- AUXILIARES ---
     window.showDropAd = e => {
         e.stopPropagation();
         const menu = e.target.nextElementSibling;
@@ -213,7 +262,7 @@
     };
 
     window.adicionarItemAdicional = async function(catId) {
-        const nome = prompt("Nome do Item (ex: Molho Especial):");
+        const nome = prompt("Nome do Item:");
         if (!nome) return;
         const cat = categoriasAdicionais.find(c => c._id === catId);
         cat.adicionais.push({ nome, valor: 0, desconto: 0, status: 'disponivel' });
@@ -236,7 +285,7 @@
     };
 
     window.excluirCatReal = async id => {
-        if(!confirm("Excluir categoria e todos os seus itens?")) return;
+        if(!confirm("Excluir categoria?")) return;
         await fetch(`/delete-categoria-adicional/${id}`, { method: 'DELETE' });
         carregarDados();
     };
