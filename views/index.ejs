@@ -33,7 +33,7 @@
 </div>
 
 <nav>
-    <div class="logo">Açai<span>Roxinho</span></div>
+    <div class="logo">Açai<span></span></div>
     <div class="cart-btn" onclick="toggleCart()">
         <span>🛒 Carrinho</span>
         <span id="cart-count">0</span>
@@ -230,6 +230,8 @@
     const socket = io();
     let carrinho = [];
     let produtoAtual = null;
+    
+    // IMPORTANTE: Carregamos a nova estrutura enviada pelo servidor
     let configLocal = <%- JSON.stringify(estruturaAdicionais) %>;
     
     const settingsEmpresa = {
@@ -238,7 +240,6 @@
         ativarTrava: <%= locals.config?.limitarArea || false %>
     };
 
-    // Função para obter o horário atual em formato HH:mm
     function obterHorarioAtual() {
         const agora = new Date();
         return agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -247,18 +248,11 @@
     async function buscarCEP(valor) {
         const cep = valor.replace(/\D/g, '');
         if (cep.length !== 8) return;
-
         document.getElementById('cep-loading').style.display = 'inline';
-        
         try {
             const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
             const data = await response.json();
-
-            if (data.erro) {
-                alert("CEP não encontrado!");
-                return;
-            }
-
+            if (data.erro) { alert("CEP não encontrado!"); return; }
             if (settingsEmpresa.ativarTrava && settingsEmpresa.cidadeAtiva) {
                 if (data.localidade.toLowerCase() !== settingsEmpresa.cidadeAtiva.toLowerCase()) {
                     alert(`Desculpe! Atendemos apenas na cidade de ${settingsEmpresa.cidadeAtiva}.`);
@@ -266,29 +260,21 @@
                     return;
                 }
             }
-
             document.getElementById('cliente-rua').value = data.logradouro;
             document.getElementById('cliente-bairro').value = data.bairro;
             document.getElementById('cliente-complemento').focus();
-
-        } catch (error) {
-            console.error("Erro ao buscar CEP", error);
-        } finally {
+        } catch (error) { console.error("Erro ao buscar CEP", error); } finally {
             document.getElementById('cep-loading').style.display = 'none';
         }
     }
 
     function gerenciarCliqueProduto(status, temModificadores, nome, preco, desc, img, precoOriginal) {
-        if (status === 'indisponivel') {
-            alert("Este produto está indisponível no momento.");
-            return;
-        }
-
+        if (status === 'indisponivel') { alert("Este produto está indisponível no momento."); return; }
         if ("<%= locals.estaAberto %>" === "false") return alert("Estamos fechados no momento!");
         
         const idAtivo = localStorage.getItem('ultimoPedidoId');
         if (idAtivo) {
-            alert("Você já possui um pedido em andamento! Finalize-o ou aguarde a conclusão para fazer um novo.");
+            alert("Você já possui um pedido em andamento!");
             irParaStatus();
             return;
         }
@@ -305,8 +291,11 @@
     }
 
     function abrirModalMontagem(nome, preco, desc, img, temModificadores) {
-        if(configLocal) {
-            configLocal.categorias.forEach(cat => cat.opcoes.forEach(opt => opt.qtd = 0));
+        // Resetar quantidades antes de abrir
+        if(configLocal && configLocal.categorias) {
+            configLocal.categorias.forEach(cat => {
+                cat.opcoes.forEach(opt => opt.qtd = 0);
+            });
         }
         
         document.getElementById('m-img').src = img;
@@ -314,13 +303,13 @@
         document.getElementById('m-desc').innerText = desc;
         document.getElementById('m-obs').value = "";
         
-        const containerLógica = document.getElementById('container-adicionais-logic');
+        const containerLogica = document.getElementById('container-adicionais-logic');
         
         if (temModificadores) {
-            containerLógica.style.display = 'block';
+            containerLogica.style.display = 'block';
             renderizarCategorias();
         } else {
-            containerLógica.style.display = 'none';
+            containerLogica.style.display = 'none';
         }
 
         atualizarTotalModal();
@@ -330,7 +319,7 @@
     function renderizarCategorias(filtro = "") {
         const container = document.getElementById('categorias-container');
         container.innerHTML = "";
-        if(!configLocal) return;
+        if(!configLocal || !configLocal.categorias) return;
 
         configLocal.categorias.forEach(cat => {
             let htmlOpcoes = "";
@@ -344,7 +333,7 @@
                             </div>
                             <div class="item-controls">
                                 <button class="btn-qty" onclick="alterarQtd('${cat.id}', '${opt.id}', -1)">-</button>
-                                <span id="qtd-${opt.id}" style="font-weight: bold; min-width: 20px; text-align: center;">${opt.qtd}</span>
+                                <span id="qtd-${opt.id}" style="font-weight: bold; min-width: 20px; text-align: center;">${opt.qtd || 0}</span>
                                 <button class="btn-qty" onclick="alterarQtd('${cat.id}', '${opt.id}', 1)">+</button>
                             </div>
                         </div>`;
@@ -355,8 +344,8 @@
                 container.innerHTML += `
                     <div class="cat-section">
                         <div class="cat-header">
-                            <div style="font-weight:bold; color: var(--dark);">${cat.nome}</div>
-                            <div style="font-size:0.7rem; color:#888;">${cat.descricao}</div>
+                            <div style="font-weight:bold; color: var(--dark);">${cat.nome} (Máx: ${cat.limite})</div>
+                            <div style="font-size:0.7rem; color:#888;">${cat.descricao || ''}</div>
                         </div>
                         ${htmlOpcoes}
                     </div>`;
@@ -365,26 +354,33 @@
     }
 
     function alterarQtd(catId, optId, delta) {
-        const categoria = configLocal.categorias.find(c => c.id === catId);
-        const opcao = categoria.opcoes.find(o => o.id === optId);
-        const totalNaCategoria = categoria.opcoes.reduce((acc, curr) => acc + curr.qtd, 0);
+        const categoria = configLocal.categorias.find(c => c.id == catId);
+        if(!categoria) return;
+
+        const opcao = categoria.opcoes.find(o => o.id == optId);
+        if(!opcao) return;
+
+        const totalNaCategoria = categoria.opcoes.reduce((acc, curr) => acc + (curr.qtd || 0), 0);
 
         if (delta > 0 && totalNaCategoria >= categoria.limite) {
-            return alert(`Limite máximo atingido para ${categoria.nome} (${categoria.limite} itens).`);
+            return alert(`Limite atingido para ${categoria.nome}: máximo ${categoria.limite} itens.`);
         }
 
-        if (opcao.qtd + delta >= 0) {
-            opcao.qtd += delta;
-            document.getElementById(`qtd-${optId}`).innerText = opcao.qtd;
+        if ((opcao.qtd || 0) + delta >= 0) {
+            opcao.qtd = (opcao.qtd || 0) + delta;
+            const el = document.getElementById(`qtd-${optId}`);
+            if(el) el.innerText = opcao.qtd;
             atualizarTotalModal();
         }
     }
 
     function atualizarTotalModal() {
         let extra = 0;
-        if (produtoAtual.temModificadores && configLocal) {
+        if (produtoAtual.temModificadores && configLocal && configLocal.categorias) {
             configLocal.categorias.forEach(cat => {
-                cat.opcoes.forEach(opt => { extra += (opt.preco * opt.qtd); });
+                cat.opcoes.forEach(opt => { 
+                    extra += (parseFloat(opt.preco) * (opt.qtd || 0)); 
+                });
             });
         }
         const total = (produtoAtual.precoBase || 0) + extra;
@@ -399,12 +395,12 @@
         let selecionados = [];
         let precoFinal = produtoAtual.precoBase || 0;
 
-        if (produtoAtual.temModificadores && configLocal) {
+        if (produtoAtual.temModificadores && configLocal && configLocal.categorias) {
             configLocal.categorias.forEach(cat => {
                 cat.opcoes.forEach(opt => {
                     if(opt.qtd > 0) {
                         selecionados.push({ nome: opt.nome, qtd: opt.qtd, preco: opt.preco });
-                        precoFinal += (opt.preco * opt.qtd);
+                        precoFinal += (parseFloat(opt.preco) * opt.qtd);
                     }
                 });
             });
@@ -533,7 +529,6 @@
                 const erroData = await res.json();
                 document.getElementById('mensagem-erro-endereco').innerText = erroData.message || "Não entregamos neste endereço.";
                 document.getElementById('modal-erro-endereco').style.display = 'block';
-                
                 btnFinalizar.disabled = false;
                 btnFinalizar.innerText = "Finalizar Pedido";
                 btnFinalizar.classList.remove('btn-disabled');
@@ -557,17 +552,14 @@
             try {
                 const res = await fetch('/api/pedido/' + idSalvo);
                 const data = await res.json();
-                
-                if (!data.status || data.status === 'Finalizado' || data.status === 'Concluído' || data.status === 'Cancelado') {
+                if (!data.status || ['Finalizado', 'Concluído', 'Cancelado'].includes(data.status)) {
                     localStorage.removeItem('ultimoPedidoId');
                     atualizarUI();
                 } else {
                     document.getElementById('status-alerta').style.display = 'block';
                     socket.emit('join', idSalvo);
                 }
-            } catch (e) {
-                console.log("Erro ao verificar status.");
-            }
+            } catch (e) { console.log("Erro ao verificar status."); }
         }
     }
 
@@ -578,7 +570,7 @@
 
     socket.on('statusAtualizado', (data) => {
         const idSalvo = localStorage.getItem('ultimoPedidoId');
-        if (idSalvo && data.id == idSalvo && (data.novoStatus === 'Finalizado' || data.novoStatus === 'Cancelado' || data.novoStatus === 'Concluído')) {
+        if (idSalvo && data.id == idSalvo && ['Finalizado', 'Cancelado', 'Concluído'].includes(data.novoStatus)) {
             localStorage.removeItem('ultimoPedidoId');
             atualizarUI();
         }

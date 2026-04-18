@@ -1,11 +1,11 @@
 /**
- * LÓGICA DE GERENCIAMENTO DE PRODUTOS E CATEGORIAS - VERSÃO CORRIGIDA
+ * LÓGICA DE GERENCIAMENTO DE PRODUTOS E CATEGORIAS - VERSÃO ATUALIZADA
  */
 
 let imagemBase64 = ""; 
-let listaProdutosLocal = []; // Variável auxiliar para evitar erros de sintaxe no HTML
+let listaProdutosLocal = []; 
 
-// --- 0. INJEÇÃO DE CSS (Ajustes de Dropdown e Layout de Produto) ---
+// --- 0. INJEÇÃO DE CSS ---
 const styles = `
     .painel-unico-admin { font-family: sans-serif; max-width: 800px; margin: 20px auto; background: #f4f4f4; padding: 15px; border-radius: 8px; }
     .header-painel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -20,7 +20,6 @@ const styles = `
     .produtos-lista { padding: 10px 15px; background: #fafafa; border-top: 1px solid #eee; }
     .btn-add-produto { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px dashed #ccc; background: #fff; cursor: pointer; border-radius: 4px; }
     
-    /* Layout do Produto: Foto + Nome + Preço */
     .produto-linha { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 4px; cursor: pointer; }
     .prod-info-wrapper { display: flex; align-items: center; flex-grow: 1; }
     .prod-img-min { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 12px; background: #eee; }
@@ -28,7 +27,6 @@ const styles = `
     .prod-nome-txt { font-weight: bold; }
     .prod-preco-txt { font-size: 0.9em; color: #28a745; font-weight: bold; }
 
-    /* Dropdown de Opções (Clique para abrir e Flutuante) */
     .dropdown { position: relative; display: inline-block; }
     .dropdown-content { 
         display: none; 
@@ -47,7 +45,6 @@ const styles = `
     .dropdown-content a:last-child { border-bottom: none; }
     .dropdown-content a:hover { background: #f1f1f1; }
 
-    /* Modal Fullscreen (Original mantido) */
     .modal-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 10000; overflow-y: auto; }
     .modal-content header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; }
     .modal-body { padding: 20px; max-width: 600px; margin: 0 auto; }
@@ -132,17 +129,6 @@ function renderizarPainelCategorias(containerId) {
                         <span>🏷️ Preço com Desconto (R$)</span>
                         <input type="number" id="p-desconto" style="width:120px; padding:8px;" placeholder="Ex: 25.00">
                     </div>
-
-                    <div class="toggle-item">
-                        <div>
-                            <strong>Adicionar Modificadores</strong><br>
-                            <small style="color:#666;">Ativar acompanhamentos e extras</small>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="p-modificador">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
                 </div>
             </div>
         </div>
@@ -197,7 +183,6 @@ function renderizarItemCategoria(cat, todosProdutos) {
                 <button onclick="menuClique(event)" style="border:none; background:none; font-size:20px; cursor:pointer;">⋮</button>
                 <div class="dropdown-content">
                     <a href="#" onclick="confirmarExclusaoCat('${cat._id}', '${cat.fixa}')">Excluir</a>
-                    <a href="#" onclick="duplicarCategoria('${cat._id}')">Duplicar</a>
                 </div>
             </div>
         </div>
@@ -217,7 +202,6 @@ function renderizarItemCategoria(cat, todosProdutos) {
                             <button onclick="menuClique(event)" style="border:none; background:none; cursor:pointer;">⋮</button>
                             <div class="dropdown-content">
                                 <a href="#" onclick="excluirProduto('${p._id}')">Excluir</a>
-                                <a href="#" onclick="duplicarProduto('${p._id}')">Duplicar</a>
                             </div>
                         </div>
                     </div>
@@ -228,7 +212,7 @@ function renderizarItemCategoria(cat, todosProdutos) {
     lista.appendChild(div);
 }
 
-// --- 3. LÓGICA DE INTERAÇÃO (Dropdown e Expandir) ---
+// --- 3. LÓGICA DE INTERAÇÃO ---
 
 function menuClique(e) {
     e.stopPropagation();
@@ -270,7 +254,6 @@ function abrirCriarProduto(catNome) {
     document.getElementById('p-desc').value = "";
     document.getElementById('p-preco').value = "";
     document.getElementById('p-desconto').value = "";
-    document.getElementById('p-modificador').checked = false;
     document.getElementById('p-categoria-origem').value = catNome;
     document.getElementById('p-preview').style.display = "none";
     document.getElementById('modal-titulo').innerText = "Novo Produto";
@@ -284,8 +267,6 @@ function abrirEdicaoProduto(id, p) {
     document.getElementById('p-preco').value = p.preco || "";
     document.getElementById('p-status').value = p.status || "disponivel";
     document.getElementById('p-desconto').value = p.desconto || "";
-    // CORREÇÃO: Alinhando o nome do campo com o que vem do banco
-    document.getElementById('p-modificador').checked = p.modificadoresAtivos === true;
     document.getElementById('p-img-data').value = p.img || "";
     document.getElementById('p-categoria-origem').value = p.categoria;
     
@@ -306,9 +287,7 @@ async function salvarProduto() {
         preco: document.getElementById('p-preco').value,
         desc: document.getElementById('p-desc').value,
         status: document.getElementById('p-status').value,
-        // CORREÇÃO: Garante o envio do desconto e do estado do modificador
         desconto: document.getElementById('p-desconto').value,
-        modificadoresAtivos: document.getElementById('p-modificador').checked,
         categoria: document.getElementById('p-categoria-origem').value,
         img: imagemBase64 || document.getElementById('p-img-data').value
     };
@@ -356,7 +335,7 @@ async function criarNovaCategoria() {
 }
 
 function confirmarExclusaoCat(id, fixa) {
-    if(fixa === "true") {
+    if(fixa === "true" || fixa === true) {
         alert("Categorias fixas não podem ser excluídas.");
         return;
     }
@@ -365,7 +344,12 @@ function confirmarExclusaoCat(id, fixa) {
     }
 }
 
-// Fecha dropdowns se clicar fora
+function excluirProduto(id) {
+    if(confirm("Excluir este produto?")) {
+        fetch('/delete-produto/' + id, { method: 'DELETE' }).then(() => carregarDadosCompletos());
+    }
+}
+
 window.onclick = function(event) {
-    if (!event.target.matches('button')) fecharTodosDropdowns();
+    if (!event.target.matches('button') && !event.target.matches('.menu-dot')) fecharTodosDropdowns();
 }
