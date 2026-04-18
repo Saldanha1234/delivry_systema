@@ -4,8 +4,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
 
 :root {
-    --primary: #a538ff;
-    --primary-hover: #E31C5F;
+    /* SISTEMA DE CORES INDEPENDENTES - MUDE AQUI */
+    --logo-span-color: #b638ff;      /* Segunda cor do nome da página */
+    --category-active-bg: #af38ff;   /* Fundo do botão de categoria ativo */
+    --cart-counter-bg: #FF385C;      /* Bolinha de contagem no carrinho */
+    --modal-border-color: #FF385C;    /* Borda dos modais de alerta */
+    --modal-title-color: #FF385C;     /* Título dentro dos modais */
+    --input-focus-color: #FF385C;     /* Borda quando clica em campos/inputs */
+    --cat-header-border: #FF385C;     /* Borda lateral dos títulos de categorias */
+    --qty-btn-border: #FF385C;        /* Borda e texto dos botões de quantidade */
+    --qty-btn-bg-hover: #FF385C;      /* Fundo do botão de quantidade no hover */
+    --link-horario-color: #FF385C;    /* Cor do link de horários */
+    --btn-confirm-bg: #FF385C;        /* Cor do botão confirmar principal */
+    --btn-confirm-hover: #E31C5F;     /* Cor do hover do botão confirmar */
+    --card-hover-border: #FF385C;     /* Borda do card ao passar o mouse */
+    --admin-progress-border: #FF385C; /* Cor da borda lateral no admin (Em progresso) */
+    --social-icon-hover: #FF385C;     /* Cor do ícone social no hover */
+
+    /* CORES DE SUPORTE */
+    --primary: #FF385C;
     --dark: #1A1A1A;
     --dark-light: #2A2A2A;
     --text-muted: #717171;
@@ -49,7 +66,7 @@ nav {
 }
 
 .logo { font-size: 1.5rem; font-weight: 800; color: var(--dark); cursor: default; }
-.logo span { color: var(--primary); }
+.logo span { color: var(--logo-span-color); }
 
 #status-alerta {
     background: var(--warning);
@@ -76,14 +93,13 @@ nav {
 .cart-btn:hover { transform: scale(1.05); background: var(--dark-light); }
 
 #cart-count {
-    background: var(--primary);
+    background: var(--cart-counter-bg);
     color: white;
     padding: 2px 8px;
     border-radius: 10px;
     font-size: 0.8rem;
 }
 
-/* NOVO: ALERTA DE ENDEREÇO NO CENTRO DA TELA */
 .modal-erro-endereco {
     position: fixed;
     top: 50%;
@@ -97,12 +113,12 @@ nav {
     text-align: center;
     width: 90%;
     max-width: 400px;
-    display: none; /* Ativado via JS */
-    border: 2px solid var(--primary);
+    display: none; 
+    border: 2px solid var(--modal-border-color);
 }
 
 .modal-erro-endereco h2 {
-    color: var(--primary);
+    color: var(--modal-title-color);
     font-weight: 800;
     margin-bottom: 15px;
 }
@@ -128,7 +144,11 @@ nav {
     background: white; color: #666; cursor: pointer; white-space: nowrap;
     font-weight: 600; transition: 0.3s;
 }
-.cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.cat-btn.active { 
+    background: var(--category-active-bg); 
+    color: white; 
+    border-color: var(--category-active-bg); 
+}
 
 .events-area { display: flex; gap: 15px; padding: 20px; overflow-x: auto; }
 .events-area::-webkit-scrollbar { display: none; }
@@ -166,7 +186,7 @@ nav {
 
 .card:hover { 
     transform: translateY(-8px); 
-    border-color: var(--primary); 
+    border-color: var(--card-hover-border); 
     box-shadow: 0 15px 35px rgba(0,0,0,0.1);
 }
 
@@ -220,7 +240,6 @@ nav {
     to { transform: translateY(0); opacity: 1; }
 }
 
-/* Modal de Montagem Específico */
 .modal-montagem-content { width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 0 !important; }
 .modal-body { padding: 20px; }
 
@@ -235,7 +254,7 @@ nav {
     font-size: 0.95rem;
     transition: 0.2s;
 }
-.search-box:focus { border-color: var(--primary); background: white; }
+.search-box:focus { border-color: var(--input-focus-color); background: white; }
 
 .cat-section { margin-bottom: 25px; }
 .cat-header { 
@@ -243,7 +262,7 @@ nav {
     padding: 12px 15px; 
     border-radius: 10px; 
     margin-bottom: 12px; 
-    border-left: 5px solid var(--primary);
+    border-left: 5px solid var(--cat-header-border);
 }
 
 .item-add {
@@ -259,9 +278,9 @@ nav {
 .btn-qty {
     width: 34px; height: 34px;
     border-radius: 50%;
-    border: 2px solid var(--primary);
+    border: 2px solid var(--qty-btn-border);
     background: white;
-    color: var(--primary);
+    color: var(--qty-btn-border);
     font-weight: 800;
     cursor: pointer;
     display: flex;
@@ -269,7 +288,7 @@ nav {
     justify-content: center;
     transition: 0.2s;
 }
-.btn-qty:hover { background: var(--primary); color: white; }
+.btn-qty:hover { background: var(--qty-btn-bg-hover); color: white; }
 .btn-qty:active { transform: scale(0.9); }
 
 .obs-box {
@@ -283,8 +302,7 @@ nav {
     font-size: 0.9rem;
 }
 
-/* Modal de Horários */
-.horario-link { color: var(--primary); text-decoration: underline; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+.horario-link { color: var(--link-horario-color); text-decoration: underline; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
 .modal-horarios-content { width: 90%; max-width: 400px; border-radius: 15px; padding: 25px; text-align: left; }
 .lista-horarios { list-style: none; padding: 0; margin-top: 15px; }
 .item-horario { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
@@ -308,11 +326,11 @@ input, select, textarea {
     transition: 0.2s;
     color: var(--dark);
 }
-input:focus, select:focus { border-color: var(--primary); outline: none; background: white; }
+input:focus, select:focus { border-color: var(--input-focus-color); outline: none; background: white; }
 
 .btn-confirm {
     width: 100%;
-    background: var(--primary);
+    background: var(--btn-confirm-bg);
     color: white;
     border: none;
     padding: 18px;
@@ -322,7 +340,11 @@ input:focus, select:focus { border-color: var(--primary); outline: none; backgro
     cursor: pointer;
     transition: 0.3s;
 }
-.btn-confirm:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 56, 92, 0.3); }
+.btn-confirm:hover:not(:disabled) { 
+    background: var(--btn-confirm-hover); 
+    transform: translateY(-2px); 
+    box-shadow: 0 5px 15px rgba(255, 56, 92, 0.3); 
+}
 .btn-disabled { background: #ccc !important; cursor: not-allowed !important; opacity: 0.6; }
 
 .btn-close {
@@ -355,7 +377,7 @@ input:focus, select:focus { border-color: var(--primary); outline: none; backgro
 .social-footer { margin-top: 50px; padding: 40px 20px; background: #fdfdfd; border-top: 1px solid #eee; text-align: center; }
 .social-buttons { display: flex; justify-content: center; gap: 25px; margin-bottom: 20px; }
 .social-icon { color: #888; font-size: 1.8rem; transition: 0.3s; text-decoration: none; }
-.social-icon:hover { color: var(--primary); transform: translateY(-3px); }
+.social-icon:hover { color: var(--social-icon-hover); transform: translateY(-3px); }
 
 .status-badge { display: inline-block; padding: 6px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
 .status-aberto { background: #e7f9ee; color: #2ecc71; border: 1px solid #2ecc71; }
@@ -372,7 +394,7 @@ input:focus, select:focus { border-color: var(--primary); outline: none; backgro
 .column-header { font-weight: 800; font-size: 0.8rem; color: #666; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1.5px; }
 
 .order-card-admin { background: #222; border-radius: 14px; padding: 18px; margin-bottom: 15px; border-left: 6px solid #444; }
-.in-progress { border-left-color: var(--primary); }
+.in-progress { border-left-color: var(--admin-progress-border); }
 .delivery { border-left-color: var(--success); }
 
 /* =========================================
