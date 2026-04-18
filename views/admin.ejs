@@ -7,16 +7,7 @@
     <title>Admin | Gestão Total</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root { 
-            --primary: #ffca2c; 
-            --dark: #181818; 
-            --bg: #f0f2f5; 
-            --success: #2ecc71; 
-            --danger: #ff4757; 
-            --info: #1e90ff;
-            --bank-card: #252525;
-            --text-muted: #888;
-        }
+        :root { --primary: #ffca2c; --dark: #181818; --bg: #f0f2f5; --success: #2ecc71; --danger: #ff4757; --info: #1e90ff; }
         
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; }
@@ -57,49 +48,106 @@
         .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
 
-        /* --- Interface de Banco (Aba Financeiro) --- */
-        .bank-container { max-width: 1000px; margin: 0 auto; color: #fff; background: #1a1a1a; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .bank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        
-        .balance-card { background: var(--bank-card); padding: 30px; border-radius: 20px; border-left: 5px solid var(--primary); margin-bottom: 25px; }
-        .balance-label { color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; }
-        .balance-value { font-size: 2.5rem; font-weight: 800; margin: 10px 0; color: #fff; }
-        
-        .bank-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
-        .transaction-list { background: var(--bank-card); padding: 20px; border-radius: 20px; }
-        .transaction-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #333; }
-        .transaction-info strong { display: block; color: #fff; }
-        .transaction-info small { color: var(--text-muted); }
-        .transaction-amount { font-weight: bold; color: var(--success); }
+        .banner-operacao {
+            background: var(--dark);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 10px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .btn-abrir-kds {
+            background: var(--primary);
+            color: var(--dark);
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 900;
+            transition: 0.3s;
+            text-align: center;
+            font-size: 0.9rem;
+        }
 
-        .pix-config-box { background: #333; padding: 20px; border-radius: 20px; height: fit-content; }
-        .pix-config-box h3 { margin-top: 0; font-size: 1rem; color: var(--primary); }
-        .bank-input { width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
-        .btn-bank-save { width: 100%; background: var(--primary); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; }
-
-        /* --- Suporte & Outros --- */
-        .banner-operacao { background: var(--dark); color: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-left: 10px solid var(--primary); }
+        /* --- Chat Suporte --- */
         .suporte-container { display: flex; height: 75vh; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .chat-sidebar-list { width: 280px; background: #f8f9fa; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
         .chat-main-area { flex: 1; display: flex; flex-direction: column; background: #fff; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #f0f2f5; }
-        .msg.admin { background: var(--primary); color: #000; align-self: flex-end; }
-        .msg.cliente { background: white; align-self: flex-start; }
         
-        /* Modal e Switches */
+        .chat-selector { flex: 1; overflow-y: auto; padding: 10px; }
+        .chat-item { padding: 12px; color: #444; cursor: pointer; border-radius: 8px; margin-bottom: 8px; font-size: 0.85rem; border: 1px solid #eee; background: white; transition: 0.3s; }
+        .chat-item.active { border-color: var(--primary); background: #fff9e6; font-weight: bold; }
+        
+        .chat-item.has-new { 
+            background: #333 !important; 
+            color: #fff !important; 
+            border-left: 5px solid var(--primary);
+            animation: pulse 1.5s infinite; 
+        }
+
+        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #f0f2f5; }
+        .msg { padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; max-width: 85%; line-height: 1.4; position: relative; }
+        .msg.cliente { background: white; align-self: flex-start; color: #333; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .msg.admin { background: var(--primary); color: #000; align-self: flex-end; font-weight: 500; }
+
+        .chat-input-area { padding: 12px; display: flex; gap: 8px; border-top: 1px solid #ddd; background: white; }
+        .chat-input-area input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 0.9rem; }
+        .chat-input-area button { background: var(--dark); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        /* --- ESTILOS EXCLUSIVOS DO NOVO FINANCEIRO (ESTILO BANCO) --- */
+        .bank-interface { background: #121212; color: white; border-radius: 25px; padding: 25px; min-height: 500px; }
+        .bank-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
+        .bank-balance-label { color: #888; font-size: 0.85rem; }
+        .bank-balance-value { font-size: 2.2rem; font-weight: 800; margin: 5px 0; }
+        .bank-rendimento { color: var(--primary); font-size: 0.8rem; font-weight: bold; }
+        
+        .bank-avatar { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary); overflow: hidden; }
+        .bank-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .bank-actions-grid { display: flex; justify-content: space-between; margin: 25px 0; gap: 10px; }
+        .bank-action-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+        .bank-icon-circle { width: 55px; height: 55px; background: #1e1e1e; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; transition: 0.3s; }
+        .bank-icon-circle:hover { background: #2a2a2a; }
+        .bank-action-label { font-size: 0.75rem; color: #ccc; text-align: center; font-weight: 500; }
+
+        .bank-transactions-section { margin-top: 30px; }
+        .bank-trans-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #222; cursor: pointer; }
+        .bank-trans-info strong { display: block; font-size: 0.9rem; color: #fff; }
+        .bank-trans-info small { color: #666; font-size: 0.75rem; }
+        .bank-trans-amount { font-weight: bold; font-size: 0.95rem; }
+        .bank-trans-amount.positive { color: var(--success); }
+        .bank-trans-amount.negative { color: var(--danger); }
+
+        /* Modais Full Screen */
+        .modal-full { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 9999; padding: 25px; overflow-y: auto; animation: fadeIn 0.3s; }
+        .modal-full-header { display: flex; align-items: center; margin-bottom: 30px; }
+        .btn-close-modal { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; margin-right: 15px; }
+        .bank-input-group { margin-bottom: 20px; }
+        .bank-input-group label { display: block; color: #888; font-size: 0.8rem; margin-bottom: 8px; }
+        .bank-input-field { width: 100%; background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 12px; color: #fff; outline: none; }
+        .btn-bank-confirm { width: 100%; background: var(--primary); color: #000; border: none; padding: 18px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-top: 10px; }
+
+        /* Switch Toggle */
         .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .switch input { opacity: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(26px); }
 
+        .config-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+        .modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border-radius: 15px; width: 90%; max-width: 500px; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         @media (max-width: 768px) {
-            .bank-grid { grid-template-columns: 1fr; }
-            .suporte-container { flex-direction: column; }
-            .chat-sidebar-list { width: 100%; height: 150px; }
+            .suporte-container { flex-direction: column; height: 80vh; }
+            .chat-sidebar-list { width: 100%; height: 180px; }
         }
     </style>
 </head>
@@ -109,123 +157,129 @@
         <div class="admin-main">
             <nav class="admin-nav" style="background:#fff; padding:15px 25px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd;">
                 <div class="logo" style="color:var(--dark); font-weight:800; font-size: 1.2rem;">ADMIN<span style="color:var(--primary)">PANEL</span></div>
-                <button onclick="location.reload()" style="padding: 6px 12px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: white; font-weight: bold;">🔄 Atualizar</button>
+                <button onclick="location.reload()" style="padding: 6px 12px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: white; font-weight: bold; font-size: 0.8rem;">🔄 Atualizar</button>
             </nav>
 
             <div class="tab-container">
-                <button class="tab-btn active" onclick="openTab(event, 'aba-suporte')">💬 Suporte</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">📋 Pedidos</button>
+                <button class="tab-btn active" onclick="openTab(event, 'aba-suporte')">💬 Suporte Cliente</button>
+                <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">📋 Gestão de Pedidos</button>
                 <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">🍔 Cardápio</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Banco & Pix</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">⚙️ Config</button>
-            </div>
-
-            <div id="aba-financeiro" class="tab-content">
-                <div class="bank-container">
-                    <div class="bank-header">
-                        <div>
-                            <h2 style="margin:0">Meu Banco</h2>
-                            <small style="color:var(--text-muted)">Gestão financeira do seu delivery</small>
-                        </div>
-                        <div style="text-align: right">
-                            <span style="display:block; font-size:0.8rem; color:var(--primary)">STATUS DA CONTA</span>
-                            <strong>OPERACIONAL</strong>
-                        </div>
-                    </div>
-
-                    <% 
-                        let totalMesAcumulado = config.vendasMes || 0;
-                        let ultimosPedidos = pedidos.filter(p => p.status === 'Concluído').slice(-5).reverse();
-                    %>
-
-                    <div class="balance-card">
-                        <div class="balance-label">Saldo Acumulado (Mês)</div>
-                        <div class="balance-value">R$ <%= totalMesAcumulado.toFixed(2) %></div>
-                        <div style="font-size: 0.8rem; color: var(--success)">● Recebimentos processados via PIX/Cartão</div>
-                    </div>
-
-                    <div class="bank-grid">
-                        <div class="transaction-list">
-                            <h3 style="font-size: 1rem; margin-bottom: 20px;">Extrato Recente</h3>
-                            <% if(ultimosPedidos.length > 0) { %>
-                                <% ultimosPedidos.forEach(p => { %>
-                                    <div class="transaction-item">
-                                        <div class="transaction-info">
-                                            <strong>Pedido #<%= p.id %></strong>
-                                            <small><%= p.cliente %></small>
-                                        </div>
-                                        <div class="transaction-amount">+ R$ <%= p.total.toFixed(2) %></div>
-                                    </div>
-                                <% }) %>
-                            <% } else { %>
-                                <p style="color: #666; text-align: center; padding: 20px;">Nenhuma transação recente.</p>
-                            <% } %>
-                        </div>
-
-                        <div class="pix-config-box">
-                            <h3>Configuração de Recebimento</h3>
-                            <form id="form-config-pix">
-                                <label style="font-size: 0.7rem; color: #999;">PROVEDOR</label>
-                                <select id="conf-pixProvedor" class="bank-input">
-                                    <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
-                                    <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
-                                </select>
-
-                                <label style="font-size: 0.7rem; color: #999;">ACCESS TOKEN</label>
-                                <input type="password" id="conf-pixToken" class="bank-input" value="<%= config.pixToken || '' %>" placeholder="Chave Privada">
-                                
-                                <button type="button" onclick="salvarConfigPix()" class="btn-bank-save">ATUALIZAR CHAVES</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+                <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Financeiro & Pix</button>
+                <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">⚙️ Configuração</button>
             </div>
 
             <div id="aba-suporte" class="tab-content active">
                 <div class="suporte-container">
                     <div class="chat-sidebar-list">
-                        <div style="padding:12px; font-weight:bold; background:#eee; font-size:0.75rem;">PEDIDOS ATIVOS</div>
+                        <div style="padding:12px; font-weight:bold; background:#eee; font-size:0.75rem; color:#666; letter-spacing: 1px;">PEDIDOS EM ABERTO</div>
                         <div class="chat-selector" id="lista-pedidos-chat">
                             <% let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
                                ativosNoChat.forEach(p => { %>
-                                 <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer;">
-                                    <strong>#<%= p.id %></strong> - <small><%= p.cliente %></small>
+                                 <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
+                                    <strong>#<%= p.id %></strong><br><small><%= p.cliente %></small>
                                  </div>
                             <% }) %>
                         </div>
                     </div>
                     <div class="chat-main-area">
-                        <div class="chat-messages" id="chat-box"></div>
-                        <div class="chat-input-area" style="padding:10px; display:flex; gap:5px;">
-                            <input type="text" id="admin-msg" style="flex:1; padding:8px;" placeholder="Mensagem...">
-                            <button onclick="enviarParaCliente()" style="background:var(--dark); color:#fff; border:none; padding:10px;">Enviar</button>
+                        <div class="chat-messages" id="chat-box">
+                            <div style="text-align:center; color:#999; margin-top:50px; padding: 20px;">
+                                <h3>Central de Suporte</h3>
+                                <p style="font-size: 0.9rem;">Responda seus clientes em tempo real.</p>
+                            </div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="admin-msg" placeholder="Digite sua mensagem...">
+                            <button onclick="enviarParaCliente()">➤</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="aba-financeiro" class="tab-content">
+                <% 
+                    const dataAtual = new Date();
+                    const hojeStr = dataAtual.toLocaleDateString('pt-BR');
+                    let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hojeStr);
+                    let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
+                %>
+                
+                <div class="bank-interface">
+                    <div class="bank-header">
+                        <div>
+                            <span class="bank-balance-label">Saldo disponível</span>
+                            <div class="bank-balance-value">R$ <%= totalDia.toFixed(2) %></div>
+                            <div class="bank-rendimento">Rendimento: <span id="bank-clock"></span></div>
+                        </div>
+                        <div class="bank-avatar">
+                            <img src="/foto-admin.png" onerror="this.src='https://ui-avatars.com/api/?name=Admin&background=ffca2c&color=181818'">
+                        </div>
+                    </div>
+
+                    <div class="bank-actions-grid">
+                        <div class="bank-action-item" onclick="abrirModalBank('modal-mes-full')">
+                            <div class="bank-icon-circle">🗓️</div>
+                            <span class="bank-action-label">Mês</span>
+                        </div>
+                        <div class="bank-action-item" onclick="abrirModalBank('modal-reembolso-full')">
+                            <div class="bank-icon-circle">💸</div>
+                            <span class="bank-action-label">Registrar Reembolso</span>
+                        </div>
+                        <div class="bank-action-item" onclick="abrirModalBank('modal-cadastrar-pix-full')">
+                            <div class="bank-icon-circle">🔑</div>
+                            <span class="bank-action-label">Cadastrar Pix</span>
+                        </div>
+                    </div>
+
+                    <div class="bank-transactions-section">
+                        <h3 style="font-size: 1rem; margin-bottom: 15px;">Transações</h3>
+                        <div id="lista-logs-financeiro">
+                            <% 
+                                let logs = pedidos.filter(p => p.status === 'Concluído' || p.reembolsado === true).slice(-8).reverse();
+                                logs.forEach(log => {
+                            %>
+                                <div class="bank-trans-item" onclick="abrirComprovante('<%= log.id %>')">
+                                    <div class="bank-trans-info">
+                                        <strong><%= log.reembolsado ? 'Reembolso Efetuado' : 'Recebimento de Pedido' %></strong>
+                                        <small>#<%= log.id %> - <%= log.cliente %></small>
+                                    </div>
+                                    <div class="bank-trans-amount <%= log.reembolsado ? 'negative' : 'positive' %>">
+                                        <%= log.reembolsado ? '-' : '+' %> R$ <%= log.total.toFixed(2) %>
+                                    </div>
+                                </div>
+                            <% }) %>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div id="aba-configuracao" class="tab-content">
-                <div style="background:#fff; padding:20px; border-radius:12px;">
-                    <h3>Configurações Gerais</h3>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                        <span>Modo Manutenção</span>
+                <div class="config-card" style="background:white; padding:20px; border-radius:12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                    <h3 style="margin-top:0; font-size: 1.1rem;">⚙️ Configurações do Site</h3>
+                    <div class="config-item">
+                        <div><strong>🛠️ Modo Manutenção</strong></div>
                         <label class="switch">
                             <input type="checkbox" id="conf-manutencao" onchange="salvarConfigSite()" <%= config.manutencao ? 'checked' : '' %>>
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <input type="text" id="conf-nomeSite" value="<%= config.nomeSite %>" style="width:100%; padding:10px; margin-bottom:10px;">
-                    <button onclick="salvarConfigSite()" class="btn-bank-save" style="background:var(--dark); color:#fff;">Salvar Site</button>
+                    <div class="config-item" style="display: block; padding-top: 20px;">
+                        <label style="font-size:0.8rem; font-weight:bold; color:#555; display: block; margin-bottom: 8px;">🏷️ Nome do Site</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="conf-nomeSite" value="<%= config.nomeSite || '' %>" style="flex: 1; padding:10px; border-radius:6px; border:1px solid #ddd;">
+                            <button onclick="salvarConfigSite()" style="background:var(--success); color:white; padding:0 15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">SALVAR</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div id="aba-pedidos" class="tab-content">
                 <div class="banner-operacao">
                     <div>
-                        <h2>Painel de Operação</h2>
-                        <p>Acompanhe os pedidos em tempo real.</p>
+                        <h1 style="margin:0; color:var(--primary); font-size: 1.3rem;">Operação</h1>
+                        <p style="margin:5px 0 0 0; opacity:0.9; font-size: 0.85rem;">Gerencie a cozinha.</p>
                     </div>
-                    <a href="/operacao" target="_blank" style="background:var(--primary); color:#000; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold;">ABRIR COMANDAS</a>
+                    <a href="/operacao" target="_blank" class="btn-abrir-kds">ABRIR COMANDAS ➔</a>
                 </div>
             </div>
 
@@ -236,31 +290,109 @@
         </div>
     </div>
 
+    <div id="modal-mes-full" class="modal-full">
+        <div class="modal-full-header">
+            <button class="btn-close-modal" onclick="fecharModalBank('modal-mes-full')">✕</button>
+            <h2 style="margin:0">Rendimento do Mês</h2>
+        </div>
+        <div style="background:#1e1e1e; padding:30px; border-radius:20px; text-align:center;">
+            <span style="color:#888;">Faturamento Acumulado</span>
+            <h1 style="font-size: 2.8rem; margin: 15px 0;">R$ <%= config.vendasMes ? config.vendasMes.toFixed(2) : '0.00' %></h1>
+            <div style="display:flex; justify-content:center; gap:20px; margin-top:20px; border-top:1px solid #333; padding-top:20px;">
+                <div>
+                    <small style="display:block; color:#888;">Entregas Concluídas</small>
+                    <strong style="font-size:1.2rem; color:var(--primary);"><%= config.entregasMes || 0 %></strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-reembolso-full" class="modal-full">
+        <div class="modal-full-header">
+            <button class="btn-close-modal" onclick="fecharModalBank('modal-reembolso-full')">✕</button>
+            <h2 style="margin:0">Registrar Reembolso</h2>
+        </div>
+        <div class="bank-input-group">
+            <label>NÚMERO DO PEDIDO</label>
+            <input type="text" id="reembolso-id" class="bank-input-field" placeholder="Ex: 1050">
+        </div>
+        <div class="bank-input-group">
+            <label>VALOR DO REEMBOLSO</label>
+            <input type="number" id="reembolso-valor" class="bank-input-field" placeholder="0.00">
+        </div>
+        <button class="btn-bank-confirm" onclick="processarReembolso()">REGISTRAR REEMBOLSO</button>
+        
+        <button class="btn-bank-confirm" style="background:none; border:1px solid #333; color:#fff; margin-top:20px;" onclick="document.getElementById('lista-reembolsos-area').style.display='block'">VER REGISTROS DE REEMBOLSO</button>
+        
+        <div id="lista-reembolsos-area" style="display:none; margin-top:30px;">
+            <h3 style="font-size:0.9rem; color:#888;">HISTÓRICO DE REEMBOLSOS</h3>
+            <div id="lista-reembolsos-content">
+                </div>
+        </div>
+    </div>
+
+    <div id="modal-cadastrar-pix-full" class="modal-full">
+        <div class="modal-full-header">
+            <button class="btn-close-modal" onclick="fecharModalBank('modal-cadastrar-pix-full')">✕</button>
+            <h2 style="margin:0">Cadastrar Pix (API)</h2>
+        </div>
+        <div class="bank-input-group">
+            <label>PROVEDOR</label>
+            <select id="conf-pixProvedor" class="bank-input-field">
+                <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
+                <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
+            </select>
+        </div>
+        <div class="bank-input-group">
+            <label>ACCESS TOKEN / CLIENT SECRET</label>
+            <input type="password" id="conf-pixToken" class="bank-input-field" value="<%= config.pixToken || '' %>">
+        </div>
+        <button class="btn-bank-confirm" onclick="salvarConfigPix()">SALVAR CREDENCIAIS</button>
+    </div>
+
     <script>
         const socket = io();
         let pedidoAtivoId = null;
 
-        function openTab(evt, tabName) {
-            const contents = document.getElementsByClassName("tab-content");
-            for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
-            const btns = document.getElementsByClassName("tab-btn");
-            for (let i = 0; i < btns.length; i++) btns[i].classList.remove("active");
-            document.getElementById(tabName).classList.add("active");
-            if(evt) evt.currentTarget.classList.add("active");
+        // --- LÓGICA DO RELÓGIO EM TEMPO REAL ---
+        function updateBankClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
+            const el = document.getElementById('bank-clock');
+            if(el) el.innerText = timeStr;
         }
+        setInterval(updateBankClock, 1000);
+        updateBankClock();
 
-        async function salvarConfigPix() {
-            const dados = {
-                pixProvedor: document.getElementById('conf-pixProvedor').value,
-                pixToken: document.getElementById('conf-pixToken').value
-            };
-            const res = await fetch('/update-config-pix', {
+        // --- LÓGICA DE MODAIS DO BANCO ---
+        function abrirModalBank(id) { document.getElementById(id).style.display = 'block'; }
+        function fecharModalBank(id) { document.getElementById(id).style.display = 'none'; }
+
+        async function processarReembolso() {
+            const id = document.getElementById('reembolso-id').value;
+            const valor = document.getElementById('reembolso-valor').value;
+            if(!id || !valor) return alert("Preencha todos os campos!");
+            
+            const res = await fetch('/registrar-reembolso', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
+                body: JSON.stringify({ pedidoId: id, valor: valor })
             });
-            if (res.ok) alert("✅ Banco atualizado!");
+            
+            if(res.ok) {
+                alert("✅ Reembolso registrado com sucesso!");
+                location.reload();
+            } else {
+                alert("❌ Erro: Pedido não encontrado ou valor inválido.");
+            }
         }
+
+        // --- SCRIPTS ORIGINAIS MANTIDOS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if(typeof renderizarPainelCategorias === "function") {
+                renderizarPainelCategorias('container-gerenciador-produtos');
+            }
+        });
 
         async function salvarConfigSite() {
             const dados = {
@@ -274,9 +406,52 @@
             });
         }
 
+        async function salvarConfigPix() {
+            const dados = {
+                pixProvedor: document.getElementById('conf-pixProvedor').value,
+                pixToken: document.getElementById('conf-pixToken').value
+            };
+            const res = await fetch('/update-config-pix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (res.ok) alert("✅ Chaves de pagamento atualizadas!");
+        }
+
+        function openTab(evt, tabName) {
+            const contents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
+            const btns = document.getElementsByClassName("tab-btn");
+            for (let i = 0; i < btns.length; i++) btns[i].classList.remove("active");
+            document.getElementById(tabName).classList.add("active");
+            if(evt) evt.currentTarget.classList.add("active");
+        }
+
         function selecionarChat(id, cliente) {
             pedidoAtivoId = id;
+            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
+            const target = document.getElementById(`chat-item-${id}`);
+            if(target) target.classList.add('active');
             socket.emit('join', id);
+        }
+
+        socket.on('novaMensagem', (msg) => {
+            if (msg.pedidoId === pedidoAtivoId) {
+                renderizarMensagem(msg);
+            } else {
+                const item = document.getElementById(`chat-item-${msg.pedidoId}`);
+                if(item) item.classList.add('has-new');
+            }
+        });
+
+        function renderizarMensagem(msg) {
+            const div = document.createElement('div');
+            div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
+            div.innerHTML = `<span>${msg.texto}</span>`;
+            const box = document.getElementById('chat-box');
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
         }
 
         function enviarParaCliente() {
@@ -285,15 +460,6 @@
             socket.emit('enviarMensagem', { usuario: 'Admin', texto: input.value, pedidoId: pedidoAtivoId });
             input.value = '';
         }
-
-        socket.on('novaMensagem', (msg) => {
-            if (msg.pedidoId === pedidoAtivoId) {
-                const box = document.getElementById('chat-box');
-                const div = document.createElement('div');
-                div.innerHTML = `<b>${msg.usuario}:</b> ${msg.texto}`;
-                box.appendChild(div);
-            }
-        });
     </script>
     <script src="/js/gerenciar-produtos.js"></script>
 </body>
