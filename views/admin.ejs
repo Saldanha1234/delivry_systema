@@ -16,6 +16,21 @@
             --danger: #ff4757; 
             --info: #3498db;
             --white: #ffffff;
+            --text-main: #333333;
+            --border-color: #e0e0e0;
+            --chat-bg: #f0f2f5;
+            --sidebar-bg: #fcfcfc;
+        }
+
+        /* CONFIGURAÇÃO MODO ESCURO */
+        body.dark-mode {
+            --bg: #121212;
+            --white: #1e1e1e;
+            --text-main: #f0f0f0;
+            --border-color: #333333;
+            --chat-bg: #181818;
+            --sidebar-bg: #1a1a1a;
+            --dark: #ffffff; /* Ajuste para contraste em modo dark */
         }
         
         * { box-sizing: border-box; }
@@ -24,7 +39,8 @@
             padding: 0; 
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             background: var(--bg); 
-            color: #333;
+            color: var(--text-main);
+            transition: background 0.3s, color 0.3s;
         }
 
         .admin-layout { display: flex; flex-direction: column; height: 100vh; }
@@ -37,14 +53,14 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid var(--border-color);
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
 
         .tab-container { 
             display: flex; 
             background: var(--white); 
-            border-bottom: 1px solid #ddd; 
+            border-bottom: 1px solid var(--border-color); 
             padding: 0 15px; 
             gap: 10px; 
             overflow-x: auto; 
@@ -77,10 +93,10 @@
             border-radius: 10px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
             margin-bottom: 20px;
-            border: 1px solid #eee;
+            border: 1px solid var(--border-color);
         }
 
-        /* --- Financeiro (Arrumado) --- */
+        /* --- Financeiro --- */
         .finance-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
@@ -102,7 +118,7 @@
 
         /* --- Banner Operação --- */
         .banner-operacao {
-            background: var(--dark);
+            background: #181818; /* Mantido fixo escuro para destaque */
             color: white;
             padding: 30px;
             border-radius: 12px;
@@ -114,7 +130,7 @@
         }
         .btn-abrir-kds {
             background: var(--primary);
-            color: var(--dark);
+            color: #181818;
             padding: 14px 25px;
             border-radius: 8px;
             text-decoration: none;
@@ -122,30 +138,46 @@
             font-size: 0.9rem;
             transition: 0.2s;
         }
-        .btn-abrir-kds:hover { opacity: 0.9; transform: scale(1.02); }
 
         /* --- Suporte / Chat --- */
-        .suporte-container { display: flex; height: 70vh; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #ddd; }
-        .chat-sidebar-list { width: 300px; background: #fcfcfc; border-right: 1px solid #eee; display: flex; flex-direction: column; }
+        .suporte-container { display: flex; height: 70vh; background: var(--white); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); }
+        .chat-sidebar-list { width: 300px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
         .chat-selector { flex: 1; overflow-y: auto; padding: 10px; }
-        .chat-item { padding: 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s; }
-        .chat-item.active { background: #fff9e6; border-color: var(--primary); }
-        .chat-item.has-new { border-left: 5px solid var(--danger); animation: pulse 1.5s infinite; }
+        .chat-item { padding: 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
+        .chat-item.active { background: rgba(255, 202, 44, 0.1); border-color: var(--primary); }
         
         .chat-main-area { flex: 1; display: flex; flex-direction: column; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; background: #f0f2f5; display: flex; flex-direction: column; gap: 10px; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; background: var(--chat-bg); display: flex; flex-direction: column; gap: 10px; }
         .msg { padding: 12px 16px; border-radius: 12px; font-size: 0.9rem; max-width: 80%; line-height: 1.4; }
-        .msg.cliente { background: white; align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .msg.admin { background: var(--primary); align-self: flex-end; font-weight: 600; }
+        .msg.cliente { background: var(--white); align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: var(--text-main); }
+        .msg.admin { background: var(--primary); align-self: flex-end; font-weight: 600; color: #181818; }
 
-        .chat-input-area { padding: 15px; display: flex; gap: 10px; border-top: 1px solid #eee; }
-        .chat-input-area input { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
-        .chat-input-area button { background: var(--dark); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; }
+        .chat-input-area { padding: 15px; display: flex; gap: 10px; border-top: 1px solid var(--border-color); }
+        .chat-input-area input { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--white); color: var(--text-main); outline: none; }
+        .chat-input-area button { background: #181818; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; }
+
+        /* Botão Tema */
+        .btn-theme { 
+            padding: 8px 15px; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            border: 1px solid var(--border-color); 
+            background: var(--white); 
+            color: var(--text-main); 
+            font-weight: bold;
+            margin-right: 10px;
+        }
 
         /* --- Config e Modais --- */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
-        .modal-content { background: #fff; margin: 5% auto; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; }
+        .modal-content { background: var(--white); margin: 5% auto; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; color: var(--text-main); }
         
+        input[type="text"], input[type="password"], input[type="time"], select {
+            background: var(--bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
         .switch { position: relative; display: inline-block; width: 46px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 20px; }
@@ -153,15 +185,7 @@
         input:checked + .slider { background: var(--success); }
         input:checked + .slider:before { transform: translateX(24px); }
 
-        .dia-config { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #f5f5f5; }
-        .horarios-inputs { display: flex; gap: 8px; }
-        .horarios-inputs input { padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @media (max-width: 768px) {
-            .suporte-container { flex-direction: column; height: 80vh; }
-            .chat-sidebar-list { width: 100%; height: 150px; }
-        }
     </style>
 </head>
 <body>
@@ -170,7 +194,10 @@
         <div class="admin-main">
             <nav class="admin-nav">
                 <div class="logo" style="font-weight:900; font-size: 1.3rem;">ADMIN<span style="color:var(--primary)">PANEL</span></div>
-                <button onclick="location.reload()" style="padding: 8px 15px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: #fff; font-weight: bold;">🔄 Sincronizar</button>
+                <div>
+                    <button id="theme-toggle" class="btn-theme" onclick="toggleTheme()">🌙 Modo Noturno</button>
+                    <button onclick="location.reload()" style="padding: 8px 15px; cursor: pointer; border-radius: 6px; border: 1px solid var(--border-color); background: var(--white); color: var(--text-main); font-weight: bold;">🔄 Sincronizar</button>
+                </div>
             </nav>
 
             <div class="tab-container">
@@ -184,7 +211,7 @@
             <div id="aba-suporte" class="tab-content active">
                 <div class="suporte-container">
                     <div class="chat-sidebar-list">
-                        <div style="padding:15px; font-weight:bold; background:#f0f0f0; font-size:0.7rem; letter-spacing:1px;">CHATS ATIVOS</div>
+                        <div style="padding:15px; font-weight:bold; background:var(--border-color); font-size:0.7rem; letter-spacing:1px;">CHATS ATIVOS</div>
                         <div class="chat-selector" id="lista-pedidos-chat">
                             <% let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
                                ativosNoChat.forEach(p => { %>
@@ -245,7 +272,7 @@
                         <div class="value"><%= entregasDia %></div>
                         <span class="date-label">Hoje</span>
                     </div>
-                    <div class="stat-card" style="border-left-color: var(--dark);">
+                    <div class="stat-card" style="border-left-color: #555;">
                         <h4>📊 Acumulado (<%= nomeMeses[dataAtual.getMonth()] %>)</h4>
                         <div class="value">R$ <%= (config.vendasMes || 0).toFixed(2) %></div>
                         <span class="date-label">Total do mês</span>
@@ -257,16 +284,16 @@
                     <form id="form-config-pix" style="display:grid; gap:15px; max-width: 500px;">
                         <div>
                             <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:5px;">Provedor</label>
-                            <select id="conf-pixProvedor" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ddd;">
+                            <select id="conf-pixProvedor" style="width:100%; padding:10px; border-radius:6px;">
                                 <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
                                 <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
                             </select>
                         </div>
                         <div>
                             <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:5px;">Chave de API / Token</label>
-                            <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ddd;">
+                            <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" style="width:100%; padding:10px; border-radius:6px;">
                         </div>
-                        <button type="button" onclick="salvarConfigPix()" style="background:var(--dark); color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ATUALIZAR CREDENCIAIS</button>
+                        <button type="button" onclick="salvarConfigPix()" style="background:#181818; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ATUALIZAR CREDENCIAIS</button>
                     </form>
                 </div>
             </div>
@@ -275,7 +302,7 @@
                 <div class="card-box">
                     <h3 style="margin-top:0;">⚙️ Configurações Gerais</h3>
                     
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #eee;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid var(--border-color);">
                         <div>
                             <strong>Modo Manutenção (Forçar Fechado)</strong><br>
                             <small style="color:#888;">Desativa o checkout imediatamente.</small>
@@ -286,7 +313,7 @@
                         </label>
                     </div>
 
-                    <div style="padding:15px 0; border-bottom:1px solid #eee;">
+                    <div style="padding:15px 0; border-bottom:1px solid var(--border-color);">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                             <strong>Limitar por Cidade</strong>
                             <label class="switch">
@@ -295,8 +322,8 @@
                             </label>
                         </div>
                         <div id="container-campos-cidade" style="display: <%= config.cidadeAtiva ? 'grid' : 'none' %>; grid-template-columns: 1fr 80px; gap:10px;">
-                            <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" style="padding:8px; border:1px solid #ddd;">
-                            <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" style="padding:8px; border:1px solid #ddd;">
+                            <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" style="padding:8px;">
+                            <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" style="padding:8px;">
                         </div>
                     </div>
 
@@ -317,9 +344,9 @@
                         <% const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
                            diasSemana.forEach((dia, i) => { 
                            const agendaDia = (config.agenda && config.agenda[i]) || { aberto: false, inicio: '18:00', fim: '23:00' }; %>
-                            <div class="dia-config">
+                            <div class="dia-config" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
                                 <span style="font-weight: bold; width: 80px;"><%= dia %></span>
-                                <div class="horarios-inputs" id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>;">
+                                <div class="horarios-inputs" id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>; gap: 5px;">
                                     <input type="time" class="input-inicio" value="<%= agendaDia.inicio %>">
                                     <input type="time" class="input-fim" value="<%= agendaDia.fim %>">
                                 </div>
@@ -340,6 +367,27 @@
     <script>
         const socket = io();
         let pedidoAtivoId = null;
+
+        // MODO NOTURNO
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('theme-toggle');
+            body.classList.toggle('dark-mode');
+            
+            if(body.classList.contains('dark-mode')) {
+                btn.innerText = "☀️ Modo Claro";
+                localStorage.setItem('admin-theme', 'dark');
+            } else {
+                btn.innerText = "🌙 Modo Noturno";
+                localStorage.setItem('admin-theme', 'light');
+            }
+        }
+
+        // CARREGAR TEMA SALVO
+        if(localStorage.getItem('admin-theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('theme-toggle').innerText = "☀️ Modo Claro";
+        }
 
         // INICIALIZAÇÃO
         document.addEventListener('DOMContentLoaded', () => {
@@ -367,7 +415,8 @@
         }
         function toggleCamposCidade() {
             const isChecked = document.getElementById('conf-cidadeAtiva').checked;
-            document.getElementById('container-campos-cidade').style.display = isChecked ? 'grid' : 'none';
+            const container = document.getElementById('container-campos-cidade');
+            if(container) container.style.display = isChecked ? 'grid' : 'none';
         }
 
         // SALVAMENTOS (FETCH)
