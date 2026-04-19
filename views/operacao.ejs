@@ -31,7 +31,6 @@
             min-height: 100vh;
         }
 
-        /* TOP BAR FIXA */
         .top-bar {
             height: 60px;
             padding: 0 15px;
@@ -51,7 +50,6 @@
             font-size: 0.9rem;
         }
 
-        /* BARRA DE PESQUISA */
         .search-container {
             padding: 12px 15px;
             background: var(--bg-deep);
@@ -70,7 +68,6 @@
 
         .search-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 10px var(--accent-glow); }
 
-        /* NAVEGAÇÃO MOBILE (ABAS) */
         .status-nav {
             display: flex;
             background: var(--bg-surface);
@@ -108,10 +105,8 @@
         }
 
         .nav-item.active .count { background: var(--accent-primary); color: white; }
-
         .nav-item .label { font-size: 10px; font-weight: 800; text-transform: uppercase; }
 
-        /* CONTAINER PRINCIPAL */
         .container {
             padding: 15px;
             width: 100%;
@@ -129,7 +124,6 @@
 
         .tab-content.active { display: flex; }
 
-        /* CARDS DO PEDIDO */
         .order-card {
             background: var(--bg-card);
             border-radius: 16px;
@@ -172,7 +166,6 @@
             text-transform: uppercase;
         }
 
-        /* BOTÕES */
         .card-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -195,12 +188,10 @@
         }
 
         .btn-full { grid-column: span 2; }
-
         .btn-primary { background: var(--accent-primary); color: white; }
         .btn-dark { background: #2a2a35; color: white; border: 1px solid var(--border-color); }
         .btn-cancel { background: transparent; color: var(--status-alert); border: 1px solid rgba(255, 75, 75, 0.2); }
 
-        /* MODAL */
         #modalDetalhes {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -222,13 +213,8 @@
             border: 1px solid var(--border-color);
         }
 
-        /* DESKTOP VIEW */
         @media (min-width: 1024px) {
-            .container {
-                flex-direction: row;
-                align-items: flex-start;
-                justify-content: center;
-            }
+            .container { flex-direction: row; align-items: flex-start; justify-content: center; }
             .status-nav { display: none; }
             .tab-content {
                 display: flex !important;
@@ -236,7 +222,7 @@
                 padding: 15px;
                 border-radius: 15px;
                 min-height: 80vh;
-                width: 24%; /* 4 colunas */
+                width: 24%;
             }
             .desktop-label {
                 display: block;
@@ -248,9 +234,7 @@
                 letter-spacing: 1px;
             }
         }
-        @media (max-width: 1023px) {
-            .desktop-label { display: none; }
-        }
+        @media (max-width: 1023px) { .desktop-label { display: none; } }
     </style>
 </head>
 <body>
@@ -279,7 +263,7 @@
             <span class="label">Prontos</span>
         </div>
         <div class="nav-item" onclick="showTab('encerrados', 3)">
-            <span class="count"><%= pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Finalizado').length %></span>
+            <span class="count"><%= pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Concluído').length %></span>
             <span class="label">Sairam</span>
         </div>
     </nav>
@@ -300,7 +284,7 @@
                     <div class="card-actions">
                         <button class="btn btn-primary btn-full" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">ACEITAR PEDIDO</button>
                         <button class="btn btn-dark" onclick="abrirDetalhes('<%= p.id %>')">DETALHES</button>
-                        <button class="btn btn-cancel" onclick="cancelarPedido('<%= p.id %>')">RECUSAR</button>
+                        <button class="btn btn-cancel" onclick="atualizarStatus('<%= p.id %>', 'Cancelado')">RECUSAR</button>
                     </div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
@@ -340,13 +324,13 @@
 
         <div id="encerrados" class="tab-content">
             <div class="desktop-label">ENCERRADOS</div>
-            <% pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Finalizado').forEach(p => { %>
+            <% pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Concluído').forEach(p => { %>
                 <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" style="opacity: 0.7">
                     <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
                     <span class="client-name"><%= p.cliente %></span>
                     <div class="status-badge"><%= p.status %></div>
                     <% if(p.status === 'Saiu para Entrega') { %>
-                        <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="atualizarStatus('<%= p.id %>', 'Finalizado')">CONCLUIR</button>
+                        <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="atualizarStatus('<%= p.id %>', 'Concluído')">FINALIZAR E ENCERRAR</button>
                     <% } %>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
@@ -367,23 +351,19 @@
     <script>
         const socket = io();
 
-        // RELÓGIO
         setInterval(() => {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString('pt-BR');
         }, 1000);
 
-        // ABAS MOBILE
         function showTab(tabId, index) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            
             document.getElementById(tabId).classList.add('active');
             document.querySelectorAll('.nav-item')[index].classList.add('active');
-            window.scrollTo(0, 0); // Volta ao topo ao trocar aba
+            window.scrollTo(0, 0);
         }
 
-        // BUSCA FILTRADA
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             document.querySelectorAll('.search-item').forEach(card => {
@@ -392,22 +372,19 @@
             });
         });
 
-        // LÓGICA DE ROTAS (NÃO ALTERADA)
         async function atualizarStatus(id, novoStatus) {
+            // Se o status for 'Finalizado', enviamos 'Concluído' para o servidor
+            // Isso garante que o status.ejs do cliente limpe o localStorage corretamente.
+            const statusSync = (novoStatus === 'Finalizado') ? 'Concluído' : novoStatus;
+
             try {
                 const res = await fetch('/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, novoStatus })
+                    body: JSON.stringify({ id, novoStatus: statusSync })
                 });
                 if (res.ok) window.location.reload();
             } catch (err) { console.error(err); }
-        }
-
-        function cancelarPedido(id) {
-            if (confirm("Deseja CANCELAR este pedido?")) {
-                atualizarStatus(id, 'Cancelado');
-            }
         }
 
         function abrirDetalhes(id) {
@@ -419,7 +396,6 @@
         }
         function fecharModal() { document.getElementById('modalDetalhes').style.display = "none"; }
 
-        // SOCKET.IO
         socket.on('novoPedido', () => { 
             const audio = document.getElementById('audioNotificacao');
             if(audio) audio.play().catch(e => console.log("Audio block"));
