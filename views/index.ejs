@@ -18,6 +18,23 @@
         .flex-70 { flex: 0 0 65% !important; }
         .flex-30 { flex: 0 0 32% !important; }
         .loading-cep { font-size: 0.7rem; color: var(--primary); display: none; }
+        
+        /* Estilo para animação da etiqueta de desconto */
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .etiqueta-promo {
+            color: #ff0000;
+            font-size: 0.75rem;
+            font-weight: 800;
+            animation: blink 1.5s infinite;
+            margin-left: 10px;
+        }
+        .btn-qty-plus { background: #27ae60 !important; color: white !important; border: none; border-radius: 5px; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
+        .btn-qty-minus { background: #e74c3c !important; color: white !important; border: none; border-radius: 5px; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
+        .item-indisponivel { opacity: 0.5; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -231,7 +248,6 @@
     let carrinho = [];
     let produtoAtual = null;
     
-    // IMPORTANTE: Carregamos a nova estrutura enviada pelo servidor
     let configLocal = <%- JSON.stringify(estruturaAdicionais) %>;
     
     const settingsEmpresa = {
@@ -291,7 +307,6 @@
     }
 
     function abrirModalMontagem(nome, preco, desc, img, temModificadores) {
-        // Resetar quantidades antes de abrir
         if(configLocal && configLocal.categorias) {
             configLocal.categorias.forEach(cat => {
                 cat.opcoes.forEach(opt => opt.qtd = 0);
@@ -322,19 +337,29 @@
         if(!configLocal || !configLocal.categorias) return;
 
         configLocal.categorias.forEach(cat => {
+            const temDescontoNaCat = cat.opcoes.some(opt => opt.desconto && Number(opt.desconto) < Number(opt.preco));
             let htmlOpcoes = "";
+
             cat.opcoes.forEach(opt => {
                 if (filtro === "" || opt.nome.toLowerCase().includes(filtro.toLowerCase())) {
+                    const isIndisponivel = opt.status === 'indisponivel';
+                    const temPromo = opt.desconto && Number(opt.desconto) < Number(opt.preco);
+                    const precoExibir = temPromo ? Number(opt.desconto) : Number(opt.preco);
+
                     htmlOpcoes += `
-                        <div class="item-add">
+                        <div class="item-add ${isIndisponivel ? 'item-indisponivel' : ''}">
                             <div>
                                 <div style="font-weight: 500;">${opt.nome}</div>
-                                <div style="font-size:0.75rem; color:var(--primary);">${opt.preco > 0 ? '+ R$ '+opt.preco.toFixed(2) : 'Incluso'}</div>
+                                <div style="font-size:0.75rem;">
+                                    ${temPromo ? `<span style="text-decoration:line-through; color:#999; margin-right:5px;">R$ ${Number(opt.preco).toFixed(2)}</span>` : ''}
+                                    <span style="color:var(--primary); font-weight:bold;">${precoExibir > 0 ? 'R$ '+precoExibir.toFixed(2) : 'Incluso'}</span>
+                                    ${isIndisponivel ? '<b style="color:red; margin-left:10px;">INDISPONÍVEL</b>' : ''}
+                                </div>
                             </div>
                             <div class="item-controls">
-                                <button class="btn-qty" onclick="alterarQtd('${cat.id}', '${opt.id}', -1)">-</button>
+                                <button class="btn-qty-minus" onclick="alterarQtd('${cat.id}', '${opt.id}', -1)">-</button>
                                 <span id="qtd-${opt.id}" style="font-weight: bold; min-width: 20px; text-align: center;">${opt.qtd || 0}</span>
-                                <button class="btn-qty" onclick="alterarQtd('${cat.id}', '${opt.id}', 1)">+</button>
+                                <button class="btn-qty-plus" onclick="alterarQtd('${cat.id}', '${opt.id}', 1)">+</button>
                             </div>
                         </div>`;
                 }
@@ -343,9 +368,12 @@
             if (htmlOpcoes !== "") {
                 container.innerHTML += `
                     <div class="cat-section">
-                        <div class="cat-header">
-                            <div style="font-weight:bold; color: var(--dark);">${cat.nome} (Máx: ${cat.limite})</div>
-                            <div style="font-size:0.7rem; color:#888;">${cat.descricao || ''}</div>
+                        <div class="cat-header" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-weight:bold; color: var(--dark);">${cat.nome} (Máx: ${cat.limite})</div>
+                                <div style="font-size:0.7rem; color:#888;">${cat.descricao || ''} ${cat.status === 'obrigatorio' ? '<b style="color:red;">*Obrigatório</b>' : ''}</div>
+                            </div>
+                            ${temDescontoNaCat ? '<span class="etiqueta-promo">🏷️ DESCONTO APLICADO</span>' : ''}
                         </div>
                         ${htmlOpcoes}
                     </div>`;
@@ -355,11 +383,7 @@
 
     function alterarQtd(catId, optId, delta) {
         const categoria = configLocal.categorias.find(c => c.id == catId);
-        if(!categoria) return;
-
         const opcao = categoria.opcoes.find(o => o.id == optId);
-        if(!opcao) return;
-
         const totalNaCategoria = categoria.opcoes.reduce((acc, curr) => acc + (curr.qtd || 0), 0);
 
         if (delta > 0 && totalNaCategoria >= categoria.limite) {
@@ -379,7 +403,8 @@
         if (produtoAtual.temModificadores && configLocal && configLocal.categorias) {
             configLocal.categorias.forEach(cat => {
                 cat.opcoes.forEach(opt => { 
-                    extra += (parseFloat(opt.preco) * (opt.qtd || 0)); 
+                    const precoEfetivo = (opt.desconto && Number(opt.desconto) < Number(opt.preco)) ? Number(opt.desconto) : Number(opt.preco);
+                    extra += (precoEfetivo * (opt.qtd || 0)); 
                 });
             });
         }
@@ -394,16 +419,29 @@
     function confirmarMontagem() {
         let selecionados = [];
         let precoFinal = produtoAtual.precoBase || 0;
+        let faltouObrigatorio = false;
+        let nomeFaltante = "";
 
         if (produtoAtual.temModificadores && configLocal && configLocal.categorias) {
             configLocal.categorias.forEach(cat => {
-                cat.opcoes.forEach(opt => {
-                    if(opt.qtd > 0) {
-                        selecionados.push({ nome: opt.nome, qtd: opt.qtd, preco: opt.preco });
-                        precoFinal += (parseFloat(opt.preco) * opt.qtd);
-                    }
+                const selecionadosNaCat = cat.opcoes.filter(o => o.qtd > 0);
+                
+                if(cat.status === 'obrigatorio' && selecionadosNaCat.length === 0) {
+                    faltouObrigatorio = true;
+                    nomeFaltante = cat.nome;
+                }
+
+                selecionadosNaCat.forEach(opt => {
+                    const pFinal = (opt.desconto && Number(opt.desconto) < Number(opt.preco)) ? Number(opt.desconto) : Number(opt.preco);
+                    selecionados.push({ nome: opt.nome, qtd: opt.qtd, preco: pFinal });
+                    precoFinal += (pFinal * opt.qtd);
                 });
             });
+        }
+
+        if(faltouObrigatorio) {
+            alert(`ATENÇÃO: Você precisa escolher pelo menos um item da categoria "${nomeFaltante}"!`);
+            return;
         }
 
         const obs = document.getElementById('m-obs').value;
@@ -533,7 +571,7 @@
                 btnFinalizar.innerText = "Finalizar Pedido";
                 btnFinalizar.classList.remove('btn-disabled');
             } else {
-                alert("Ocorreu um erro ao processar seu pedido.");
+                alert("Erro ao processar pedido.");
                 btnFinalizar.disabled = false;
                 btnFinalizar.innerText = "Finalizar Pedido";
                 btnFinalizar.classList.remove('btn-disabled');
