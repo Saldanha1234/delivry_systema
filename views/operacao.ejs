@@ -21,7 +21,58 @@
             --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* PERSONALIZAÇÃO DOS CARDS (CONFORME IMAGEM) */
+        /* ESTILOS DO SISTEMA DE DEMANDA (CABEÇALHO) */
+        #status-indicator {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: var(--transition-smooth);
+            text-transform: uppercase;
+        }
+        .status-online { color: var(--status-ready); }
+        .status-overload { 
+            color: #fff; 
+            background: var(--status-alert); 
+            animation: pulse-red 1s infinite;
+        }
+        @keyframes pulse-red {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* BOTÃO MODO LENTO FLUTUANTE */
+        .floating-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1500;
+            background: var(--bg-card);
+            padding: 12px 18px;
+            border-radius: 50px;
+            border: 1px solid var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .slow-label { font-size: 11px; font-weight: 800; color: var(--text-main); text-transform: uppercase; }
+        
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--status-alert); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* PERSONALIZAÇÃO DOS CARDS */
         .order-card {
             background: var(--bg-card);
             border-radius: 20px;
@@ -33,15 +84,11 @@
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-
-        /* ANIMAÇÃO AO CLICAR */
         .order-card:active {
             transform: scale(0.96);
             border-color: var(--accent-primary);
             box-shadow: 0 0 20px var(--accent-glow);
         }
-
-        /* ESTILO DE ATRASO DINÂMICO */
         .order-card.delayed {
             border-color: var(--status-alert) !important;
             animation: alertPulse 2s infinite;
@@ -64,36 +111,15 @@
             font-family: 'JetBrains Mono', monospace;
         }
 
-        /* ESTRUTURA INTERNA DO CARD */
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .order-number { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 15px; font-weight: 700; }
         .timer-live { font-family: 'JetBrains Mono', monospace; color: var(--text-main); font-size: 13px; opacity: 0.9; }
-        
-        .client-name { 
-            font-size: 1.2rem; 
-            font-weight: 800; 
-            text-transform: uppercase; 
-            margin-bottom: 4px; 
-            color: var(--text-main); 
-            display: block;
-        }
+        .client-name { font-size: 1.2rem; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; color: var(--text-main); display: block; }
+        .order-info-line { font-size: 13px; color: var(--text-dim); font-weight: 600; }
+        .status-badge { margin-top: 12px; display: inline-block; padding: 4px 12px; border-radius: 8px; font-size: 10px; font-weight: 800; border: 1px solid var(--border-color); background: rgba(255,255,255,0.03); text-transform: uppercase; }
 
-        .order-info-line {
-            font-size: 13px;
-            color: var(--text-dim);
-            font-weight: 600;
-        }
-
-        .status-badge {
-            margin-top: 12px;
-            display: inline-block; padding: 4px 12px; border-radius: 8px;
-            font-size: 10px; font-weight: 800; border: 1px solid var(--border-color);
-            background: rgba(255,255,255,0.03); text-transform: uppercase;
-        }
-
-        /* RESTANTE DO CSS ORIGINAL PRESERVADO */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; }
+        body { background-color: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 100px; }
         .top-bar { height: 60px; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 1100; }
         #clock { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 0.9rem; }
         .search-container { padding: 12px 15px; background: var(--bg-deep); }
@@ -131,7 +157,15 @@
     <div class="top-bar">
         <div style="font-weight:800; letter-spacing: -1px;">Açai<span style="color:var(--accent-primary)">Roxinho</span></div>
         <div id="clock">00:00:00</div>
-        <div style="font-size: 9px; color: var(--status-ready); font-weight: 800;">ON-LINE</div>
+        <div id="status-indicator" class="status-online">ON-LINE</div>
+    </div>
+
+    <div class="floating-control">
+        <span class="slow-label">Modo Lento</span>
+        <label class="switch">
+            <input type="checkbox" id="slowModeInput" onchange="alternarModoLento(this.checked)">
+            <span class="slider"></span>
+        </label>
     </div>
 
     <div class="search-container">
@@ -167,12 +201,7 @@
         <div id="pendentes" class="tab-content active">
             <div class="desktop-label">PENDENTES</div>
             <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                <div class="order-card search-item sla-monitor" 
-                     data-id="<%= p.id %>" 
-                     data-status="Pendente"
-                     data-time="<%= p.createdAt %>"
-                     data-cliente="<%= p.cliente.toLowerCase() %>" 
-                     onclick="abrirDetalhes('<%= p.id %>', 'Pendente')">
+                <div class="order-card search-item sla-monitor" data-id="<%= p.id %>" data-status="Pendente" data-time="<%= p.createdAt %>" data-cliente="<%= p.cliente.toLowerCase() %>" onclick="abrirDetalhes('<%= p.id %>', 'Pendente')">
                     <div class="card-header">
                         <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
                         <span class="timer-live" data-start="<%= p.createdAt %>">00:00</span>
@@ -191,12 +220,7 @@
         <div id="preparo" class="tab-content">
             <div class="desktop-label">EM PREPARO</div>
             <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                <div class="order-card search-item sla-monitor" 
-                     data-id="<%= p.id %>" 
-                     data-status="Preparando"
-                     data-time="<%= p.updatedAt || p.createdAt %>"
-                     data-cliente="<%= p.cliente.toLowerCase() %>" 
-                     onclick="abrirDetalhes('<%= p.id %>', 'Preparando')">
+                <div class="order-card search-item sla-monitor" data-id="<%= p.id %>" data-status="Preparando" data-time="<%= p.updatedAt || p.createdAt %>" data-cliente="<%= p.cliente.toLowerCase() %>" onclick="abrirDetalhes('<%= p.id %>', 'Preparando')">
                     <div class="card-header">
                         <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
                         <span class="timer-live" data-start="<%= p.updatedAt || p.createdAt %>">00:00</span>
@@ -259,6 +283,33 @@
         const socket = io();
         const listaPedidosRaw = <%- JSON.stringify(pedidos) %>;
 
+        // --- LÓGICA DE MONITORAMENTO DE ALTA DEMANDA ---
+        function verificarDemanda() {
+            const pendentes = document.querySelectorAll('#pendentes .order-card').length;
+            const preparo = document.querySelectorAll('#preparo .order-card').length;
+            const totalAtivo = pendentes + preparo;
+            const indicador = document.getElementById('status-indicator');
+
+            if (totalAtivo >= 10) {
+                indicador.innerText = "ALERTA: ALTA DEMANDA";
+                indicador.className = "status-overload";
+            } else {
+                indicador.innerText = "ON-LINE";
+                indicador.className = "status-online";
+            }
+        }
+
+        // --- LÓGICA DO MODO LENTO ---
+        function alternarModoLento(ativo) {
+            socket.emit('toggle-modo-lento', { active: ativo });
+            localStorage.setItem('modoLentoStatus', ativo);
+        }
+
+        // Recuperar estado do modo lento ao recarregar a página
+        if (localStorage.getItem('modoLentoStatus') === 'true') {
+            document.getElementById('slowModeInput').checked = true;
+        }
+
         function formatTime(ms) {
             const totalSecs = Math.floor(ms / 1000);
             const mins = Math.floor(totalSecs / 60);
@@ -266,25 +317,19 @@
             return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
 
-        // MOTOR DE TEMPO REAL E SLA
         function updateLiveTimers() {
             const agora = Date.now();
-            
-            // Atualiza os contadores de cada card
             document.querySelectorAll('.timer-live').forEach(timer => {
                 const start = new Date(timer.getAttribute('data-start')).getTime();
                 timer.innerText = formatTime(agora - start);
             });
 
-            // Lógica de SLA (Atraso)
             document.querySelectorAll('.sla-monitor').forEach(card => {
                 const status = card.getAttribute('data-status');
                 const startTime = new Date(card.getAttribute('data-time')).getTime();
                 const delayInfo = card.querySelector('.delay-info');
-                
                 const diffMin = Math.floor((agora - startTime) / 60000);
                 let limite = status === 'Pendente' ? 7 : 15;
-                
                 if (diffMin >= limite) {
                     const extra = diffMin - limite;
                     card.classList.add('delayed');
@@ -299,6 +344,7 @@
         setInterval(() => {
             document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR');
             updateLiveTimers();
+            verificarDemanda(); // Atualiza o alerta de alta demanda em tempo real
         }, 1000);
 
         function calcularFaturamento() {
@@ -376,6 +422,7 @@
         window.onload = () => {
             calcularFaturamento();
             updateLiveTimers();
+            verificarDemanda();
         };
     </script>
 </body>

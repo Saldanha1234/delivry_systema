@@ -12,7 +12,7 @@
         .step.active { opacity: 1; font-weight: 800; transform: scale(1.1); }
         .icon { display: block; font-size: 1.5rem; margin-bottom: 5px; }
 
-        /* --- AJUSTE DO CHAT PARA FORMATO WIDGET (IGUAL AO INDEX) --- */
+        /* --- AJUSTE DO CHAT PARA FORMATO WIDGET --- */
         #chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 1000; font-family: sans-serif; }
         
         #chat-button { 
@@ -68,11 +68,11 @@
                 <div class="step <%= pedido.status === 'Preparando' ? 'active' : '' %>">
                     <span class="icon">🔥</span> Cozinha
                 </div>
-                <div class="step <%= pedido.status === 'Saiu para Entrega' ? 'active' : '' %>">
-                    <span class="icon">🛵</span> Entrega
+                <div class="step <%= pedido.status === 'Pronto' ? 'active' : '' %>">
+                    <span class="icon">📦</span> Pronto
                 </div>
-                <div class="step <%= pedido.status === 'Concluído' ? 'active' : '' %>">
-                    <span class="icon">✅</span> Fim
+                <div class="step <%= (pedido.status === 'Saiu para Entrega' || pedido.status === 'Concluído') ? 'active' : '' %>">
+                    <span class="icon">🛵</span> Entrega
                 </div>
             </div>
         <% } else { %>
@@ -104,8 +104,7 @@
                 <span>💬 Suporte Online</span>
                 <span style="cursor:pointer" onclick="toggleChat()">×</span>
             </div>
-            <div id="chat-content">
-                </div>
+            <div id="chat-content"></div>
             <div class="chat-input-st">
                 <input type="text" id="msg-input" placeholder="Digite sua mensagem...">
                 <button onclick="enviarMensagem()">➤</button>
@@ -121,6 +120,7 @@
 
         socket.emit('join', pedidoId);
 
+        // Se o pedido já estiver encerrado ao carregar, limpa o ID do localstorage
         if (statusAtual === 'Cancelado' || statusAtual === 'Concluído') {
             localStorage.removeItem('ultimoPedidoId');
         }
@@ -128,8 +128,13 @@
         function toggleChat() {
             const wrapper = document.getElementById('chat-wrapper');
             wrapper.style.display = (wrapper.style.display === 'flex') ? 'none' : 'flex';
+            if(wrapper.style.display === 'flex') {
+                const box = document.getElementById('chat-content');
+                box.scrollTop = box.scrollHeight;
+            }
         }
 
+        // Long Polling de segurança para status
         setInterval(async () => {
             try {
                 const res = await fetch('/api/pedido/' + pedidoId);
@@ -150,12 +155,14 @@
             window.location.href = '/';
         }
 
+        // --- LÓGICA DO CHAT REAL-TIME ---
         socket.on('novaMensagem', (msg) => {
             adicionarMensagemNaTela(msg);
         });
 
         socket.on('historico', (historico) => {
-            document.getElementById('chat-content').innerHTML = '';
+            const box = document.getElementById('chat-content');
+            box.innerHTML = '';
             historico.forEach(msg => adicionarMensagemNaTela(msg));
         });
 
@@ -166,7 +173,6 @@
             const ehAdmin = msg.usuario === 'Admin';
             const nomeParaExibir = ehAdmin ? 'Suporte' : msg.usuario;
             
-            // Força o horário em tempo real se não vier no objeto msg
             const agora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             const horaParaExibir = msg.hora || agora;
             
@@ -199,6 +205,13 @@
 
         document.getElementById('msg-input').addEventListener('keypress', (e) => {
             if(e.key === 'Enter') enviarMensagem();
+        });
+
+        // Escuta atualização via socket para recarregar página se status mudar
+        socket.on('statusAtualizado', (data) => {
+            if(data.id === pedidoId) {
+                window.location.reload();
+            }
         });
     </script>
 </body>
