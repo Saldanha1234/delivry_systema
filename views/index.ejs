@@ -32,8 +32,29 @@
             animation: blink 1.5s infinite;
             margin-left: 10px;
         }
-        .btn-qty-plus { background: #27ae60 !important; color: white !important; border: none; border-radius: 5px; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
-        .btn-qty-minus { background: #e74c3c !important; color: white !important; border: none; border-radius: 5px; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
+
+        /* --- CORREÇÃO DO DESIGN DOS BOTÕES (MAIS E MENOS) --- */
+        .btn-qty-plus, .btn-qty-minus { 
+            background: none !important; 
+            color: var(--primary) !important; 
+            border: none !important; 
+            padding: 0;
+            width: 25px; 
+            height: 25px; 
+            cursor: pointer; 
+            font-size: 1.4rem; 
+            font-weight: 300; /* Finura do traço */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .item-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        /* ---------------------------------------------------- */
+
         .item-indisponivel { opacity: 0.5; pointer-events: none; }
     </style>
 </head>
@@ -50,7 +71,7 @@
 </div>
 
 <nav>
-    <div class="logo">Açai<span></span></div>
+    <div class="logo">Açai<span>Roxinho</span></div>
     <div class="cart-btn" onclick="toggleCart()">
         <span>🛒 Carrinho</span>
         <span id="cart-count">0</span>
@@ -357,9 +378,9 @@
                                 </div>
                             </div>
                             <div class="item-controls">
-                                <button class="btn-qty-minus" onclick="alterarQtd('${cat.id}', '${opt.id}', -1)">-</button>
-                                <span id="qtd-${opt.id}" style="font-weight: bold; min-width: 20px; text-align: center;">${opt.qtd || 0}</span>
                                 <button class="btn-qty-plus" onclick="alterarQtd('${cat.id}', '${opt.id}', 1)">+</button>
+                                <span id="qtd-${opt.id}" style="font-weight: bold; min-width: 20px; text-align: center;">${opt.qtd || 0}</span>
+                                <button class="btn-qty-minus" onclick="alterarQtd('${cat.id}', '${opt.id}', -1)">-</button>
                             </div>
                         </div>`;
                 }
