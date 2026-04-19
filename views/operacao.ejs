@@ -3,349 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Farol da Operação | Painel Profissional</title>
+    <title>Farol da Operação | KDS</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
-            --bg-page: #0f172a; /* Azul escuro profundo */
-            --bg-col: #1e293b;
-            --card-bg: #ffffff;
-            --text-dark: #1e293b;
-            --text-light: #64748b;
-            --primary: #ef4444; /* Vermelho vibrante */
-            --warning: #f59e0b; /* Laranja forte */
-            --success: #10b981; /* Verde esmeralda */
-            --info: #3b82f6;    /* Azul royal */
-            --finalizado: #6b7280;
-            --accent: #8b5cf6;  /* Roxo para destaque */
+            --bg-body: #121212;
+            --bg-card: #2a2a2a;
+            --primary-purple: #8b5cf6;
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --success-green: #00ff88;
         }
 
         body {
-            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--bg-page);
-            color: #f8fafc;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
             margin: 0;
-            padding: 10px;
+            padding: 0;
             overflow-x: hidden;
         }
 
-        /* HEADER */
-        .header-painel {
+        /* HEADER & DASHBOARD INFO */
+        .header-top {
+            background: linear-gradient(to bottom, #1e1e2e, #121212);
+            padding: 10px 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .stats-bar {
             display: flex;
-            flex-wrap: wrap;
+            justify-content: space-around;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--primary-purple);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .stats-bar span b { color: var(--success-green); }
+
+        .header-main {
+            display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            gap: 15px;
-            background: #1e293b;
-            padding: 15px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            border: 1px solid #334155;
-        }
-
-        .header-left { 
-            display: flex; 
-            align-items: center; 
-            gap: 20px; 
-            flex: 1;
-            min-width: 280px;
-        }
-
-        .header-title {
-            display: flex;
-            flex-direction: column;
-            line-height: 1.2;
         }
 
         #real-time-clock {
-            font-family: 'Courier New', monospace;
-            font-size: 1.4rem;
-            color: var(--success);
+            font-size: 1.2rem;
+            color: var(--primary-purple);
             font-weight: bold;
-            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+            font-family: monospace;
         }
 
-        .search-container { flex-grow: 1; max-width: 400px; }
-
-        .search-input {
-            width: 100%;
-            padding: 12px 18px;
-            border-radius: 10px;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: white;
-            outline: none;
-            font-size: 0.95rem;
-        }
-
-        .search-input:focus { border-color: var(--info); }
-
-        .btn-sair {
-            text-decoration: none; 
-            color: #fff; 
-            background: #475569;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-
-        /* NAVEGAÇÃO POR ABAS (MOBILE APENAS) */
-        .mobile-tabs {
-            display: none;
-            gap: 5px;
-            overflow-x: auto;
-            margin-bottom: 15px;
-            padding-bottom: 5px;
-        }
-
-        .tab-btn {
-            background: #334155;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
-            white-space: nowrap;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        .tab-btn.active {
-            background: var(--info);
-        }
-
-        /* KANBAN */
-        .kanban {
+        /* CATEGORIAS POR ABAS (IGUAL A FOTO) */
+        .status-tabs {
             display: flex;
-            gap: 15px;
-            overflow-x: auto;
-            height: calc(100vh - 180px);
-            align-items: flex-start;
+            background: #1a1a1a;
+            border-bottom: 2px solid #333;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .col {
-            background-color: var(--bg-col);
-            border-radius: 12px;
-            min-width: 300px;
-            max-width: 300px;
+        .tab-item {
+            flex: 1;
+            padding: 12px 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            border-bottom: 3px solid transparent;
             display: flex;
             flex-direction: column;
-            max-height: 100%;
-            border: 1px solid #334155;
+            align-items: center;
+            gap: 2px;
         }
 
-        .col-header {
-            padding: 15px;
+        .tab-item.active {
+            border-bottom: 3px solid var(--primary-purple);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .tab-item .count {
+            background: #333;
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .tab-item.active .count { background: var(--primary-purple); }
+
+        .tab-item .label {
+            font-size: 0.65rem;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .tab-item.active .label { color: #white; }
+
+        /* LISTA DE PEDIDOS */
+        .kanban-container {
+            padding: 15px;
+        }
+
+        .col-content {
+            display: none; /* Escondido por padrão no mobile */
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .col-content.active { display: flex; }
+
+        /* CARDS (ESTILO DA FOTO) */
+        .mini-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            padding: 15px;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid #3d3d3d;
+        }
+
+        .card-header-info {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            color: #94a3b8;
-            background: rgba(0,0,0,0.2);
-            border-radius: 12px 12px 0 0;
-        }
-
-        .count-badge {
-            background: var(--info);
-            color: #fff;
-            border-radius: 6px;
-            padding: 2px 8px;
-            font-size: 0.8rem;
-        }
-
-        .lista-pedidos { padding: 12px; overflow-y: auto; flex-grow: 1; }
-
-        /* CARDS */
-        .mini-card {
-            background: var(--card-bg);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
-            border-left: 5px solid var(--info);
-            color: var(--text-dark);
-            transition: transform 0.2s;
-        }
-
-        .mini-card:hover { transform: translateY(-2px); }
-
-        .status-pendente { border-left-color: var(--primary); }
-        .status-preparando { border-left-color: var(--warning); }
-        .status-pronto { border-left-color: var(--success); }
-        .status-rota { border-left-color: var(--info); }
-
-        .waiting-text { font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; display: block; }
-        .mini-card-id { font-size: 1.6rem; font-weight: 900; color: #000; display: block; }
-        .mini-card-cliente { font-size: 1rem; color: #475569; font-weight: 500; margin-bottom: 15px; display: block; }
-
-        /* BOTÕES */
-        .btn-main {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 800;
-            cursor: pointer;
             margin-bottom: 8px;
+        }
+
+        .card-id {
+            color: var(--primary-purple);
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .card-time {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .card-cliente {
+            font-size: 1.1rem;
+            font-weight: 700;
             text-transform: uppercase;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .card-details-summary {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* BOTÕES DE AÇÃO */
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
             font-size: 0.75rem;
-            letter-spacing: 0.5px;
+            cursor: pointer;
+            text-transform: uppercase;
         }
 
-        .btn-aceitar { background: var(--primary); color: white; box-shadow: 0 4px 0 #b91c1c; }
-        .btn-pronto { background: var(--success); color: white; box-shadow: 0 4px 0 #059669; }
-        .btn-enviar { background: var(--info); color: white; box-shadow: 0 4px 0 #2563eb; }
-        .btn-finalizar { background: var(--finalizado); color: white; }
-        .btn-detalhe { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; }
-        .btn-cancelar { background: #fff1f2; color: #e11d48; margin-top: 5px; }
+        .btn-primary { background: var(--primary-purple); color: white; }
+        .btn-outline { background: #3d3d3d; color: white; }
+        .btn-cancel { background: transparent; color: #ff4444; border: 1px solid #444; font-size: 0.65rem; }
 
-        /* MODAL */
-        .modal {
-            display: none; position: fixed; z-index: 1000;
-            left: 0; top: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.9); justify-content: center; align-items: center;
-            backdrop-filter: blur(8px);
+        /* BUSCA */
+        .search-box {
+            padding: 10px 15px;
+            background: #121212;
         }
-        .modal-content { 
-            background: white; padding: 25px; border-radius: 15px; 
-            width: 90%; max-width: 500px; color: var(--text-dark);
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            color: white;
         }
 
-        @media (max-width: 768px) {
-            .mobile-tabs { display: flex; }
-            .kanban { display: block; height: auto; }
-            .col { 
-                min-width: 100%; 
-                max-width: 100%; 
-                display: none; /* Escondido por padrão, controlado por JS */
-                margin-bottom: 20px;
+        /* DESKTOP */
+        @media (min-width: 900px) {
+            .status-tabs { display: none; }
+            .kanban-container {
+                display: flex;
+                gap: 15px;
+                overflow-x: auto;
+                align-items: flex-start;
             }
-            .col.active { display: flex; }
-            .header-painel { text-align: center; }
-            .header-left { justify-content: center; }
-            #real-time-clock { font-size: 1.8rem; margin: 10px 0; }
+            .col-content {
+                display: flex !important;
+                min-width: 300px;
+                background: #1a1a1a;
+                border-radius: 10px;
+                padding: 10px;
+                height: 80vh;
+                overflow-y: auto;
+            }
         }
     </style>
 </head>
 <body>
 
-    <header class="header-painel">
-        <div class="header-left">
-            <div class="header-title">
-                <small style="color:var(--info); font-weight: bold;">SISTEMA OPERACIONAL</small>
-                <strong>FAROL DA OPERAÇÃO</strong>
+    <header class="header-top">
+        <div class="stats-bar">
+            <span>Faturamento: <b>R$ 0,00</b></span>
+            <span>Ticket Médio: <b>R$ 0,00</b></span>
+            <span>Total: <b><%= pedidos.length %></b></span>
+        </div>
+        <div class="header-main">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:10px; height:10px; background:var(--success-green); border-radius:50%"></div>
+                <strong style="font-size: 0.9rem;">OPERACIONAL KDS</strong>
             </div>
             <div id="real-time-clock">00:00:00</div>
+            <a href="/admin" style="color:var(--text-dim); text-decoration:none; font-size:0.7rem;">SAIR</a>
         </div>
-        <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar cliente ou pedido...">
-        </div>
-        <a href="/admin" class="btn-sair">SAIR</a>
     </header>
 
-    <div class="mobile-tabs">
-        <button class="tab-btn active" onclick="showTab(0)">Pendente</button>
-        <button class="tab-btn" onclick="showTab(1)">Preparo</button>
-        <button class="tab-btn" onclick="showTab(2)">Pronto</button>
-        <button class="tab-btn" onclick="showTab(3)">Rota</button>
-        <button class="tab-btn" onclick="showTab(4)">Concluído</button>
+    <div class="search-box">
+        <input type="text" id="searchInput" class="search-input" placeholder="Buscar cliente ou ID...">
     </div>
 
-    <div class="kanban">
-        <div class="col active">
-            <div class="col-header">PENDENTES <span class="count-badge"><%= pedidos.filter(p => p.status === 'Pendente').length %></span></div>
-            <div class="lista-pedidos" id="pendentes">
-                <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                    <div class="mini-card status-pendente search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.createdAt %>">
-                        <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
-                        <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="mini-card-cliente"><%= p.cliente %></span>
-                        <div id="btn-area-<%= p.id %>">
-                            <button class="btn-main btn-aceitar" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceitar Pedido</button>
+    <nav class="status-tabs">
+        <div class="tab-item active" onclick="switchTab(0)">
+            <span class="count"><%= pedidos.filter(p => p.status === 'Pendente').length %></span>
+            <span class="label">Pendentes</span>
+        </div>
+        <div class="tab-item" onclick="switchTab(1)">
+            <span class="count"><%= pedidos.filter(p => p.status === 'Preparando').length %></span>
+            <span class="label">Preparo</span>
+        </div>
+        <div class="tab-item" onclick="switchTab(2)">
+            <span class="count"><%= pedidos.filter(p => p.status === 'Pronto').length %></span>
+            <span class="label">Prontos</span>
+        </div>
+        <div class="tab-item" onclick="switchTab(3)">
+            <span class="count"><%= pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Finalizado').length %></span>
+            <span class="label">Encerrado</span>
+        </div>
+    </nav>
+
+    <div class="kanban-container">
+        
+        <div class="col-content active" id="col-0">
+            <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
+                <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.createdAt %>">
+                    <div class="card-header-info">
+                        <span class="card-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="card-time label-topo" id="label-topo-<%= p.id %>">--:--</span>
+                    </div>
+                    <span class="card-cliente"><%= p.cliente %></span>
+                    <span class="card-details-summary">Itens do pedido • Pix</span>
+                    
+                    <div class="btn-group" id="btn-area-<%= p.id %>">
+                        <button class="btn-action btn-primary" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceitar</button>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-action btn-outline" onclick="abrirDetalhes('<%= p.id %>')">Ver Pedido</button>
+                        <button class="btn-action btn-cancel" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
+                    </div>
+                    <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
+                </div>
+            <% }) %>
+        </div>
+
+        <div class="col-content" id="col-1">
+            <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
+                <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
+                    <div class="card-header-info">
+                        <span class="card-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="card-time label-topo" id="label-topo-<%= p.id %>">--:--</span>
+                    </div>
+                    <span class="card-cliente"><%= p.cliente %></span>
+                    
+                    <div class="btn-group" id="btn-area-<%= p.id %>">
                         </div>
-                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Ver Detalhes</button>
-                        <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
-                        <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
-                    </div>
-                <% }) %>
-            </div>
+                    <button class="btn-action btn-outline" style="width:100%; margin-top:10px;" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                    <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
+                </div>
+            <% }) %>
         </div>
 
-        <div class="col">
-            <div class="col-header">EM PREPARO <span class="count-badge"><%= pedidos.filter(p => p.status === 'Preparando').length %></span></div>
-            <div class="lista-pedidos">
-                <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                    <div class="mini-card status-preparando search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
-                        <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
-                        <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="mini-card-cliente"><%= p.cliente %></span>
-                        <div id="btn-area-<%= p.id %>"></div>
-                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
-                        <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
-                        <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
+        <div class="col-content" id="col-2">
+            <% pedidos.filter(p => p.status === 'Pronto').forEach(p => { %>
+                <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
+                    <div class="card-header-info">
+                        <span class="card-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="card-time label-topo" id="label-topo-<%= p.id %>">--:--</span>
                     </div>
-                <% }) %>
-            </div>
+                    <span class="card-cliente"><%= p.cliente %></span>
+                    
+                    <div class="btn-group" id="btn-area-<%= p.id %>">
+                        <button class="btn-action btn-primary" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Despachar</button>
+                    </div>
+                    <button class="btn-action btn-outline" style="width:100%; margin-top:10px;" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                    <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
+                </div>
+            <% }) %>
         </div>
 
-        <div class="col">
-            <div class="col-header">PRONTO <span class="count-badge"><%= pedidos.filter(p => p.status === 'Pronto').length %></span></div>
-            <div class="lista-pedidos">
-                <% pedidos.filter(p => p.status === 'Pronto').forEach(p => { %>
-                    <div class="mini-card status-pronto search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
-                        <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
-                        <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="mini-card-cliente"><%= p.cliente %></span>
-                        <div id="btn-area-<%= p.id %>">
-                            <button class="btn-main btn-enviar" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar para Rota</button>
-                        </div>
-                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
-                        <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
+        <div class="col-content" id="col-3">
+            <% pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Finalizado').forEach(p => { %>
+                <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
+                    <div class="card-header-info">
+                        <span class="card-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="card-time"><%= p.status %></span>
                     </div>
-                <% }) %>
-            </div>
+                    <span class="card-cliente"><%= p.cliente %></span>
+                    <% if(p.status === 'Saiu para Entrega') { %>
+                        <button class="btn-action btn-primary" style="width:100%;" onclick="atualizarStatus('<%= p.id %>', 'Finalizado')">Concluir</button>
+                    <% } else { %>
+                        <span style="color:var(--success-green); font-size:0.7rem; font-weight:bold;">PEDIDO FINALIZADO</span>
+                    <% } %>
+                    <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
+                </div>
+            <% }) %>
         </div>
 
-        <div class="col">
-            <div class="col-header">EM ROTA <span class="count-badge"><%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %></span></div>
-            <div class="lista-pedidos">
-                <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
-                    <div class="mini-card status-rota search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
-                        <span class="waiting-text" style="color:var(--info)">🛵 EM ENTREGA</span>
-                        <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="mini-card-cliente"><%= p.cliente %></span>
-                        <button class="btn-main btn-finalizar" onclick="atualizarStatus('<%= p.id %>', 'Finalizado')">Finalizar</button>
-                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
-                        <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
-                    </div>
-                <% }) %>
-            </div>
-        </div>
-
-        <div class="col">
-            <div class="col-header">CONCLUÍDO <span class="count-badge"><%= pedidos.filter(p => p.status === 'Finalizado').length %></span></div>
-            <div class="lista-pedidos">
-                <% pedidos.filter(p => p.status === 'Finalizado').forEach(p => { %>
-                    <div class="mini-card search-item" style="border-left-color:#cbd5e1" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
-                        <span class="waiting-text" style="color:var(--finalizado)">✅ CONCLUÍDO</span>
-                        <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="mini-card-cliente"><%= p.cliente %></span>
-                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Ver Comanda</button>
-                        <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
-                    </div>
-                <% }) %>
-            </div>
-        </div>
     </div>
 
-    <div id="modalDetalhes" class="modal">
-        <div class="modal-content">
-            <div id="comanda-interna"></div>
-            <button class="btn-main" onclick="fecharModal()" style="margin-top:15px; background: #1e293b; color: #fff;">FECHAR</button>
+    <div id="modalDetalhes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center;">
+        <div style="background:#2a2a2a; width:90%; max-width:500px; padding:20px; border-radius:15px; max-height:80vh; overflow-y:auto;">
+            <div id="comanda-interna" style="color:white;"></div>
+            <button class="btn-action btn-primary" style="width:100%; margin-top:20px;" onclick="fecharModal()">FECHAR</button>
         </div>
     </div>
 
@@ -354,24 +348,22 @@
     <script>
         const socket = io();
 
-        // RELÓGIO EM TEMPO REAL
-        function startClock() {
-            const clockElement = document.getElementById('real-time-clock');
-            setInterval(() => {
-                const now = new Date();
-                clockElement.innerText = now.toLocaleTimeString('pt-BR');
-            }, 1000);
-        }
-        startClock();
+        // RELÓGIO
+        setInterval(() => {
+            document.getElementById('real-time-clock').innerText = new Date().toLocaleTimeString('pt-BR');
+        }, 1000);
 
-        // CONTROLE DE ABAS MOBILE
-        function showTab(index) {
-            const cols = document.querySelectorAll('.col');
-            const btns = document.querySelectorAll('.tab-btn');
-            cols.forEach((c, i) => c.classList.toggle('active', i === index));
-            btns.forEach((b, i) => b.classList.toggle('active', i === index));
+        // TROCA DE ABAS (MOBILE)
+        function switchTab(index) {
+            document.querySelectorAll('.tab-item').forEach((t, i) => {
+                t.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.col-content').forEach((c, i) => {
+                c.classList.toggle('active', i === index);
+            });
         }
 
+        // LÓGICA DE TEMPO E CORES DOS BOTÕES (FAROL)
         function updateFarol() {
             const now = new Date();
             const cards = document.querySelectorAll('.mini-card[data-time]');
@@ -382,31 +374,19 @@
                 const diffMin = Math.floor((now - startTime) / 60000);
                 const labelTopo = card.querySelector('.label-topo');
                 const btnArea = card.querySelector(`#btn-area-${id}`);
-                const colHeader = card.closest('.col').querySelector('.col-header').innerText;
+                
+                if(!labelTopo) return;
+                labelTopo.innerText = diffMin + " min";
 
-                if (colHeader.includes("PENDENTES")) {
-                    if (diffMin >= 5) {
-                        labelTopo.innerHTML = `<span style="color:var(--primary)">⚠️ ATRASADO: ${diffMin} MIN</span>`;
-                        btnArea.innerHTML = `<button class="btn-main btn-aceitar" onclick="atualizarStatus('${id}', 'Preparando')">Aceitar Urgente</button>`;
-                    } else {
-                        labelTopo.innerHTML = `<span style="color:var(--text-light)">Recebido há ${diffMin} min</span>`;
-                    }
-                }
-
-                if (colHeader.includes("PREPARO")) {
+                // Se estiver na coluna de Preparo
+                if(card.parentElement.id === 'col-1') {
                     if (diffMin < 5) {
-                        labelTopo.innerHTML = `<span style="color:var(--warning)">👨‍🍳 PREPARANDO... (${5 - diffMin} min)</span>`;
-                        btnArea.innerHTML = `<button class="btn-main" style="background:#e2e8f0; color:#94a3b8; cursor:not-allowed">Em preparo</button>`;
+                        labelTopo.style.color = "#f39c12";
+                        if(btnArea) btnArea.innerHTML = `<button class="btn-action btn-outline" style="opacity:0.5" disabled>Em preparo...</button>`;
                     } else {
-                        labelTopo.innerHTML = `<span style="color:var(--success)">✅ PRONTO PARA SAIR</span>`;
-                        btnArea.innerHTML = `<button class="btn-main btn-pronto" onclick="atualizarStatus('${id}', 'Pronto')">Marcar Pronto</button>`;
+                        labelTopo.style.color = "#00ff88";
+                        if(btnArea) btnArea.innerHTML = `<button class="btn-action btn-primary" onclick="atualizarStatus('${id}', 'Pronto')">Marcar Pronto</button>`;
                     }
-                }
-
-                if (colHeader.includes("PRONTO")) {
-                    labelTopo.innerHTML = diffMin >= 15 
-                        ? `<span style="color:var(--primary)">⚠️ PARADO HÁ ${diffMin} MIN</span>` 
-                        : `<span style="color:var(--success)">AGUARDANDO COLETA (${diffMin} MIN)</span>`;
                 }
             });
         }
@@ -423,6 +403,7 @@
             });
         });
 
+        // FUNÇÕES ORIGINAIS DE ROTA
         async function atualizarStatus(id, novoStatus) {
             try {
                 const res = await fetch('/update-status', {
@@ -435,7 +416,7 @@
         }
 
         async function cancelarPedido(id) {
-            if (confirm("Deseja realmente CANCELAR este pedido?")) atualizarStatus(id, 'Cancelado');
+            if (confirm("Deseja realmente CANCELAR?")) atualizarStatus(id, 'Cancelado');
         }
 
         function abrirDetalhes(id) {
