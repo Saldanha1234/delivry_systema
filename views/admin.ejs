@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="/style.css">
     <title>Admin | Gestão Total</title>
     <script src="/socket.io/socket.io.js"></script>
@@ -41,6 +41,7 @@
             background: var(--bg); 
             color: var(--text-main);
             transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
         }
 
         .admin-layout { display: flex; flex-direction: column; height: 100vh; }
@@ -54,8 +55,10 @@
             align-items: center; 
             border-bottom: 1px solid var(--border-color);
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            flex-shrink: 0;
         }
 
+        /* CORREÇÃO DO ENQUADRAMENTO DAS CATEGORIAS (TABS) */
         .tab-container { 
             display: flex; 
             background: var(--white); 
@@ -65,12 +68,15 @@
             overflow-x: auto; 
             position: sticky; 
             top: 0; 
-            z-index: 100;
+            z-index: 1000;
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
         }
+        .tab-container::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
         .tab-btn { 
-            padding: 14px 15px; 
+            padding: 14px 18px; 
             border: none; 
             background: none; 
             cursor: pointer; 
@@ -81,7 +87,7 @@
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            flex-shrink: 0;
+            flex-shrink: 0; /* IMPEDE QUE AS CATEGORIAS SE ACHATEM */
         }
         .tab-btn.active { color: var(--dark); border-bottom-color: var(--primary); }
 
@@ -112,7 +118,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
             transition: transform 0.2s;
         }
-        .stat-card:hover { transform: translateY(-3px); }
         .stat-card h4 { margin: 0 0 8px 0; font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 1px;}
         .stat-card .value { font-size: 1.4rem; font-weight: 800; color: var(--dark); }
         .stat-card .date-label { font-size: 0.75rem; color: var(--info); font-weight: 600; display: block; margin-top: 5px; }
@@ -147,6 +152,7 @@
         .chat-selector { flex: 1; overflow-y: auto; padding: 10px; }
         .chat-item { padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
         .chat-item.active { background: rgba(255, 202, 44, 0.1); border-color: var(--primary); }
+        .chat-item.has-new { border-left: 4px solid var(--danger); animation: pulse 1.5s infinite; }
         
         .chat-main-area { flex: 1; display: flex; flex-direction: column; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 15px; background: var(--chat-bg); display: flex; flex-direction: column; gap: 10px; }
@@ -172,12 +178,6 @@
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); overflow-y: auto; }
         .modal-content { background: var(--white); margin: 10% auto; padding: 20px; border-radius: 15px; width: 95%; max-width: 500px; color: var(--text-main); }
         
-        input[type="text"], input[type="password"], input[type="time"], select {
-            background: var(--bg);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-        }
-
         .switch { position: relative; display: inline-block; width: 46px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 20px; }
@@ -185,20 +185,19 @@
         input:checked + .slider { background: var(--success); }
         input:checked + .slider:before { transform: translateX(24px); }
 
-        /* RESPONSIVIDADE MOBILE */
+        /* RESPONSIVIDADE MOBILE FINAL */
         @media (max-width: 768px) {
-            .admin-nav { flex-direction: column; gap: 10px; text-align: center; }
+            .admin-nav { padding: 10px; }
             .suporte-container { flex-direction: column; height: 80vh; }
             .chat-sidebar-list { width: 100%; height: 150px; border-right: none; border-bottom: 1px solid var(--border-color); }
             .banner-operacao { text-align: center; justify-content: center; }
             .btn-abrir-kds { width: 100%; }
-            .tab-btn { padding: 12px 10px; font-size: 0.7rem; }
+            .tab-btn { padding: 12px 15px; font-size: 0.7rem; }
             .finance-grid { grid-template-columns: 1fr; }
-            .dia-config { flex-wrap: wrap; gap: 10px; }
-            .horarios-inputs { order: 3; width: 100%; justify-content: center; margin-top: 5px; }
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -262,7 +261,6 @@
                 <div class="card-box">
                     <div id="container-gerenciador-produtos"></div>
                 </div>
-
                 <div class="card-box">
                     <div id="container-gerenciador-adicionais"></div>
                 </div>
@@ -389,7 +387,6 @@
             const body = document.body;
             const btn = document.getElementById('theme-toggle');
             body.classList.toggle('dark-mode');
-            
             if(body.classList.contains('dark-mode')) {
                 btn.innerText = "☀️ Claro";
                 localStorage.setItem('admin-theme', 'dark');
@@ -405,12 +402,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            if(typeof renderizarPainelCategorias === "function") {
-                renderizarPainelCategorias('container-gerenciador-produtos');
-            }
-            if(typeof renderizarPainelAdicionais === "function") {
-                renderizarPainelAdicionais('container-gerenciador-adicionais');
-            }
+            if(typeof renderizarPainelCategorias === "function") renderizarPainelCategorias('container-gerenciador-produtos');
+            if(typeof renderizarPainelAdicionais === "function") renderizarPainelAdicionais('container-gerenciador-adicionais');
         });
 
         function openTab(evt, tabName) {
@@ -430,8 +423,7 @@
         }
         function toggleCamposCidade() {
             const isChecked = document.getElementById('conf-cidadeAtiva').checked;
-            const container = document.getElementById('container-campos-cidade');
-            if(container) container.style.display = isChecked ? 'grid' : 'none';
+            document.getElementById('container-campos-cidade').style.display = isChecked ? 'grid' : 'none';
         }
 
         async function salvarHorarios() {
