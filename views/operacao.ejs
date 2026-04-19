@@ -41,6 +41,7 @@
             position: relative;
         }
 
+        /* Efeito de Glow no fundo */
         body::before {
             content: '';
             position: absolute;
@@ -93,6 +94,7 @@
             text-transform: uppercase;
         }
 
+        /* Barra de Métricas corrigida */
         .metrics-bar {
             background: rgba(255, 255, 255, 0.02);
             border-bottom: 1px solid var(--border-color);
@@ -199,17 +201,6 @@
             flex-shrink: 0;
         }
 
-        .order-card.delayed {
-            border-color: var(--status-alert);
-            animation: alertPulse 2s infinite;
-        }
-
-        @keyframes alertPulse {
-            0% { box-shadow: 0 0 0px rgba(255, 75, 75, 0); }
-            50% { box-shadow: 0 0 12px rgba(255, 75, 75, 0.2); }
-            100% { box-shadow: 0 0 0px rgba(255, 75, 75, 0); }
-        }
-
         .order-header { 
             display: flex; 
             justify-content: space-between; 
@@ -221,6 +212,7 @@
         .customer-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
         .order-details { font-size: 0.85rem; color: var(--text-dim); }
 
+        /* Modal Comanda Digital */
         #modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -275,6 +267,7 @@
             width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: none; font-family: sans-serif;
         }
 
+        /* Toggle Modo Lento */
         .slow-mode-toggle-container {
             position: fixed;
             bottom: 20px;
@@ -317,7 +310,7 @@
     <div class="metrics-bar">
         <div class="metric-item">VENDAS<span id="m-revenue">R$ 0,00</span></div>
         <div class="metric-item">TICKET MÉDIO<span id="m-average">R$ 0,00</span></div>
-        <div class="metric-item">PEDIDOS<span id="m-total-count">0</span></div>
+        <div class="metric-item">CONCLUÍDOS<span id="m-total-count">0</span></div>
     </div>
 
     <nav class="tab-bar">
@@ -347,7 +340,7 @@
     </main>
 
     <div class="slow-mode-toggle-container">
-        <span style="font-size: 0.6rem; font-weight: 800; color: var(--text-dim)">MODO LENTO</span>
+        <span style="font-size: 0.6rem; font-weight: 800; color: var(--text-dim)">ALTA DEMANDA</span>
         <label class="switch">
             <input type="checkbox" id="slow-mode-toggle" onchange="toggleSlowMode()">
             <span class="slider"></span>
@@ -361,7 +354,6 @@
     <script>
         const socket = io(); 
         let orders = <%- JSON.stringify(pedidos) %>;
-        let isSlowMode = false;
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -372,30 +364,33 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
+        // Lógica de Renderização e Filtro de Finalizados
         function render() {
-            const listPending = document.getElementById('list-pending');
-            const listPreparing = document.getElementById('list-preparing');
-            const listReady = document.getElementById('list-ready');
-            const listArchived = document.getElementById('list-archived');
-
             const containers = { 
-                'Pendente': listPending, 
-                'Preparando': listPreparing, 
-                'Em entrega': listReady, 
-                'Finalizado': listArchived,
-                'Cancelado': listArchived,
-                'Concluído': listArchived
+                'Pendente': document.getElementById('list-pending'), 
+                'Preparando': document.getElementById('list-preparing'), 
+                'Em entrega': document.getElementById('list-ready'), 
+                'Finalizado': document.getElementById('list-archived'),
+                'Cancelado': document.getElementById('list-archived'),
+                'Concluído': document.getElementById('list-archived')
             };
             
-            [listPending, listPreparing, listReady, listArchived].forEach(c => c.innerHTML = '');
+            Object.values(containers).forEach(c => c.innerHTML = '');
 
             const counts = { pending: 0, preparing: 0, ready: 0, archived: 0 };
-            
+            let totalRevenue = 0;
+            let finishedCount = 0;
+
             orders.forEach(order => {
-                if(order.status === 'Pendente') counts.pending++;
+                // Contabilização de métricas apenas para FINALIZADOS ou CONCLUÍDOS
+                if(['Finalizado', 'Concluído'].includes(order.status)) {
+                    totalRevenue += (order.total || 0);
+                    finishedCount++;
+                    counts.archived++;
+                } else if(order.status === 'Pendente') counts.pending++;
                 else if(order.status === 'Preparando') counts.preparing++;
                 else if(order.status === 'Em entrega') counts.ready++;
-                else counts.archived++;
+                else if(order.status === 'Cancelado') counts.archived++;
 
                 const card = document.createElement('div');
                 card.className = `order-card`;
@@ -406,25 +401,23 @@
                         <span class="order-time">${order.hora}</span>
                     </div>
                     <div class="customer-name">${order.cliente}</div>
-                    <div class="order-details">
-                        ${order.itens ? order.itens.length : 0} itens • <strong>${order.pagamento}</strong>
-                    </div>
+                    <div class="order-details">${order.itens ? order.itens.length : 0} itens • <strong>${order.pagamento}</strong></div>
                 `;
                 
-                const targetContainer = containers[order.status] || listPending;
-                targetContainer.appendChild(card);
+                const target = containers[order.status] || containers['Pendente'];
+                target.appendChild(card);
             });
 
+            // Atualiza Interface de Métricas
+            document.getElementById('m-revenue').innerText = `R$ ${totalRevenue.toFixed(2)}`;
+            document.getElementById('m-total-count').innerText = finishedCount;
+            document.getElementById('m-average').innerText = finishedCount > 0 ? `R$ ${(totalRevenue / finishedCount).toFixed(2)}` : 'R$ 0,00';
+
+            // Atualiza Badges das Tabs
             document.getElementById('count-pending').innerText = counts.pending;
             document.getElementById('count-preparing').innerText = counts.preparing;
             document.getElementById('count-ready').innerText = counts.ready;
             document.getElementById('count-archived').innerText = counts.archived;
-
-            const finalizados = orders.filter(o => ['Finalizado', 'Concluído'].includes(o.status));
-            const revenue = finalizados.reduce((acc, o) => acc + (o.total || 0), 0);
-            document.getElementById('m-revenue').innerText = `R$ ${revenue.toFixed(2)}`;
-            document.getElementById('m-total-count').innerText = finalizados.length;
-            document.getElementById('m-average').innerText = finalizados.length > 0 ? `R$ ${(revenue / finalizados.length).toFixed(2)}` : 'R$ 0,00';
         }
 
         function showComanda(id) {
@@ -452,7 +445,7 @@
                     ${actionBtn}
                     <button class="btn btn-cancel" onclick="document.getElementById('cancel-box').style.display='flex'">CANCELAR</button>
                     <div id="cancel-box" class="cancel-reason-box">
-                        <textarea id="reason-input" placeholder="Motivo do cancelamento..."></textarea>
+                        <textarea id="reason-input" placeholder="Motivo..."></textarea>
                         <button class="btn btn-cancel" style="background:#222" onclick="updateStatus('${order.id}', 'Cancelado')">CONFIRMAR CANCELAMENTO</button>
                     </div>
                     <button class="btn btn-close" onclick="closeModal()">VOLTAR</button>
@@ -468,44 +461,25 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({id: id, novoStatus: novoStatus})
                 });
-                if(res.ok) {
-                    closeModal();
-                }
-            } catch (e) { alert("Erro de conexão"); }
+                if(res.ok) closeModal();
+            } catch (e) { console.error(e); }
         }
 
-        socket.on('novoPedido', (pedido) => {
-            orders.push(pedido);
-            render();
-            new Audio('https://www.soundjay.com/buttons/sounds/beep-01a.mp3').play().catch(()=>{});
-        });
-
+        socket.on('novoPedido', (pedido) => { orders.push(pedido); render(); });
         socket.on('statusAtualizado', (data) => {
             const index = orders.findIndex(o => o.id == data.id);
-            if(index !== -1) {
-                orders[index].status = data.novoStatus;
-                render();
-            }
-        });
-
-        socket.on('pedidoEncerrado', (data) => {
-            render();
+            if(index !== -1) { orders[index].status = data.novoStatus; render(); }
         });
 
         function toggleSlowMode() {
-            isSlowMode = document.getElementById('slow-mode-toggle').checked;
-            const status = document.getElementById('status-online');
-            status.style.color = isSlowMode ? 'var(--status-alert)' : 'var(--status-ready)';
-            status.innerText = isSlowMode ? '● ALTA DEMANDA' : '● SISTEMA ATIVO';
+            const isSlow = document.getElementById('slow-mode-toggle').checked;
+            document.getElementById('status-online').style.color = isSlow ? 'var(--status-alert)' : 'var(--status-ready)';
+            document.getElementById('status-online').innerText = isSlow ? '● ALTA DEMANDA' : '● SISTEMA ATIVO';
         }
 
         function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
         function handleOverlayClick(e) { if(e.target.id === 'modal-overlay') closeModal(); }
-
-        setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR');
-        }, 1000);
-
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR'); }, 1000);
         window.onload = render;
     </script>
 </body>
