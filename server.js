@@ -42,7 +42,9 @@ const Categoria = mongoose.model('Categoria', CategoriaSchema);
 // --- NOVO SCHEMA DE ADICIONAIS (BANCO DE DATOS) ---
 const CategoriaAdicionalSchema = new mongoose.Schema({
     nome: String,
+    descricao: String,
     status: { type: String, default: 'opcional' }, // opcional ou obrigatorio
+    limite: { type: Number, default: 1 },
     produtosVinculados: [String], // IDs dos produtos que usam esta categoria
     adicionais: [{
         nome: String,
@@ -294,12 +296,33 @@ app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
         const categoriasDoBanco = await Categoria.find();
-        const adicionais = await CategoriaAdicional.find();
+        const catsAdicionais = await CategoriaAdicional.find();
+        
+        // Formata os adicionais para a estrutura que o index espera
+        const estruturaAdicionais = {
+            categorias: catsAdicionais.map(cat => ({
+                id: cat._id,
+                nome: cat.nome,
+                descricao: cat.descricao || "",
+                status: cat.status,
+                limite: cat.limite || 1,
+                produtosVinculados: cat.produtosVinculados || [],
+                opcoes: cat.adicionais.map(opt => ({
+                    id: opt._id,
+                    nome: opt.nome,
+                    preco: opt.valor,
+                    desconto: opt.desconto,
+                    status: opt.status,
+                    qtd: 0
+                }))
+            }))
+        };
+
         const categoriasFixas = [{ nome: 'Promoção' }, { nome: 'Destaques' }];
         const categorias = [...categoriasFixas, ...categoriasDoBanco];
         let config = await Config.findOne({ chave: 'global' });
         
-        res.render('index', { produtos, categorias, config, estruturaAdicionais: adicionais });
+        res.render('index', { produtos, categorias, config, estruturaAdicionais });
     } catch (err) { res.status(500).send("Erro interno."); }
 });
 
