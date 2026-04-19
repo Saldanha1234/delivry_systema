@@ -360,9 +360,7 @@
 
     <script>
         const socket = io(); 
-        // Inicializa com os pedidos enviados pelo servidor via EJS
         let orders = <%- JSON.stringify(pedidos) %>;
-        let archivedOrders = [];
         let isSlowMode = false;
 
         function switchTab(tabId) {
@@ -389,13 +387,11 @@
                 'Concluído': listArchived
             };
             
-            // Limpa as colunas base
             [listPending, listPreparing, listReady, listArchived].forEach(c => c.innerHTML = '');
 
             const counts = { pending: 0, preparing: 0, ready: 0, archived: 0 };
             
             orders.forEach(order => {
-                // Lógica de contagem simplificada para as badges
                 if(order.status === 'Pendente') counts.pending++;
                 else if(order.status === 'Preparando') counts.preparing++;
                 else if(order.status === 'Em entrega') counts.ready++;
@@ -415,18 +411,15 @@
                     </div>
                 `;
                 
-                // Distribui o card na coluna correta
                 const targetContainer = containers[order.status] || listPending;
                 targetContainer.appendChild(card);
             });
 
-            // Atualiza Badges
             document.getElementById('count-pending').innerText = counts.pending;
             document.getElementById('count-preparing').innerText = counts.preparing;
             document.getElementById('count-ready').innerText = counts.ready;
             document.getElementById('count-archived').innerText = counts.archived;
 
-            // Atualiza Métricas (Somente Finalizados/Concluídos)
             const finalizados = orders.filter(o => ['Finalizado', 'Concluído'].includes(o.status));
             const revenue = finalizados.reduce((acc, o) => acc + (o.total || 0), 0);
             document.getElementById('m-revenue').innerText = `R$ ${revenue.toFixed(2)}`;
@@ -477,12 +470,10 @@
                 });
                 if(res.ok) {
                     closeModal();
-                    // O Socket.io vai disparar o statusAtualizado e o render() será chamado
                 }
             } catch (e) { alert("Erro de conexão"); }
         }
 
-        // --- SOCKET.IO EVENTOS ---
         socket.on('novoPedido', (pedido) => {
             orders.push(pedido);
             render();
@@ -498,8 +489,6 @@
         });
 
         socket.on('pedidoEncerrado', (data) => {
-            // Se o status for de encerramento, o server.js emite este evento.
-            // Mantemos no histórico local ou removemos conforme a necessidade.
             render();
         });
 
