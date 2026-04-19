@@ -3,160 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KDS Profissional | Farol</title>
+    <title>KDS Profissional | Sistema de Gerenciamento</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
-            --bg-site: #0a0a0c;
-            --bg-card: #16161e;
-            --primary: #7c3aed; /* Roxo vibrante profissional */
-            --accent: #9f67ff;
-            --text-main: #e2e8f0;
-            --text-dim: #94a3b8;
-            --danger: #ef4444;
-            --success: #10b981;
-            --border: #2d2d39;
+            --bg-body: #111111;
+            --bg-nav: #1a1a1a;
+            --bg-card: #222222;
+            --purple-main: #8a2be2;
+            --purple-light: #a855f7;
+            --text-gray: #bbbbbb;
+            --text-white: #ffffff;
+            --border-color: #333333;
+            --green-status: #00ff88;
         }
 
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background-color: var(--bg-site);
-            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-white);
             margin: 0;
             padding: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
-        /* HEADER LIMPO E PROFISSIONAL */
-        .top-header {
-            background: #111118;
-            padding: 15px 20px;
+        /* BARRA SUPERIOR (CLOCK E TÍTULO) */
+        .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border);
+            padding: 10px 20px;
+            background-color: var(--bg-body);
         }
 
-        .brand {
-            font-weight: 800;
-            letter-spacing: -0.5px;
+        #clock {
             font-size: 1.1rem;
-            color: var(--primary);
+            font-weight: bold;
+            color: var(--purple-main);
+        }
+
+        .system-status {
+            font-size: 0.75rem;
+            color: var(--green-status);
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        /* NAVEGAÇÃO POR ABAS (IGUAL AO VÍDEO) */
+        .status-nav {
             display: flex;
-            align-items: center;
-            gap: 8px;
+            background-color: var(--bg-nav);
+            border-bottom: 2px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        #real-time-clock {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        /* SISTEMA DE ABAS - CADA UMA ISOLADA */
-        .tab-navigation {
-            display: flex;
-            background: #111118;
-            border-bottom: 1px solid var(--border);
-            width: 100%;
-        }
-
-        .tab-item {
+        .nav-item {
             flex: 1;
             padding: 15px 5px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
-            border-bottom: 3px solid transparent;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--text-dim);
+            transition: 0.3s;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 5px;
+            border-bottom: 4px solid transparent;
         }
 
-        .tab-item.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-            background: rgba(124, 58, 237, 0.05);
+        .nav-item.active {
+            border-bottom-color: var(--purple-main);
+            background: linear-gradient(to bottom, transparent, rgba(138, 43, 226, 0.1));
         }
 
-        .tab-item .badge {
-            font-size: 0.8rem;
-            color: var(--text-main);
-        }
-
-        /* CONTEÚDO DAS ABAS - ISOLAMENTO TOTAL */
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            position: relative;
-        }
-
-        .status-section {
-            display: none; /* Esconde todas as categorias */
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .status-section.active {
-            display: flex; /* Mostra apenas a ativa */
-        }
-
-        /* CARDS ESTILO PREMIUM */
-        .pedido-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+        .nav-item .count {
+            background: #333;
+            padding: 2px 10px;
             border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .nav-item.active .count {
+            background: var(--purple-main);
+        }
+
+        .nav-item .label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active .label {
+            color: var(--text-white);
+        }
+
+        /* CONTEÚDO DOS PEDIDOS */
+        .container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .tab-content {
+            display: none; /* Escondido por padrão */
+            width: 100%;
+            max-width: 500px;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tab-content.active {
+            display: flex; /* Só mostra a aba ativa */
+        }
+
+        /* CARDS DO PEDIDO (ESTILO DO VÍDEO) */
+        .order-card {
+            background-color: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            border: 1px solid #2d2d2d;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .card-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             margin-bottom: 10px;
         }
 
-        .order-id {
-            background: #2d2d39;
-            color: var(--accent);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: 800;
-            font-size: 0.9rem;
+        .order-number {
+            color: var(--purple-light);
+            font-weight: 900;
+            font-size: 1rem;
         }
 
-        .order-timer {
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            font-weight: 600;
+        .order-time {
+            font-size: 0.75rem;
+            color: var(--text-gray);
         }
 
         .client-name {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            margin: 5px 0;
-            color: #fff;
             text-transform: uppercase;
+            margin: 10px 0;
+            display: block;
         }
 
-        /* BOTÕES DE INTERAÇÃO */
-        .actions {
+        .order-info {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--green-status);
+            padding: 4px 12px;
+            border-radius: 5px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 1px solid var(--green-status);
+        }
+
+        /* BOTÕES DE AÇÃO */
+        .card-actions {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
         .btn {
@@ -164,177 +190,177 @@
             padding: 12px;
             border-radius: 8px;
             border: none;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.75rem;
+            font-weight: bold;
+            font-size: 0.8rem;
             cursor: pointer;
-            transition: opacity 0.2s;
+            text-transform: uppercase;
+            transition: 0.2s;
         }
 
-        .btn-main { background: var(--primary); color: #fff; }
-        .btn-sec { background: #2d2d39; color: var(--text-main); }
-        .btn-del { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .btn-primary { background-color: var(--purple-main); color: white; }
+        .btn-dark { background-color: #333; color: white; }
+        .btn-cancel { background: transparent; color: #ff4444; border: 1px solid #444; font-size: 0.7rem; }
 
-        .search-area {
-            padding: 10px 15px;
-            background: #0a0a0c;
+        /* BUSCA */
+        .search-bar {
+            padding: 15px 20px;
+            background: var(--bg-body);
         }
-
         .search-input {
             width: 100%;
             padding: 12px;
-            background: #16161e;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: #fff;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-nav);
+            color: white;
             outline: none;
         }
 
-        /* DESKTOP */
+        /* RESPONSIVIDADE DESKTOP */
         @media (min-width: 1024px) {
-            .tab-navigation { display: none; }
-            .main-content {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 15px;
-                overflow-x: auto;
+            .container {
+                flex-direction: row;
+                justify-content: space-around;
+                align-items: flex-start;
             }
-            .status-section {
+            .tab-content {
                 display: flex !important;
-                max-width: none;
-                background: #0f0f13;
-                padding: 10px;
-                border-radius: 12px;
-                height: fit-content;
+                background: #0f0f0f;
+                padding: 15px;
+                border-radius: 10px;
                 min-height: 80vh;
             }
-            .section-title-desktop {
+            .status-nav { display: none; }
+            .desktop-label {
                 display: block;
-                padding: 10px;
-                font-weight: 800;
-                color: var(--text-dim);
-                border-bottom: 1px solid var(--border);
-                margin-bottom: 10px;
+                text-align: center;
+                font-weight: bold;
+                color: var(--text-gray);
+                margin-bottom: 15px;
+                border-bottom: 1px solid #333;
+                padding-bottom: 10px;
             }
         }
         @media (max-width: 1023px) {
-            .section-title-desktop { display: none; }
+            .desktop-label { display: none; }
         }
     </style>
 </head>
 <body>
 
-    <header class="top-header">
-        <div class="brand">
-            <div style="width:12px; height:12px; background:var(--success); border-radius:3px;"></div>
-            FAROL KDS
-        </div>
-        <div id="real-time-clock">00:00:00</div>
-        <a href="/admin" style="color:var(--text-dim); text-decoration:none; font-size:0.8rem; font-weight:700;">SAIR</a>
-    </header>
-
-    <div class="search-area">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar cliente ou pedido...">
+    <div class="top-bar">
+        <div id="clock">00:00:00</div>
+        <div class="system-status">• SISTEMA ATIVO</div>
+        <a href="/admin" style="text-decoration:none; color:var(--text-gray); font-size:0.7rem;">ADMIN</a>
     </div>
 
-    <nav class="tab-navigation">
-        <div class="tab-item active" onclick="changeTab(0)">
-            <span class="badge"><%= pedidos.filter(p => p.status === 'Pendente').length %></span>
-            <span>Pendentes</span>
+    <div class="search-bar">
+        <input type="text" id="searchInput" class="search-input" placeholder="Buscar cliente ou pedido...">
+    </div>
+
+    <nav class="status-nav">
+        <div class="nav-item active" onclick="showTab('pendentes', 0)">
+            <span class="count"><%= pedidos.filter(p => p.status === 'Pendente').length %></span>
+            <span class="label">Pendentes</span>
         </div>
-        <div class="tab-item" onclick="changeTab(1)">
-            <span class="badge"><%= pedidos.filter(p => p.status === 'Preparando').length %></span>
-            <span>Preparo</span>
+        <div class="nav-item" onclick="showTab('preparo', 1)">
+            <span class="count"><%= pedidos.filter(p => p.status === 'Preparando').length %></span>
+            <span class="label">Preparo</span>
         </div>
-        <div class="tab-item" onclick="changeTab(2)">
-            <span class="badge"><%= pedidos.filter(p => p.status === 'Pronto').length %></span>
-            <span>Prontos</span>
+        <div class="nav-item" onclick="showTab('prontos', 2)">
+            <span class="count"><%= pedidos.filter(p => p.status === 'Pronto').length %></span>
+            <span class="label">Prontos</span>
         </div>
-        <div class="tab-item" onclick="changeTab(3)">
-            <span class="badge"><%= pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Finalizado').length %></span>
-            <span>Encerrados</span>
+        <div class="nav-item" onclick="showTab('encerrados', 3)">
+            <span class="count"><%= pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Finalizado').length %></span>
+            <span class="label">Encerrados</span>
         </div>
     </nav>
 
-    <main class="main-content">
+    <main class="container">
         
-        <section class="status-section active" id="sec-0">
-            <div class="section-title-desktop">PENDENTES</div>
+        <div id="pendentes" class="tab-content active">
+            <div class="desktop-label">PENDENTES</div>
             <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                <div class="pedido-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.createdAt %>">
+                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
                     <div class="card-header">
-                        <span class="order-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="order-timer label-topo" id="label-topo-<%= p.id %>">--:--</span>
+                        <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="order-time"><%= new Date(p.createdAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) %></span>
                     </div>
-                    <div class="client-name"><%= p.cliente %></div>
-                    <div class="actions" id="btn-area-<%= p.id %>">
-                        <button class="btn btn-main" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceitar</button>
+                    <span class="client-name"><%= p.cliente %></span>
+                    <span class="order-info">1 Itens • Pix</span>
+                    
+                    <div class="card-actions">
+                        <button class="btn btn-primary" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceitar</button>
                     </div>
-                    <div class="actions">
-                        <button class="btn btn-sec" onclick="abrirDetalhes('<%= p.id %>')">Ver Itens</button>
-                        <button class="btn btn-del" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
+                    <div class="card-actions">
+                        <button class="btn btn-dark" onclick="abrirDetalhes('<%= p.id %>')">Ver Detalhes</button>
+                        <button class="btn btn-cancel" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
                     </div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
-        </section>
+        </div>
 
-        <section class="status-section" id="sec-1">
-            <div class="section-title-desktop">EM PREPARO</div>
+        <div id="preparo" class="tab-content">
+            <div class="desktop-label">EM PREPARO</div>
             <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                <div class="pedido-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
+                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
                     <div class="card-header">
-                        <span class="order-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="order-timer label-topo" id="label-topo-<%= p.id %>">--:--</span>
+                        <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="order-time">Em produção</span>
                     </div>
-                    <div class="client-name"><%= p.cliente %></div>
-                    <div class="actions" id="btn-area-<%= p.id %>"></div>
-                    <button class="btn btn-sec" style="width:100%; margin-top:10px" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                    <span class="client-name"><%= p.cliente %></span>
+                    <div class="card-actions">
+                        <button class="btn btn-primary" onclick="atualizarStatus('<%= p.id %>', 'Pronto')">Marcar Pronto</button>
+                    </div>
+                    <button class="btn btn-dark" style="width:100%; margin-top:10px;" onclick="abrirDetalhes('<%= p.id %>')">Comanda</button>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
-        </section>
+        </div>
 
-        <section class="status-section" id="sec-2">
-            <div class="section-title-desktop">PRONTOS</div>
+        <div id="prontos" class="tab-content">
+            <div class="desktop-label">PRONTOS</div>
             <% pedidos.filter(p => p.status === 'Pronto').forEach(p => { %>
-                <div class="pedido-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
+                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
                     <div class="card-header">
-                        <span class="order-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="order-timer label-topo" id="label-topo-<%= p.id %>">--:--</span>
+                        <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="status-badge">PRONTO</span>
                     </div>
-                    <div class="client-name"><%= p.cliente %></div>
-                    <div class="actions">
-                        <button class="btn btn-main" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Despachar</button>
+                    <span class="client-name"><%= p.cliente %></span>
+                    <div class="card-actions">
+                        <button class="btn btn-primary" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Despachar</button>
                     </div>
-                    <button class="btn btn-sec" style="width:100%; margin-top:10px" onclick="abrirDetalhes('<%= p.id %>')">Comanda</button>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
-        </section>
+        </div>
 
-        <section class="status-section" id="sec-3">
-            <div class="section-title-desktop">ENCERRADOS</div>
+        <div id="encerrados" class="tab-content">
+            <div class="desktop-label">ENCERRADOS</div>
             <% pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Finalizado').forEach(p => { %>
-                <div class="pedido-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
-                    <div class="card-header">
-                        <span class="order-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="order-timer" style="color:var(--success)"><%= p.status %></span>
-                    </div>
-                    <div class="client-name"><%= p.cliente %></div>
+                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
+                    <span class="status-badge" style="<%= p.status === 'Finalizado' ? 'color: #999; border-color: #444' : '' %>">
+                        <%= p.status %>
+                    </span>
+                    <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
+                    <span class="client-name"><%= p.cliente %></span>
+                    <span class="order-info">Total: R$ <%= p.total %></span>
                     <% if(p.status === 'Saiu para Entrega') { %>
-                        <button class="btn btn-main" style="width:100%" onclick="atualizarStatus('<%= p.id %>', 'Finalizado')">Finalizar</button>
+                        <button class="btn btn-primary" style="width:100%; margin-top:10px" onclick="atualizarStatus('<%= p.id %>', 'Finalizado')">Concluir</button>
                     <% } %>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
-        </section>
+        </div>
+
     </main>
 
-    <div id="modalDetalhes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; justify-content:center; align-items:center;">
-        <div style="background:var(--bg-card); width:90%; max-width:450px; padding:25px; border-radius:15px; border:1px solid var(--border);">
+    <div id="modalDetalhes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:var(--bg-card); width:90%; max-width:450px; padding:25px; border-radius:15px; border:1px solid var(--border-color);">
             <div id="comanda-interna"></div>
-            <button class="btn btn-main" style="width:100%; margin-top:20px" onclick="fecharModal()">FECHAR</button>
+            <button class="btn btn-primary" style="width:100%; margin-top:20px" onclick="fecharModal()">VOLTAR</button>
         </div>
     </div>
 
@@ -343,54 +369,30 @@
     <script>
         const socket = io();
 
-        // RELÓGIO ATUALIZADO
+        // RELÓGIO
         setInterval(() => {
-            document.getElementById('real-time-clock').innerText = new Date().toLocaleTimeString('pt-BR');
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR');
         }, 1000);
 
-        // NAVEGAÇÃO ENTRE ABAS ISOLADAS
-        function changeTab(idx) {
-            if(window.innerWidth < 1024) {
-                document.querySelectorAll('.tab-item').forEach((t, i) => t.classList.toggle('active', i === idx));
-                document.querySelectorAll('.status-section').forEach((s, i) => s.classList.toggle('active', i === idx));
-            }
+        // TROCA DE ABAS MOBILE (ISOLAMENTO TOTAL)
+        function showTab(tabId, index) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.nav-item')[index].classList.add('active');
         }
 
-        // FAROL DE TEMPO PROFISSIONAL
-        function updateTimes() {
-            const now = new Date();
-            document.querySelectorAll('.pedido-card[data-time]').forEach(card => {
-                const id = card.getAttribute('data-id');
-                const start = new Date(card.getAttribute('data-time'));
-                const diff = Math.floor((now - start) / 60000);
-                const label = card.querySelector('.label-topo');
-                const btnArea = card.querySelector(`#btn-area-${id}`);
-                
-                if(label) label.innerText = diff + " MIN";
-
-                // Se estiver no preparo (sec-1)
-                if(card.closest('#sec-1')) {
-                    if(diff >= 5) {
-                        if(btnArea) btnArea.innerHTML = `<button class="btn btn-main" onclick="atualizarStatus('${id}', 'Pronto')">Marcar Pronto</button>`;
-                    } else {
-                        if(btnArea) btnArea.innerHTML = `<button class="btn btn-sec" style="opacity:0.4" disabled>Preparando...</button>`;
-                    }
-                }
-            });
-        }
-        setInterval(updateTimes, 5000);
-        updateTimes();
-
-        // BUSCA
+        // BUSCA FILTRADA
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            document.querySelectorAll('.search-item').forEach(item => {
-                const searchStr = item.getAttribute('data-cliente') + item.getAttribute('data-id');
-                item.style.display = searchStr.includes(term) ? 'block' : 'none';
+            document.querySelectorAll('.search-item').forEach(card => {
+                const text = card.getAttribute('data-cliente') + card.getAttribute('data-id');
+                card.style.display = text.includes(term) ? 'block' : 'none';
             });
         });
 
-        // REQUISIÇÕES AO SERVIDOR
+        // LÓGICA DE ROTAS
         async function atualizarStatus(id, novoStatus) {
             try {
                 const res = await fetch('/update-status', {
@@ -403,7 +405,9 @@
         }
 
         async function cancelarPedido(id) {
-            if (confirm("CONFIRMAR CANCELAMENTO?")) atualizarStatus(id, 'Cancelado');
+            if (confirm("Deseja realmente CANCELAR este pedido?")) {
+                atualizarStatus(id, 'Cancelado');
+            }
         }
 
         function abrirDetalhes(id) {
@@ -415,6 +419,7 @@
         }
         function fecharModal() { document.getElementById('modalDetalhes').style.display = "none"; }
 
+        // SOCKET.IO
         socket.on('novoPedido', () => { 
             document.getElementById('audioNotificacao').play();
             setTimeout(() => window.location.reload(), 800); 
