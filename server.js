@@ -39,18 +39,17 @@ const CategoriaSchema = new mongoose.Schema({
 });
 const Categoria = mongoose.model('Categoria', CategoriaSchema);
 
-// --- NOVO SCHEMA DE ADICIONAIS (BANCO DE DATOS) ---
 const CategoriaAdicionalSchema = new mongoose.Schema({
     nome: String,
     descricao: String,
-    status: { type: String, default: 'opcional' }, // opcional ou obrigatorio
+    status: { type: String, default: 'opcional' }, 
     limite: { type: Number, default: 1 },
-    produtosVinculados: [String], // IDs dos produtos que usam esta categoria
+    produtosVinculados: [String], 
     adicionais: [{
         nome: String,
         valor: Number,
         desconto: { type: Number, default: 0 },
-        status: { type: String, default: 'disponivel' } // disponivel ou indisponivel
+        status: { type: String, default: 'disponivel' } 
     }]
 });
 const CategoriaAdicional = mongoose.model('CategoriaAdicional', CategoriaAdicionalSchema);
@@ -64,7 +63,7 @@ const ProdutoSchema = new mongoose.Schema({
     desconto: { type: Number, default: null },
     status: { type: String, default: 'disponivel' },
     modificadoresAtivos: { type: Boolean, default: false },
-    adicionaisIds: [String] // IDs das CategoriaAdicional vinculadas
+    adicionaisIds: [String] 
 });
 const Produto = mongoose.model('Produto', ProdutoSchema);
 
@@ -173,6 +172,32 @@ app.use(async (req, res, next) => {
         res.locals.estaAberto = false;
         res.locals.nomeSite = "Meu Delivery";
         next();
+    }
+});
+
+// --- NOVAS ROTAS DE API (PARA RESOLVER O ERRO 404 E SYNTAX ERROR) ---
+
+app.get('/api/get-orders', async (req, res) => {
+    try {
+        const ativos = await Pedido.find({ status: { $nin: ['Finalizado', 'Cancelado', 'Concluído'] } }).sort({ createdAt: 1 });
+        const arquivados = await Pedido.find({ status: { $in: ['Finalizado', 'Cancelado', 'Concluído'] } }).limit(50).sort({ updatedAt: -1 });
+        res.json({ active: ativos, archived: arquivados });
+    } catch (err) {
+        res.status(500).json({ error: "Erro ao buscar dados" });
+    }
+});
+
+app.post('/api/update-status', async (req, res) => {
+    const { id, status } = req.body;
+    try {
+        const pedido = await Pedido.findOneAndUpdate({ id: id }, { status: status, updatedAt: Date.now() }, { new: true });
+        if (['Finalizado', 'Cancelado', 'Concluído'].includes(status)) {
+            await Mensagem.deleteMany({ pedidoId: id.toString() });
+        }
+        io.emit('statusAtualizado', { id, novoStatus: status });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false });
     }
 });
 
@@ -298,7 +323,6 @@ app.get('/', async (req, res) => {
         const categoriasDoBanco = await Categoria.find();
         const catsAdicionais = await CategoriaAdicional.find();
         
-        // Formata os adicionais para a estrutura que o index espera
         const estruturaAdicionais = {
             categorias: catsAdicionais.map(cat => ({
                 id: cat._id,
