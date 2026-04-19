@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELITE OPS | Kitchen Display System</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --bg-deep: #020203;
@@ -247,25 +251,6 @@
         .customer-name { font-size: 1.2rem; font-weight: 700; margin-bottom: 5px; }
         .order-details { font-size: 0.9rem; color: var(--text-dim); }
 
-        .fab {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: var(--accent-primary);
-            color: white;
-            border: none;
-            font-size: 24px;
-            box-shadow: 0 10px 20px rgba(130, 87, 229, 0.4);
-            cursor: pointer;
-            z-index: 90;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
         #modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -383,75 +368,48 @@
         </section>
     </main>
 
-    <button class="fab" onclick="simulateNewOrder()">+</button>
-
     <div id="modal-overlay">
         <div class="comanda-digital" id="comanda-target"></div>
     </div>
 
     <script>
-        // CONFIGURAÇÃO DE ROTAS (Substitua pela URL do seu servidor/arquivo PHP/Node/Java)
-        const API_BASE_URL = "http://localhost:8080/api/orders"; 
+        // COLOQUE SUAS CONFIGURAÇÕES DO FIREBASE AQUI
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
+            projectId: "SEU_PROJETO",
+            storageBucket: "SEU_PROJETO.appspot.com",
+            messagingSenderId: "ID",
+            appId: "ID_APP"
+        };
 
-        let orders = [];
-        let archivedOrders = [];
-        let historicalRevenue = 0;
-        let totalProcessedOrders = 0;
-        let isSlowMode = false;
-
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
         const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
 
-        // FUNÇÃO PARA BUSCAR DADOS DO SERVIDOR (READ)
-        async function fetchOrders() {
-            try {
-                // Se estiver usando arquivos locais/mock, você pode usar um arquivo JSON
-                // const response = await fetch('pedidos.json');
-                const response = await fetch(API_BASE_URL);
-                const data = await response.json();
+        let allOrders = {};
+        let isSlowMode = false;
+
+        // --- LÓGICA DE MIGRAÇÃO: MONITORAMENTO EM TEMPO REAL ---
+        db.ref('pedidos').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // Verifica se entrou pedido novo para tocar o som
+                const currentCount = Object.keys(allOrders).filter(k => allOrders[k].status === 'pending').length;
+                const newCount = Object.keys(data).filter(k => data[k].status === 'pending').length;
                 
-                // Filtra o que é ativo e o que é arquivado
-                orders = data.filter(o => o.status !== 'archived' && !o.canceled);
-                archivedOrders = data.filter(o => o.status === 'archived' || o.canceled);
-                
+                if (newCount > currentCount) {
+                    notificationSound.play().catch(e => console.log("Aguardando interação para som"));
+                }
+
+                allOrders = data;
                 render();
-            } catch (error) {
-                console.error("Erro ao carregar rotas de pedidos:", error);
-            }
-        }
-
-        function toggleSlowMode() {
-            isSlowMode = document.getElementById('slow-mode-toggle').checked;
-            const statusIndicator = document.getElementById('status-online');
-            
-            if (isSlowMode) {
-                statusIndicator.style.color = 'var(--status-alert)';
-                statusIndicator.innerText = '● ALERTA DE ALTA DEMANDA';
             } else {
-                statusIndicator.style.color = 'var(--status-ready)';
-                statusIndicator.innerText = '● SISTEMA ATIVO';
+                allOrders = {};
+                render();
             }
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('active'));
-            const selectedBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
-            selectedBtn.classList.add('active');
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-        }
-
-        function updateMetrics() {
-            let totalRev = archivedOrders.reduce((acc, o) => {
-                const orderTotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
-                return o.canceled ? acc : acc + orderTotal;
-            }, 0);
-            
-            let count = archivedOrders.filter(o => !o.canceled).length;
-            
-            document.getElementById('m-revenue').innerText = `R$ ${totalRev.toFixed(2)}`;
-            document.getElementById('m-total-count').innerText = count;
-            document.getElementById('m-average').innerText = count > 0 ? `R$ ${(totalRev / count).toFixed(2)}` : "R$ 0,00";
-        }
+        });
 
         function render() {
             const containers = {
@@ -460,41 +418,36 @@
                 ready: document.getElementById('list-ready'),
                 archived: document.getElementById('list-archived')
             };
-            const counts = { pending: 0, preparing: 0, ready: 0, archived: archivedOrders.length };
+
+            const counts = { pending: 0, preparing: 0, ready: 0, archived: 0 };
             Object.values(containers).forEach(c => c.innerHTML = '');
 
-            const now = Date.now();
+            let totalRevenue = 0;
+            let successOrders = 0;
 
-            orders.forEach(order => {
-                counts[order.status]++;
+            Object.keys(allOrders).forEach(key => {
+                const order = allOrders[key];
+                const status = order.status || 'pending';
+                
+                // Cálculo de métricas (apenas finalizados não cancelados)
+                if (status === 'archived' && !order.canceled) {
+                    const total = order.items.reduce((acc, i) => acc + (i.price * i.qty), 0);
+                    totalRevenue += total;
+                    successOrders++;
+                }
+
+                counts[status]++;
+                
                 const card = document.createElement('div');
-                const isDelayed = (now - order.timestamp) > 900000 && order.status !== 'ready';
+                const now = Date.now();
+                const isDelayed = (now - (order.timestamp || now)) > 900000 && status !== 'ready';
                 
                 card.className = `order-card ${isDelayed ? 'delayed' : ''}`;
-                card.onclick = () => showComanda(order.id);
-                card.innerHTML = `
-                    <div class="order-header">
-                        <span class="order-id">#${order.id}</span>
-                        <span class="order-time">${order.time}</span>
-                    </div>
-                    <div class="customer-name">${order.customer}</div>
-                    <div class="order-details">
-                        ${order.items.length} itens • <strong>${order.payment}</strong>
-                    </div>
-                `;
-                containers[order.status].appendChild(card);
-            });
+                if (status !== 'archived') card.onclick = () => showComanda(key);
 
-            archivedOrders.forEach(order => {
-                const card = document.createElement('div');
-                card.className = 'order-card';
-                card.style.opacity = '0.7';
-                card.style.cursor = 'default';
-                const total = order.items.reduce((acc, i) => acc + (i.price * i.qty), 0);
-                
                 const statusTag = order.canceled ? 
                     `<span style="color: var(--status-alert)">CANCELADO</span>` : 
-                    `<span style="color: var(--status-ready)">FINALIZADO</span>`;
+                    (status === 'archived' ? `<span style="color: var(--status-ready)">FINALIZADO</span>` : order.time);
 
                 card.innerHTML = `
                     <div class="order-header">
@@ -503,30 +456,60 @@
                     </div>
                     <div class="customer-name">${order.customer}</div>
                     <div class="order-details">
-                        Total: R$ ${total.toFixed(2)}
+                        ${order.items.length} itens • <strong>${order.payment}</strong>
                         ${order.canceled ? `<br><small style="color:#ff4b4b">Motivo: ${order.reason}</small>` : ''}
                     </div>
                 `;
-                containers['archived'].appendChild(card);
+                containers[status].appendChild(card);
             });
 
+            // Atualiza Badges e Métricas
             document.getElementById('count-pending').innerText = counts.pending;
             document.getElementById('count-preparing').innerText = counts.preparing;
             document.getElementById('count-ready').innerText = counts.ready;
             document.getElementById('count-archived').innerText = counts.archived;
-            updateMetrics();
+
+            document.getElementById('m-revenue').innerText = `R$ ${totalRevenue.toFixed(2)}`;
+            document.getElementById('m-total-count').innerText = successOrders;
+            document.getElementById('m-average').innerText = successOrders > 0 ? `R$ ${(totalRevenue / successOrders).toFixed(2)}` : "R$ 0,00";
         }
 
-        function showComanda(id) {
-            const order = orders.find(o => o.id === id);
-            if(!order) return;
+        // --- ROTAS DE MOVIMENTAÇÃO (UPDATE NO BANCO) ---
+        function moveOrder(key, newStatus) {
+            db.ref('pedidos/' + key).update({
+                status: newStatus,
+                // Se for arquivado, liberamos o cliente (dependendo da lógica do seu site)
+                finalizado: (newStatus === 'archived') 
+            }).then(() => {
+                closeModal();
+                switchTab(newStatus);
+            });
+        }
+
+        function confirmCancel(key) {
+            const reason = document.getElementById('reason-input').value;
+            if(!reason) { alert("Informe o motivo!"); return; }
+
+            db.ref('pedidos/' + key).update({
+                status: 'archived',
+                canceled: true,
+                reason: reason,
+                finalizado: true // Isso permite o cliente comprar de novo
+            }).then(() => {
+                closeModal();
+                switchTab('archived');
+            });
+        }
+
+        function showComanda(key) {
+            const order = allOrders[key];
             const target = document.getElementById('comanda-target');
             const total = order.items.reduce((acc, i) => acc + (i.price * i.qty), 0);
 
-            let actionText = "";
-            if(order.status === 'pending') actionText = `<button class="btn btn-confirm" onclick="moveOrder('${order.id}', 'preparing')">INICIAR PRODUÇÃO</button>`;
-            else if(order.status === 'preparing') actionText = `<button class="btn btn-confirm" onclick="moveOrder('${order.id}', 'ready')">PRONTO PARA ENTREGA</button>`;
-            else actionText = `<button class="btn btn-confirm" onclick="moveOrder('${order.id}', 'archive')">FINALIZAR / ARQUIVAR</button>`;
+            let actionBtn = "";
+            if(order.status === 'pending') actionBtn = `<button class="btn btn-confirm" onclick="moveOrder('${key}', 'preparing')">INICIAR PRODUÇÃO</button>`;
+            else if(order.status === 'preparing') actionBtn = `<button class="btn btn-confirm" onclick="moveOrder('${key}', 'ready')">PRONTO PARA ENTREGA</button>`;
+            else actionBtn = `<button class="btn btn-confirm" onclick="moveOrder('${key}', 'archived')">FINALIZAR / LIBERAR CLIENTE</button>`;
 
             target.innerHTML = `
                 <div class="ticket-header">
@@ -542,19 +525,26 @@
                 ${order.items.map(i => `<div class="ticket-item"><span>${i.qty}x ${i.name}</span><span>R$ ${(i.qty * i.price).toFixed(2)}</span></div>`).join('')}
                 <div class="ticket-total">TOTAL R$ ${total.toFixed(2)}</div>
                 
-                <div class="actions-bar" id="actions-container">
-                    ${actionText}
+                <div class="actions-bar">
+                    ${actionBtn}
                     <button class="btn btn-cancel" onclick="toggleCancelReason()">CANCELAR PEDIDO</button>
-                    
                     <div id="cancel-box" class="cancel-reason-box">
-                        <textarea id="reason-input" placeholder="Digite o motivo do cancelamento..."></textarea>
-                        <button class="btn btn-cancel" style="padding: 10px" onclick="confirmCancel('${order.id}')">CONFIRMAR CANCELAMENTO</button>
+                        <textarea id="reason-input" placeholder="Motivo do cancelamento..."></textarea>
+                        <button class="btn btn-cancel" style="padding: 10px" onclick="confirmCancel('${key}')">CONFIRMAR</button>
                     </div>
-
                     <button class="btn btn-close" onclick="closeModal()">VOLTAR</button>
                 </div>
             `;
             document.getElementById('modal-overlay').style.display = 'flex';
+        }
+
+        // Funções de Interface
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('active'));
+            const btn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+            if(btn) btn.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
         function toggleCancelReason() {
@@ -562,86 +552,18 @@
             box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
         }
 
-        // FUNÇÃO DE ROTA PARA CANCELAR (UPDATE)
-        async function confirmCancel(id) {
-            const reason = document.getElementById('reason-input').value;
-            if(!reason) { alert("Por favor, insira o motivo do cancelamento."); return; }
-
-            try {
-                await fetch(`${API_BASE_URL}/${id}/cancel`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ reason: reason, canceled: true })
-                });
-                
-                closeModal();
-                fetchOrders(); // Recarrega do servidor
-                switchTab('archived');
-            } catch (e) {
-                alert("Erro ao conectar com o servidor.");
-            }
-        }
-
-        // FUNÇÃO DE ROTA PARA MOVER STATUS (UPDATE)
-        async function moveOrder(id, newStatus) {
-            try {
-                const finalStatus = (newStatus === 'archive') ? 'archived' : newStatus;
-                
-                await fetch(`${API_BASE_URL}/${id}/status`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: finalStatus })
-                });
-
-                closeModal();
-                fetchOrders(); 
-                if(newStatus !== 'archive') switchTab(newStatus);
-            } catch (e) {
-                alert("Erro ao atualizar status no servidor.");
-            }
-        }
-
         function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-        // FUNÇÃO DE ROTA PARA CRIAR NOVO (CREATE)
-        async function simulateNewOrder() {
-            notificationSound.play().catch(e => console.log("Som aguardando interação."));
-            const id = Math.floor(Math.random() * 9000) + 1000;
-            
-            const newOrder = {
-                id: id.toString(),
-                customer: "NOVO CLIENTE #" + id,
-                address: "Endereço via API",
-                items: [{name: "Item Gourmet", qty: 1, price: 45.00}],
-                payment: "Pix",
-                time: new Date().toLocaleTimeString('pt-BR'),
-                timestamp: Date.now(),
-                status: "pending",
-                canceled: false,
-                reason: ""
-            };
-
-            try {
-                await fetch(API_BASE_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newOrder)
-                });
-                fetchOrders();
-                switchTab('pending');
-            } catch (e) {
-                console.error("Erro ao simular pedido:", e);
-            }
+        function toggleSlowMode() {
+            isSlowMode = document.getElementById('slow-mode-toggle').checked;
+            const status = document.getElementById('status-online');
+            status.style.color = isSlowMode ? 'var(--status-alert)' : 'var(--status-ready)';
+            status.innerText = isSlowMode ? '● ALERTA DE ALTA DEMANDA' : '● SISTEMA ATIVO';
         }
 
         setInterval(() => {
             document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR');
         }, 1000);
-
-        // POLLING: Verifica novos pedidos no servidor a cada 30 segundos
-        setInterval(fetchOrders, 30000);
-
-        window.onload = fetchOrders;
     </script>
 </body>
 </html>
