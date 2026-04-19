@@ -3,343 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Farol da Operação | KDS</title>
+    <title>KDS Profissional | Farol</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
-            --bg-body: #121212;
-            --bg-card: #2a2a2a;
-            --primary-purple: #8b5cf6;
-            --text-main: #ffffff;
-            --text-dim: #a0a0a0;
-            --success-green: #00ff88;
+            --bg-site: #0a0a0c;
+            --bg-card: #16161e;
+            --primary: #7c3aed; /* Roxo vibrante profissional */
+            --accent: #9f67ff;
+            --text-main: #e2e8f0;
+            --text-dim: #94a3b8;
+            --danger: #ef4444;
+            --success: #10b981;
+            --border: #2d2d39;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-body);
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-site);
             color: var(--text-main);
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
-        }
-
-        /* HEADER & DASHBOARD INFO */
-        .header-top {
-            background: linear-gradient(to bottom, #1e1e2e, #121212);
-            padding: 10px 20px;
-            border-bottom: 1px solid #333;
-        }
-
-        .stats-bar {
+            height: 100vh;
             display: flex;
-            justify-content: space-around;
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: var(--primary-purple);
-            text-transform: uppercase;
-            margin-bottom: 10px;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        .stats-bar span b { color: var(--success-green); }
-
-        .header-main {
+        /* HEADER LIMPO E PROFISSIONAL */
+        .top-header {
+            background: #111118;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            font-size: 1.1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         #real-time-clock {
-            font-size: 1.2rem;
-            color: var(--primary-purple);
-            font-weight: bold;
-            font-family: monospace;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-main);
         }
 
-        /* CATEGORIAS POR ABAS (IGUAL A FOTO) */
-        .status-tabs {
+        /* SISTEMA DE ABAS - CADA UMA ISOLADA */
+        .tab-navigation {
             display: flex;
-            background: #1a1a1a;
-            border-bottom: 2px solid #333;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            background: #111118;
+            border-bottom: 1px solid var(--border);
+            width: 100%;
         }
 
         .tab-item {
             flex: 1;
-            padding: 12px 5px;
+            padding: 15px 5px;
             text-align: center;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.2s ease;
             border-bottom: 3px solid transparent;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-dim);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 2px;
+            gap: 4px;
         }
 
         .tab-item.active {
-            border-bottom: 3px solid var(--primary-purple);
-            background: rgba(139, 92, 246, 0.1);
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: rgba(124, 58, 237, 0.05);
         }
 
-        .tab-item .count {
-            background: #333;
-            color: #fff;
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 10px;
+        .tab-item .badge {
+            font-size: 0.8rem;
+            color: var(--text-main);
         }
 
-        .tab-item.active .count { background: var(--primary-purple); }
-
-        .tab-item .label {
-            font-size: 0.65rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: var(--text-dim);
-        }
-
-        .tab-item.active .label { color: #white; }
-
-        /* LISTA DE PEDIDOS */
-        .kanban-container {
-            padding: 15px;
-        }
-
-        .col-content {
-            display: none; /* Escondido por padrão no mobile */
-            flex-direction: column;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .col-content.active { display: flex; }
-
-        /* CARDS (ESTILO DA FOTO) */
-        .mini-card {
-            background: var(--bg-card);
-            border-radius: 12px;
-            width: 100%;
-            max-width: 400px;
+        /* CONTEÚDO DAS ABAS - ISOLAMENTO TOTAL */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
             padding: 15px;
             position: relative;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border: 1px solid #3d3d3d;
         }
 
-        .card-header-info {
+        .status-section {
+            display: none; /* Esconde todas as categorias */
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .status-section.active {
+            display: flex; /* Mostra apenas a ativa */
+        }
+
+        /* CARDS ESTILO PREMIUM */
+        .pedido-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            align-items: flex-start;
+            margin-bottom: 10px;
         }
 
-        .card-id {
-            color: var(--primary-purple);
-            font-weight: bold;
+        .order-id {
+            background: #2d2d39;
+            color: var(--accent);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 800;
             font-size: 0.9rem;
         }
 
-        .card-time {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-        }
-
-        .card-cliente {
-            font-size: 1.1rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .card-details-summary {
+        .order-timer {
             font-size: 0.8rem;
             color: var(--text-dim);
+            font-weight: 600;
         }
 
-        /* BOTÕES DE AÇÃO */
-        .btn-group {
+        .client-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 5px 0;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        /* BOTÕES DE INTERAÇÃO */
+        .actions {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin-top: 15px;
         }
 
-        .btn-action {
+        .btn {
             flex: 1;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 8px;
             border: none;
-            font-weight: bold;
+            font-weight: 700;
+            text-transform: uppercase;
             font-size: 0.75rem;
             cursor: pointer;
-            text-transform: uppercase;
+            transition: opacity 0.2s;
         }
 
-        .btn-primary { background: var(--primary-purple); color: white; }
-        .btn-outline { background: #3d3d3d; color: white; }
-        .btn-cancel { background: transparent; color: #ff4444; border: 1px solid #444; font-size: 0.65rem; }
+        .btn-main { background: var(--primary); color: #fff; }
+        .btn-sec { background: #2d2d39; color: var(--text-main); }
+        .btn-del { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
 
-        /* BUSCA */
-        .search-box {
+        .search-area {
             padding: 10px 15px;
-            background: #121212;
+            background: #0a0a0c;
         }
+
         .search-input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
+            background: #16161e;
+            border: 1px solid var(--border);
             border-radius: 8px;
-            border: 1px solid #333;
-            background: #1a1a1a;
-            color: white;
+            color: #fff;
+            outline: none;
         }
 
         /* DESKTOP */
-        @media (min-width: 900px) {
-            .status-tabs { display: none; }
-            .kanban-container {
-                display: flex;
+        @media (min-width: 1024px) {
+            .tab-navigation { display: none; }
+            .main-content {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
                 gap: 15px;
                 overflow-x: auto;
-                align-items: flex-start;
             }
-            .col-content {
+            .status-section {
                 display: flex !important;
-                min-width: 300px;
-                background: #1a1a1a;
-                border-radius: 10px;
+                max-width: none;
+                background: #0f0f13;
                 padding: 10px;
-                height: 80vh;
-                overflow-y: auto;
+                border-radius: 12px;
+                height: fit-content;
+                min-height: 80vh;
             }
+            .section-title-desktop {
+                display: block;
+                padding: 10px;
+                font-weight: 800;
+                color: var(--text-dim);
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 10px;
+            }
+        }
+        @media (max-width: 1023px) {
+            .section-title-desktop { display: none; }
         }
     </style>
 </head>
 <body>
 
-    <header class="header-top">
-        <div class="stats-bar">
-            <span>Faturamento: <b>R$ 0,00</b></span>
-            <span>Ticket Médio: <b>R$ 0,00</b></span>
-            <span>Total: <b><%= pedidos.length %></b></span>
+    <header class="top-header">
+        <div class="brand">
+            <div style="width:12px; height:12px; background:var(--success); border-radius:3px;"></div>
+            FAROL KDS
         </div>
-        <div class="header-main">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:10px; height:10px; background:var(--success-green); border-radius:50%"></div>
-                <strong style="font-size: 0.9rem;">OPERACIONAL KDS</strong>
-            </div>
-            <div id="real-time-clock">00:00:00</div>
-            <a href="/admin" style="color:var(--text-dim); text-decoration:none; font-size:0.7rem;">SAIR</a>
-        </div>
+        <div id="real-time-clock">00:00:00</div>
+        <a href="/admin" style="color:var(--text-dim); text-decoration:none; font-size:0.8rem; font-weight:700;">SAIR</a>
     </header>
 
-    <div class="search-box">
-        <input type="text" id="searchInput" class="search-input" placeholder="Buscar cliente ou ID...">
+    <div class="search-area">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar cliente ou pedido...">
     </div>
 
-    <nav class="status-tabs">
-        <div class="tab-item active" onclick="switchTab(0)">
-            <span class="count"><%= pedidos.filter(p => p.status === 'Pendente').length %></span>
-            <span class="label">Pendentes</span>
+    <nav class="tab-navigation">
+        <div class="tab-item active" onclick="changeTab(0)">
+            <span class="badge"><%= pedidos.filter(p => p.status === 'Pendente').length %></span>
+            <span>Pendentes</span>
         </div>
-        <div class="tab-item" onclick="switchTab(1)">
-            <span class="count"><%= pedidos.filter(p => p.status === 'Preparando').length %></span>
-            <span class="label">Preparo</span>
+        <div class="tab-item" onclick="changeTab(1)">
+            <span class="badge"><%= pedidos.filter(p => p.status === 'Preparando').length %></span>
+            <span>Preparo</span>
         </div>
-        <div class="tab-item" onclick="switchTab(2)">
-            <span class="count"><%= pedidos.filter(p => p.status === 'Pronto').length %></span>
-            <span class="label">Prontos</span>
+        <div class="tab-item" onclick="changeTab(2)">
+            <span class="badge"><%= pedidos.filter(p => p.status === 'Pronto').length %></span>
+            <span>Prontos</span>
         </div>
-        <div class="tab-item" onclick="switchTab(3)">
-            <span class="count"><%= pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Finalizado').length %></span>
-            <span class="label">Encerrado</span>
+        <div class="tab-item" onclick="changeTab(3)">
+            <span class="badge"><%= pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Finalizado').length %></span>
+            <span>Encerrados</span>
         </div>
     </nav>
 
-    <div class="kanban-container">
+    <main class="main-content">
         
-        <div class="col-content active" id="col-0">
+        <section class="status-section active" id="sec-0">
+            <div class="section-title-desktop">PENDENTES</div>
             <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.createdAt %>">
-                    <div class="card-header-info">
-                        <span class="card-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="card-time label-topo" id="label-topo-<%= p.id %>">--:--</span>
+                <div class="pedido-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.createdAt %>">
+                    <div class="card-header">
+                        <span class="order-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="order-timer label-topo" id="label-topo-<%= p.id %>">--:--</span>
                     </div>
-                    <span class="card-cliente"><%= p.cliente %></span>
-                    <span class="card-details-summary">Itens do pedido • Pix</span>
-                    
-                    <div class="btn-group" id="btn-area-<%= p.id %>">
-                        <button class="btn-action btn-primary" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceitar</button>
+                    <div class="client-name"><%= p.cliente %></div>
+                    <div class="actions" id="btn-area-<%= p.id %>">
+                        <button class="btn btn-main" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceitar</button>
                     </div>
-                    <div class="btn-group">
-                        <button class="btn-action btn-outline" onclick="abrirDetalhes('<%= p.id %>')">Ver Pedido</button>
-                        <button class="btn-action btn-cancel" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
+                    <div class="actions">
+                        <button class="btn btn-sec" onclick="abrirDetalhes('<%= p.id %>')">Ver Itens</button>
+                        <button class="btn btn-del" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
                     </div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
-        </div>
+        </section>
 
-        <div class="col-content" id="col-1">
+        <section class="status-section" id="sec-1">
+            <div class="section-title-desktop">EM PREPARO</div>
             <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
-                    <div class="card-header-info">
-                        <span class="card-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="card-time label-topo" id="label-topo-<%= p.id %>">--:--</span>
+                <div class="pedido-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
+                    <div class="card-header">
+                        <span class="order-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="order-timer label-topo" id="label-topo-<%= p.id %>">--:--</span>
                     </div>
-                    <span class="card-cliente"><%= p.cliente %></span>
-                    
-                    <div class="btn-group" id="btn-area-<%= p.id %>">
-                        </div>
-                    <button class="btn-action btn-outline" style="width:100%; margin-top:10px;" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                    <div class="client-name"><%= p.cliente %></div>
+                    <div class="actions" id="btn-area-<%= p.id %>"></div>
+                    <button class="btn btn-sec" style="width:100%; margin-top:10px" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
-        </div>
+        </section>
 
-        <div class="col-content" id="col-2">
+        <section class="status-section" id="sec-2">
+            <div class="section-title-desktop">PRONTOS</div>
             <% pedidos.filter(p => p.status === 'Pronto').forEach(p => { %>
-                <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
-                    <div class="card-header-info">
-                        <span class="card-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="card-time label-topo" id="label-topo-<%= p.id %>">--:--</span>
+                <div class="pedido-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
+                    <div class="card-header">
+                        <span class="order-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="order-timer label-topo" id="label-topo-<%= p.id %>">--:--</span>
                     </div>
-                    <span class="card-cliente"><%= p.cliente %></span>
-                    
-                    <div class="btn-group" id="btn-area-<%= p.id %>">
-                        <button class="btn-action btn-primary" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Despachar</button>
+                    <div class="client-name"><%= p.cliente %></div>
+                    <div class="actions">
+                        <button class="btn btn-main" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Despachar</button>
                     </div>
-                    <button class="btn-action btn-outline" style="width:100%; margin-top:10px;" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                    <button class="btn btn-sec" style="width:100%; margin-top:10px" onclick="abrirDetalhes('<%= p.id %>')">Comanda</button>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
-        </div>
+        </section>
 
-        <div class="col-content" id="col-3">
+        <section class="status-section" id="sec-3">
+            <div class="section-title-desktop">ENCERRADOS</div>
             <% pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Finalizado').forEach(p => { %>
-                <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
-                    <div class="card-header-info">
-                        <span class="card-id">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="card-time"><%= p.status %></span>
+                <div class="pedido-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
+                    <div class="card-header">
+                        <span class="order-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="order-timer" style="color:var(--success)"><%= p.status %></span>
                     </div>
-                    <span class="card-cliente"><%= p.cliente %></span>
+                    <div class="client-name"><%= p.cliente %></div>
                     <% if(p.status === 'Saiu para Entrega') { %>
-                        <button class="btn-action btn-primary" style="width:100%;" onclick="atualizarStatus('<%= p.id %>', 'Finalizado')">Concluir</button>
-                    <% } else { %>
-                        <span style="color:var(--success-green); font-size:0.7rem; font-weight:bold;">PEDIDO FINALIZADO</span>
+                        <button class="btn btn-main" style="width:100%" onclick="atualizarStatus('<%= p.id %>', 'Finalizado')">Finalizar</button>
                     <% } %>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
-        </div>
+        </section>
+    </main>
 
-    </div>
-
-    <div id="modalDetalhes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center;">
-        <div style="background:#2a2a2a; width:90%; max-width:500px; padding:20px; border-radius:15px; max-height:80vh; overflow-y:auto;">
-            <div id="comanda-interna" style="color:white;"></div>
-            <button class="btn-action btn-primary" style="width:100%; margin-top:20px;" onclick="fecharModal()">FECHAR</button>
+    <div id="modalDetalhes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:var(--bg-card); width:90%; max-width:450px; padding:25px; border-radius:15px; border:1px solid var(--border);">
+            <div id="comanda-interna"></div>
+            <button class="btn btn-main" style="width:100%; margin-top:20px" onclick="fecharModal()">FECHAR</button>
         </div>
     </div>
 
@@ -348,51 +343,43 @@
     <script>
         const socket = io();
 
-        // RELÓGIO
+        // RELÓGIO ATUALIZADO
         setInterval(() => {
             document.getElementById('real-time-clock').innerText = new Date().toLocaleTimeString('pt-BR');
         }, 1000);
 
-        // TROCA DE ABAS (MOBILE)
-        function switchTab(index) {
-            document.querySelectorAll('.tab-item').forEach((t, i) => {
-                t.classList.toggle('active', i === index);
-            });
-            document.querySelectorAll('.col-content').forEach((c, i) => {
-                c.classList.toggle('active', i === index);
-            });
+        // NAVEGAÇÃO ENTRE ABAS ISOLADAS
+        function changeTab(idx) {
+            if(window.innerWidth < 1024) {
+                document.querySelectorAll('.tab-item').forEach((t, i) => t.classList.toggle('active', i === idx));
+                document.querySelectorAll('.status-section').forEach((s, i) => s.classList.toggle('active', i === idx));
+            }
         }
 
-        // LÓGICA DE TEMPO E CORES DOS BOTÕES (FAROL)
-        function updateFarol() {
+        // FAROL DE TEMPO PROFISSIONAL
+        function updateTimes() {
             const now = new Date();
-            const cards = document.querySelectorAll('.mini-card[data-time]');
-
-            cards.forEach(card => {
+            document.querySelectorAll('.pedido-card[data-time]').forEach(card => {
                 const id = card.getAttribute('data-id');
-                const startTime = new Date(card.getAttribute('data-time'));
-                const diffMin = Math.floor((now - startTime) / 60000);
-                const labelTopo = card.querySelector('.label-topo');
+                const start = new Date(card.getAttribute('data-time'));
+                const diff = Math.floor((now - start) / 60000);
+                const label = card.querySelector('.label-topo');
                 const btnArea = card.querySelector(`#btn-area-${id}`);
                 
-                if(!labelTopo) return;
-                labelTopo.innerText = diffMin + " min";
+                if(label) label.innerText = diff + " MIN";
 
-                // Se estiver na coluna de Preparo
-                if(card.parentElement.id === 'col-1') {
-                    if (diffMin < 5) {
-                        labelTopo.style.color = "#f39c12";
-                        if(btnArea) btnArea.innerHTML = `<button class="btn-action btn-outline" style="opacity:0.5" disabled>Em preparo...</button>`;
+                // Se estiver no preparo (sec-1)
+                if(card.closest('#sec-1')) {
+                    if(diff >= 5) {
+                        if(btnArea) btnArea.innerHTML = `<button class="btn btn-main" onclick="atualizarStatus('${id}', 'Pronto')">Marcar Pronto</button>`;
                     } else {
-                        labelTopo.style.color = "#00ff88";
-                        if(btnArea) btnArea.innerHTML = `<button class="btn-action btn-primary" onclick="atualizarStatus('${id}', 'Pronto')">Marcar Pronto</button>`;
+                        if(btnArea) btnArea.innerHTML = `<button class="btn btn-sec" style="opacity:0.4" disabled>Preparando...</button>`;
                     }
                 }
             });
         }
-
-        setInterval(updateFarol, 5000);
-        updateFarol();
+        setInterval(updateTimes, 5000);
+        updateTimes();
 
         // BUSCA
         document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -403,7 +390,7 @@
             });
         });
 
-        // FUNÇÕES ORIGINAIS DE ROTA
+        // REQUISIÇÕES AO SERVIDOR
         async function atualizarStatus(id, novoStatus) {
             try {
                 const res = await fetch('/update-status', {
@@ -416,13 +403,13 @@
         }
 
         async function cancelarPedido(id) {
-            if (confirm("Deseja realmente CANCELAR?")) atualizarStatus(id, 'Cancelado');
+            if (confirm("CONFIRMAR CANCELAMENTO?")) atualizarStatus(id, 'Cancelado');
         }
 
         function abrirDetalhes(id) {
-            const wrapper = document.getElementById(`wrapper-${id}`);
-            if(wrapper) {
-                document.getElementById('comanda-interna').innerHTML = wrapper.innerHTML;
+            const wrap = document.getElementById(`wrapper-${id}`);
+            if(wrap) {
+                document.getElementById('comanda-interna').innerHTML = wrap.innerHTML;
                 document.getElementById('modalDetalhes').style.display = "flex";
             }
         }
@@ -430,7 +417,7 @@
 
         socket.on('novoPedido', () => { 
             document.getElementById('audioNotificacao').play();
-            setTimeout(() => window.location.reload(), 1000); 
+            setTimeout(() => window.location.reload(), 800); 
         });
         socket.on('statusAtualizado', () => window.location.reload());
     </script>
