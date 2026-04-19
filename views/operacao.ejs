@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ELITE OPS | Kitchen Display System</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
             --bg-deep: #020203;
@@ -41,7 +41,6 @@
             position: relative;
         }
 
-        /* Glow de fundo - Ajustado para não criar scroll no mobile */
         body::before {
             content: '';
             position: absolute;
@@ -94,7 +93,6 @@
             text-transform: uppercase;
         }
 
-        /* Barra de Métricas Otimizada para Mobile */
         .metrics-bar {
             background: rgba(255, 255, 255, 0.02);
             border-bottom: 1px solid var(--border-color);
@@ -114,7 +112,6 @@
             margin-top: 2px;
         }
 
-        /* Navegação por Abas */
         nav.tab-bar {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -159,7 +156,6 @@
             border: 1px solid var(--border-color);
         }
 
-        /* Área de Conteúdo */
         .content-area {
             flex-grow: 1;
             position: relative;
@@ -193,7 +189,6 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Cards de Pedido */
         .order-card {
             background: var(--bg-card);
             border-radius: 12px;
@@ -226,7 +221,6 @@
         .customer-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
         .order-details { font-size: 0.85rem; color: var(--text-dim); }
 
-        /* Modal e Comanda */
         #modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -281,7 +275,6 @@
             width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: none; font-family: sans-serif;
         }
 
-        /* Ajustes para modo lento */
         .slow-mode-toggle-container {
             position: fixed;
             bottom: 20px;
@@ -367,29 +360,10 @@
 
     <script>
         const socket = io(); 
-        let orders = [];
+        // Inicializa com os pedidos enviados pelo servidor via EJS
+        let orders = <%- JSON.stringify(pedidos) %>;
         let archivedOrders = [];
         let isSlowMode = false;
-        const notificationSound = new Audio('/static/audio/notificacao_v2.mp3'); 
-
-        // Conecta com as rotas do seu server.js
-        async function fetchOrders() {
-            try {
-                const response = await fetch('/api/get-orders');
-                const data = await response.json();
-                orders = data.active || [];
-                archivedOrders = data.archived || [];
-                render();
-            } catch (e) {
-                console.error("Erro ao sincronizar com server.js:", e);
-            }
-        }
-
-        socket.on('novoPedido', (pedido) => {
-            orders.push(pedido);
-            notificationSound.play().catch(() => console.log("Áudio bloqueado pelo navegador"));
-            render();
-        });
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -406,46 +380,44 @@
             const listReady = document.getElementById('list-ready');
             const listArchived = document.getElementById('list-archived');
 
-            const containers = { pending: listPending, preparing: listPreparing, ready: listReady, archived: listArchived };
-            Object.values(containers).forEach(c => c.innerHTML = '');
+            const containers = { 
+                'Pendente': listPending, 
+                'Preparando': listPreparing, 
+                'Em entrega': listReady, 
+                'Finalizado': listArchived,
+                'Cancelado': listArchived,
+                'Concluído': listArchived
+            };
+            
+            // Limpa as colunas base
+            [listPending, listPreparing, listReady, listArchived].forEach(c => c.innerHTML = '');
 
-            const counts = { pending: 0, preparing: 0, ready: 0, archived: archivedOrders.length };
-            const now = Date.now();
-
-            // Renderiza Ativos
+            const counts = { pending: 0, preparing: 0, ready: 0, archived: 0 };
+            
             orders.forEach(order => {
-                counts[order.status]++;
-                const card = document.createElement('div');
-                const timeDiff = now - new Date(order.timestamp).getTime();
-                const isDelayed = timeDiff > 900000 && order.status !== 'ready'; // 15 min
+                // Lógica de contagem simplificada para as badges
+                if(order.status === 'Pendente') counts.pending++;
+                else if(order.status === 'Preparando') counts.preparing++;
+                else if(order.status === 'Em entrega') counts.ready++;
+                else counts.archived++;
 
-                card.className = `order-card ${isDelayed ? 'delayed' : ''}`;
+                const card = document.createElement('div');
+                card.className = `order-card`;
                 card.onclick = () => showComanda(order.id);
                 card.innerHTML = `
                     <div class="order-header">
                         <span class="order-id">#${order.id}</span>
-                        <span class="order-time">${order.time}</span>
+                        <span class="order-time">${order.hora}</span>
                     </div>
-                    <div class="customer-name">${order.customer}</div>
+                    <div class="customer-name">${order.cliente}</div>
                     <div class="order-details">
-                        ${order.items.length} itens • <strong>${order.payment}</strong>
+                        ${order.itens ? order.itens.length : 0} itens • <strong>${order.pagamento}</strong>
                     </div>
                 `;
-                containers[order.status].appendChild(card);
-            });
-
-            // Renderiza Arquivados
-            archivedOrders.forEach(order => {
-                const card = document.createElement('div');
-                card.className = 'order-card';
-                card.style.opacity = '0.6';
-                const statusLabel = order.canceled ? '<span style="color:#ff4b4b">CANCELADO</span>' : '<span style="color:#50fa7b">FINALIZADO</span>';
-                card.innerHTML = `
-                    <div class="order-header"><span class="order-id">#${order.id}</span>${statusLabel}</div>
-                    <div class="customer-name">${order.customer}</div>
-                    <div class="order-details">R$ ${order.total.toFixed(2)}</div>
-                `;
-                listArchived.appendChild(card);
+                
+                // Distribui o card na coluna correta
+                const targetContainer = containers[order.status] || listPending;
+                targetContainer.appendChild(card);
             });
 
             // Atualiza Badges
@@ -454,40 +426,41 @@
             document.getElementById('count-ready').innerText = counts.ready;
             document.getElementById('count-archived').innerText = counts.archived;
 
-            // Atualiza Métricas
-            const revenue = archivedOrders.filter(o => !o.canceled).reduce((acc, o) => acc + o.total, 0);
+            // Atualiza Métricas (Somente Finalizados/Concluídos)
+            const finalizados = orders.filter(o => ['Finalizado', 'Concluído'].includes(o.status));
+            const revenue = finalizados.reduce((acc, o) => acc + (o.total || 0), 0);
             document.getElementById('m-revenue').innerText = `R$ ${revenue.toFixed(2)}`;
-            document.getElementById('m-total-count').innerText = archivedOrders.length;
-            document.getElementById('m-average').innerText = archivedOrders.length > 0 ? `R$ ${(revenue / archivedOrders.length).toFixed(2)}` : 'R$ 0,00';
+            document.getElementById('m-total-count').innerText = finalizados.length;
+            document.getElementById('m-average').innerText = finalizados.length > 0 ? `R$ ${(revenue / finalizados.length).toFixed(2)}` : 'R$ 0,00';
         }
 
         function showComanda(id) {
-            const order = orders.find(o => o.id === id);
+            const order = orders.find(o => o.id == id);
             if(!order) return;
 
             const target = document.getElementById('comanda-target');
             let actionBtn = '';
 
-            if(order.status === 'pending') {
-                actionBtn = `<button class="btn btn-confirm" onclick="updateStatus('${order.id}', 'preparing')">INICIAR PREPARO</button>`;
-            } else if(order.status === 'preparing') {
-                actionBtn = `<button class="btn btn-confirm" onclick="updateStatus('${order.id}', 'ready')">PEDIDO PRONTO</button>`;
-            } else {
-                actionBtn = `<button class="btn btn-confirm" onclick="updateStatus('${order.id}', 'archive')">ARQUIVAR PEDIDO</button>`;
+            if(order.status === 'Pendente') {
+                actionBtn = `<button class="btn btn-confirm" onclick="updateStatus('${order.id}', 'Preparando')">INICIAR PREPARO</button>`;
+            } else if(order.status === 'Preparando') {
+                actionBtn = `<button class="btn btn-confirm" onclick="updateStatus('${order.id}', 'Em entrega')">SAIU PARA ENTREGA</button>`;
+            } else if(order.status === 'Em entrega') {
+                actionBtn = `<button class="btn btn-confirm" onclick="updateStatus('${order.id}', 'Finalizado')">FINALIZAR PEDIDO</button>`;
             }
 
             target.innerHTML = `
-                <div class="ticket-header"><p>ELITE OPS</p><h1>#${order.id}</h1><p>${order.time}</p></div>
-                <div style="font-size:0.8rem"><strong>CLIENTE:</strong> ${order.customer}<br><strong>ENDEREÇO:</strong> ${order.address}</div>
+                <div class="ticket-header"><p>ELITE OPS</p><h1>#${order.id}</h1><p>${order.hora}</p></div>
+                <div style="font-size:0.8rem"><strong>CLIENTE:</strong> ${order.cliente}<br><strong>ENDEREÇO:</strong> ${order.endereco}</div>
                 <hr style="margin: 12px 0; border: 1px dashed #ccc;">
-                ${order.items.map(i => `<div class="ticket-item"><span>${i.qty}x ${i.name}</span><span>R$ ${(i.qty * i.price).toFixed(2)}</span></div>`).join('')}
-                <div class="ticket-total">TOTAL R$ ${order.total.toFixed(2)}</div>
+                ${order.itens ? order.itens.map(i => `<div class="ticket-item"><span>${i.qtd}x ${i.nome}</span><span>R$ ${(i.qtd * i.preco).toFixed(2)}</span></div>`).join('') : ''}
+                <div class="ticket-total">TOTAL R$ ${order.total ? order.total.toFixed(2) : '0.00'}</div>
                 <div class="actions-bar">
                     ${actionBtn}
                     <button class="btn btn-cancel" onclick="document.getElementById('cancel-box').style.display='flex'">CANCELAR</button>
                     <div id="cancel-box" class="cancel-reason-box">
                         <textarea id="reason-input" placeholder="Motivo do cancelamento..."></textarea>
-                        <button class="btn btn-cancel" style="background:#222" onclick="processCancel('${order.id}')">CONFIRMAR CANCELAMENTO</button>
+                        <button class="btn btn-cancel" style="background:#222" onclick="updateStatus('${order.id}', 'Cancelado')">CONFIRMAR CANCELAMENTO</button>
                     </div>
                     <button class="btn btn-close" onclick="closeModal()">VOLTAR</button>
                 </div>
@@ -495,47 +468,40 @@
             document.getElementById('modal-overlay').style.display = 'flex';
         }
 
-        async function updateStatus(id, newStatus) {
+        async function updateStatus(id, novoStatus) {
             try {
-                const res = await fetch('/api/update-status', {
+                const res = await fetch('/update-status', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({id, status: newStatus})
+                    body: JSON.stringify({id: id, novoStatus: novoStatus})
                 });
                 if(res.ok) {
-                    if(newStatus === 'archive') {
-                        const order = orders.find(o => o.id === id);
-                        archivedOrders.unshift({...order, status: 'archived'});
-                        orders = orders.filter(o => o.id !== id);
-                    } else {
-                        orders.find(o => o.id === id).status = newStatus;
-                    }
                     closeModal();
-                    render();
-                    if(newStatus !== 'archive') switchTab(newStatus);
+                    // O Socket.io vai disparar o statusAtualizado e o render() será chamado
                 }
-            } catch (e) { alert("Erro de conexão com server.js"); }
+            } catch (e) { alert("Erro de conexão"); }
         }
 
-        async function processCancel(id) {
-            const reason = document.getElementById('reason-input').value;
-            if(!reason) return alert("Informe o motivo");
-            
-            try {
-                const res = await fetch('/api/update-status', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({id, status: 'archive', canceled: true, reason})
-                });
-                if(res.ok) {
-                    const order = orders.find(o => o.id === id);
-                    archivedOrders.unshift({...order, canceled: true});
-                    orders = orders.filter(o => o.id !== id);
-                    closeModal();
-                    render();
-                }
-            } catch (e) { alert("Erro ao cancelar"); }
-        }
+        // --- SOCKET.IO EVENTOS ---
+        socket.on('novoPedido', (pedido) => {
+            orders.push(pedido);
+            render();
+            new Audio('https://www.soundjay.com/buttons/sounds/beep-01a.mp3').play().catch(()=>{});
+        });
+
+        socket.on('statusAtualizado', (data) => {
+            const index = orders.findIndex(o => o.id == data.id);
+            if(index !== -1) {
+                orders[index].status = data.novoStatus;
+                render();
+            }
+        });
+
+        socket.on('pedidoEncerrado', (data) => {
+            // Se o status for de encerramento, o server.js emite este evento.
+            // Mantemos no histórico local ou removemos conforme a necessidade.
+            render();
+        });
 
         function toggleSlowMode() {
             isSlowMode = document.getElementById('slow-mode-toggle').checked;
@@ -551,7 +517,7 @@
             document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR');
         }, 1000);
 
-        window.onload = fetchOrders;
+        window.onload = render;
     </script>
 </body>
 </html>
