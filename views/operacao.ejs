@@ -7,47 +7,45 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
-            --bg-page: #0f111a;
-            --bg-col: #1a1d2b;
-            --card-bg: #24283b;
-            --text-dark: #c0caf5;
-            --text-light: #a9b1d6;
-            --primary: #bb9af7; 
-            --danger: #f7768e;
-            --warning: #e0af68;
-            --success: #9ece6a;
-            --info: #7aa2f7;
-            --finalizado: #565f89;
+            --bg-page: #f4f7f9;
+            --bg-col: #ebedef;
+            --card-bg: #ffffff;
+            --text-dark: #333;
+            --text-light: #666;
+            --primary: #e61e1e; 
+            --warning: #f39c12;
+            --success: #27ae60;
+            --info: #2980b9;
+            --finalizado: #95a5a6;
         }
 
         body {
-            font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-page);
             color: var(--text-dark);
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             overflow-x: hidden;
         }
 
-        /* HEADER */
+        /* HEADER REESTRUTURADO */
         .header-painel {
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             gap: 15px;
-            background: var(--bg-col);
-            padding: 20px;
-            border-radius: 18px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         .header-left { 
             display: flex; 
             align-items: center; 
-            gap: 20px; 
+            gap: 15px; 
             flex: 1;
             min-width: 250px;
         }
@@ -55,182 +53,179 @@
         .header-title {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             white-space: nowrap;
-            font-size: 1.3rem;
-            letter-spacing: -0.5px;
+            font-size: 1.1rem;
         }
 
         .search-container { 
             flex-grow: 1; 
-            max-width: 450px; 
+            max-width: 400px; 
         }
 
         .search-input {
             width: 100%;
-            padding: 12px 20px;
-            border-radius: 12px;
-            background: var(--card-bg);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #fff;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
             outline: none;
-            font-size: 0.95rem;
-            transition: 0.3s;
-        }
-
-        .search-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(187, 154, 247, 0.2);
+            font-size: 0.9rem;
+            box-sizing: border-box;
         }
 
         .btn-sair {
             text-decoration: none; 
             color: #fff; 
-            background: rgba(255,255,255,0.05);
-            padding: 10px 22px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 0.9rem;
+            background: var(--text-light);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
             transition: 0.3s;
-            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .btn-sair:hover {
-            background: var(--danger);
-            border-color: transparent;
+            background: var(--primary);
         }
 
         /* KANBAN */
         .kanban {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             overflow-x: auto;
             align-items: flex-start;
-            height: calc(100vh - 180px);
+            height: calc(100vh - 160px);
             padding-bottom: 15px;
+            scrollbar-width: thin;
         }
-
-        .kanban::-webkit-scrollbar { height: 8px; }
-        .kanban::-webkit-scrollbar-thumb { background: var(--finalizado); border-radius: 10px; }
 
         .col {
             background-color: var(--bg-col);
-            border-radius: 20px;
-            min-width: 310px;
-            max-width: 310px;
+            border-radius: 15px;
+            min-width: 280px;
+            max-width: 280px;
             display: flex;
             flex-direction: column;
             max-height: 100%;
             flex-shrink: 0;
-            border: 1px solid rgba(255,255,255,0.03);
         }
 
         .col-header {
-            padding: 20px;
-            font-weight: 700;
-            font-size: 1rem;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: #fff;
-            background: rgba(255,255,255,0.02);
-            border-radius: 20px 20px 0 0;
+            color: #555;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
         }
 
         .count-badge {
-            background: var(--primary);
-            color: var(--bg-page);
-            border-radius: 8px;
-            padding: 4px 10px;
-            font-size: 0.8rem;
-            font-weight: 800;
+            background: #999;
+            color: #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.75rem;
         }
 
         .lista-pedidos { 
-            padding: 15px; 
+            padding: 10px; 
             overflow-y: auto; 
             flex-grow: 1; 
         }
 
         .mini-card {
             background: var(--card-bg);
-            border-radius: 16px;
-            padding: 18px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-left: 4px solid var(--primary);
-            transition: transform 0.2s;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            border: 1px solid #eee;
         }
-
-        .mini-card:hover { transform: translateY(-3px); }
 
         .waiting-text {
             font-size: 0.75rem;
-            font-weight: 700;
-            margin-bottom: 10px;
+            font-weight: bold;
+            margin-bottom: 8px;
             display: block;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
-        .mini-card-id { font-size: 1.6rem; font-weight: 900; color: #fff; margin: 5px 0; display: block; }
-        .mini-card-cliente { font-size: 1rem; color: var(--text-light); margin-bottom: 15px; display: block; }
+        .mini-card-id { font-size: 1.4rem; font-weight: 800; margin: 2px 0; display: block; }
+        .mini-card-cliente { font-size: 0.9rem; color: var(--text-light); margin-bottom: 12px; display: block; }
 
         .btn-main {
             width: 100%;
             padding: 12px;
             border: none;
-            border-radius: 10px;
-            font-weight: 700;
+            border-radius: 8px;
+            font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-size: 0.85rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 5px;
         }
 
-        .btn-aceitar { background: var(--primary); color: var(--bg-page); }
-        .btn-preparando { background: #3b4261; color: var(--text-light); cursor: not-allowed; }
-        .btn-pronto { background: var(--success); color: var(--bg-page); }
-        .btn-enviar { background: var(--info); color: var(--bg-page); }
-        .btn-finalizar { background: var(--finalizado); color: #fff; }
-        .btn-detalhe { background: rgba(255,255,255,0.08); color: #fff; }
-        .btn-cancelar { background: transparent; color: var(--danger); border: 1px solid rgba(247, 118, 142, 0.2); margin-top: 5px; }
-        .btn-cancelar:hover { background: rgba(247, 118, 142, 0.1); }
+        .btn-aceitar { background: var(--primary); color: white; }
+        .btn-preparando { background: #ddd; color: #777; cursor: not-allowed; }
+        .btn-pronto { background: var(--success); color: white; }
+        .btn-enviar { background: var(--info); color: white; }
+        .btn-finalizar { background: var(--finalizado); color: white; }
+        .btn-detalhe { background: #f0f0f0; color: #555; }
+        .btn-cancelar { background: #fdf2f2; color: var(--primary); font-size: 0.75rem; border: 1px solid #fee2e2; }
 
         /* MODAL */
         .modal {
-            display: none; position: fixed; z-index: 2000;
+            display: none; position: fixed; z-index: 1000;
             left: 0; top: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); justify-content: center; align-items: center;
-            backdrop-filter: blur(8px);
+            background: rgba(0,0,0,0.6); justify-content: center; align-items: center;
+            backdrop-filter: blur(3px);
         }
         .modal-content { 
-            background: var(--bg-col); 
-            padding: 30px; 
-            border-radius: 24px; 
-            width: 90%; 
-            max-width: 500px; 
-            max-height: 85vh;
+            background: white; 
+            padding: 20px; 
+            border-radius: 15px; 
+            width: 95%; 
+            max-width: 450px; 
+            max-height: 90vh;
             overflow-y: auto;
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #fff;
         }
         .original-card-wrapper { display: none; }
 
-        /* CORES DE STATUS */
-        .text-danger { color: var(--danger); }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .header-painel {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 12px;
+            }
+            .header-left {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .header-title {
+                justify-content: center;
+                margin-bottom: 5px;
+            }
+            .search-container {
+                max-width: 100%;
+            }
+            .btn-sair {
+                text-align: center;
+            }
+            .kanban {
+                height: calc(100vh - 220px);
+            }
+        }
+
+        .text-danger { color: var(--primary); }
         .text-warning { color: var(--warning); }
         .text-success { color: var(--success); }
         .text-muted { color: var(--finalizado); }
-
-        @media (max-width: 600px) {
-            .kanban { height: calc(100vh - 250px); }
-            .col { min-width: 85vw; }
-        }
     </style>
 </head>
 <body>
@@ -238,30 +233,30 @@
     <header class="header-painel">
         <div class="header-left">
             <div class="header-title">
-                <span style="color:var(--success); filter: drop-shadow(0 0 5px var(--success))">●</span> 
-                <strong>FAROL DA OPERAÇÃO</strong>
+                <span style="color:var(--success)">●</span> 
+                <strong>Farol da Operação</strong>
             </div>
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="Pesquisar cliente ou ID...">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar cliente ou pedido...">
             </div>
         </div>
-        <a href="/admin" class="btn-sair">Sair do Painel</a>
+        <a href="/admin" class="btn-sair">Sair</a>
     </header>
 
     <div class="kanban">
         <div class="col">
-            <div class="col-header">Aguardando <span class="count-badge"><%= pedidos.filter(p => p.status === 'Pendente').length %></span></div>
+            <div class="col-header">Aceitar <span class="count-badge"><%= pedidos.filter(p => p.status === 'Pendente').length %></span></div>
             <div class="lista-pedidos" id="pendentes">
                 <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.createdAt %>" style="border-left-color: var(--danger)">
+                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.createdAt %>">
                         <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
-                        <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
                         <div id="btn-area-<%= p.id %>">
-                            <button class="btn-main btn-aceitar" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceitar Pedido</button>
+                            <button class="btn-main btn-aceitar" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">Aceitar em até 5min</button>
                         </div>
-                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Ver Itens</button>
-                        <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Recusar</button>
+                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                        <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
                 <% }) %>
@@ -272,12 +267,12 @@
             <div class="col-header">Em preparo <span class="count-badge"><%= pedidos.filter(p => p.status === 'Preparando').length %></span></div>
             <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>" style="border-left-color: var(--warning)">
+                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
                         <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
-                        <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
                         <div id="btn-area-<%= p.id %>"></div>
-                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Ver Itens</button>
+                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
@@ -289,14 +284,15 @@
             <div class="col-header">Pronto <span class="count-badge"><%= pedidos.filter(p => p.status === 'Pronto').length %></span></div>
             <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Pronto').forEach(p => { %>
-                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>" style="border-left-color: var(--success)">
+                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" data-time="<%= p.updatedAt %>">
                         <span class="waiting-text label-topo" id="label-topo-<%= p.id %>"></span>
-                        <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
                         <div id="btn-area-<%= p.id %>">
-                            <button class="btn-main btn-enviar" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Liberar para Entrega</button>
+                            <button class="btn-main btn-enviar" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">Enviar para rota</button>
                         </div>
-                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Ver Itens</button>
+                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
+                        <button class="btn-main btn-cancelar" onclick="cancelarPedido('<%= p.id %>')">Cancelar</button>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
                 <% }) %>
@@ -307,12 +303,12 @@
             <div class="col-header">Em rota <span class="count-badge"><%= pedidos.filter(p => p.status === 'Saiu para Entrega').length %></span></div>
             <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Saiu para Entrega').forEach(p => { %>
-                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" style="border-left-color: var(--info)">
-                        <span class="waiting-text text-warning">🛵 Saiu para entrega</span>
-                        <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
+                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
+                        <span class="waiting-text text-warning">🛵 Em rota de entrega</span>
+                        <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
-                        <button class="btn-main btn-finalizar" onclick="atualizarStatus('<%= p.id %>', 'Finalizado')">Concluir Pedido</button>
-                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Ver Itens</button>
+                        <button class="btn-main btn-finalizar" onclick="atualizarStatus('<%= p.id %>', 'Finalizado')">Finalizar Pedido</button>
+                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Detalhes</button>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
                 <% }) %>
@@ -320,14 +316,14 @@
         </div>
 
         <div class="col">
-            <div class="col-header">Histórico <span class="count-badge"><%= pedidos.filter(p => p.status === 'Finalizado').length %></span></div>
+            <div class="col-header">Finalizados <span class="count-badge"><%= pedidos.filter(p => p.status === 'Finalizado').length %></span></div>
             <div class="lista-pedidos">
                 <% pedidos.filter(p => p.status === 'Finalizado').forEach(p => { %>
-                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" style="border-left-color: var(--finalizado)">
-                        <span class="waiting-text text-muted">✅ Entregue</span>
-                        <span class="mini-card-id">#<%= p.id.toString().slice(-4) %></span>
+                    <div class="mini-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
+                        <span class="waiting-text text-muted">✅ Pedido Concluído</span>
+                        <span class="mini-card-id"><%= p.id.toString().slice(-4) %></span>
                         <span class="mini-card-cliente"><%= p.cliente %></span>
-                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Ver Comanda</button>
+                        <button class="btn-main btn-detalhe" onclick="abrirDetalhes('<%= p.id %>')">Ver Detalhes</button>
                         <div id="wrapper-<%= p.id %>" class="original-card-wrapper"><%- include('partials/card-comanda', {p: p}) %></div>
                     </div>
                 <% }) %>
@@ -337,9 +333,8 @@
 
     <div id="modalDetalhes" class="modal">
         <div class="modal-content">
-            <h2 style="margin-top:0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Detalhes do Pedido</h2>
             <div id="comanda-interna"></div>
-            <button class="btn-main" onclick="fecharModal()" style="margin-top:20px; background: var(--danger); color: #fff;">Fechar Detalhes</button>
+            <button class="btn-main btn-detalhe" onclick="fecharModal()" style="margin-top:15px; background: #333; color: #fff;">Fechar</button>
         </div>
     </div>
 
@@ -359,35 +354,35 @@
                 
                 const labelTopo = card.querySelector('.label-topo');
                 const btnArea = card.querySelector(`#btn-area-${id}`);
-                const colElement = card.closest('.col').querySelector('.col-header');
-                if(!colElement) return;
+                const headerElement = card.closest('.col').querySelector('.col-header');
+                if(!headerElement) return;
 
-                const statusCol = colElement.innerText;
+                const statusCol = headerElement.innerText;
 
-                if (statusCol.includes("Aguardando")) {
+                if (statusCol.includes("Aceitar")) {
                     if (diffMin >= 5) {
-                        labelTopo.innerHTML = `<span class="text-danger">⚠️ ATRASO CRÍTICO: ${diffMin}m</span>`;
+                        labelTopo.innerHTML = `<span class="text-danger">⚠️ Atraso: ${diffMin} min</span>`;
                         btnArea.innerHTML = `<button class="btn-main btn-aceitar" onclick="atualizarStatus('${id}', 'Preparando')">Aceitar (Atrasado)</button>`;
                     } else {
-                        labelTopo.innerHTML = `<span class="text-light">Recebido há ${diffMin}m</span>`;
+                        labelTopo.innerHTML = `<span class="text-light">Novo pedido há ${diffMin} min</span>`;
                     }
                 }
 
                 if (statusCol.includes("Em preparo")) {
                     if (diffMin < 5) {
-                        labelTopo.innerHTML = `<span class="text-warning">Cozinhando: ${5 - diffMin}m restantes</span>`;
-                        btnArea.innerHTML = `<button class="btn-main btn-preparando">Em preparo...</button>`;
+                        labelTopo.innerHTML = `<span class="text-warning">Cozinhando... ${5 - diffMin} min rest.</span>`;
+                        btnArea.innerHTML = `<button class="btn-main btn-preparando">Em preparo</button>`;
                     } else {
-                        labelTopo.innerHTML = `<span class="text-success">Preparo Concluído!</span>`;
+                        labelTopo.innerHTML = `<span class="text-success">Pronto para finalizar</span>`;
                         btnArea.innerHTML = `<button class="btn-main btn-pronto" onclick="atualizarStatus('${id}', 'Pronto')">Marcar como Pronto</button>`;
                     }
                 }
 
                 if (statusCol.includes("Pronto")) {
                     if (diffMin >= 15) {
-                        labelTopo.innerHTML = `<span class="text-danger">⚠️ Parado há ${diffMin}m</span>`;
+                        labelTopo.innerHTML = `<span class="text-danger">⚠️ Parado há ${diffMin} min</span>`;
                     } else {
-                        labelTopo.innerHTML = `<span class="text-success">Aguardando Motoboy (${diffMin}m)</span>`;
+                        labelTopo.innerHTML = `<span class="text-success">Aguardando entrega (${diffMin} min)</span>`;
                     }
                 }
             });
