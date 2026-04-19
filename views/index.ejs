@@ -307,6 +307,8 @@
 
     function gerenciarCliqueProduto(status, temModificadores, nome, preco, desc, img, precoOriginal) {
         if (status === 'indisponivel') { alert("Este produto está indisponível no momento."); return; }
+        
+        // RESTAURADA A TRAVA DO SITE FECHADO ORIGINAL
         if ("<%= locals.estaAberto %>" === "false") return alert("Estamos fechados no momento!");
         
         const idAtivo = localStorage.getItem('ultimoPedidoId');
@@ -548,6 +550,11 @@
     }
 
     async function finalizar() {
+        // Lógica de Cozinha Fechada (Bloqueio Apenas no Envio)
+        if ("<%= locals.cozinhaAberta %>" === "false") {
+            return alert("Cozinha está fechada temporariamente");
+        }
+
         const nome = document.getElementById('cliente-nome').value;
         const cep = document.getElementById('cliente-cep').value;
         const rua = document.getElementById('cliente-rua').value;

@@ -20,7 +20,8 @@ const ConfigSchema = new mongoose.Schema({
     chave: { type: String, default: 'global' },
     pixProvedor: { type: String, default: 'mercadopago' },
     pixToken: String,
-    manutencao: { type: Boolean, default: false },
+    manutencao: { type: Boolean, default: false }, // ESTE É O FECHADO DO SITE
+    cozinhaAberta: { type: Boolean, default: true }, // NOVO: FECHADO DA COZINHA
     nomeSite: { type: String, default: 'Meu Delivery' },
     fusoHorario: { type: String, default: 'America/Sao_Paulo' },
     agenda: { type: Array, default: [] },
@@ -138,7 +139,8 @@ app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 const checarAberta = async () => {
     try {
         const config = await Config.findOne({ chave: 'global' });
-        if (!config || config.manutencao) return false; 
+        // Site em manutenção ou Cozinha fechada manualmente mata a abertura
+        if (!config || config.manutencao || config.cozinhaAberta === false) return false; 
 
         const fuso = config.fusoHorario || 'America/Sao_Paulo';
         const agora = new Date();
@@ -166,6 +168,7 @@ app.use(async (req, res, next) => {
     try {
         const config = await Config.findOne({ chave: 'global' });
         res.locals.estaAberto = await checarAberta();
+        res.locals.cozinhaStatus = config ? config.cozinhaAberta : true; // Para uso no front
         res.locals.nomeSite = config ? config.nomeSite : "Meu Delivery";
         next();
     } catch (err) {
@@ -175,30 +178,18 @@ app.use(async (req, res, next) => {
     }
 });
 
-// --- NOVAS ROTAS DE API (PARA RESOLVER O ERRO 404 E SYNTAX ERROR) ---
-
-app.get('/api/get-orders', async (req, res) => {
+// --- ROTA EXCLUSIVA FECHADO COZINHA ---
+app.post('/update-status-cozinha', async (req, res) => {
     try {
-        const ativos = await Pedido.find({ status: { $nin: ['Finalizado', 'Cancelado', 'Concluído'] } }).sort({ createdAt: 1 });
-        const arquivados = await Pedido.find({ status: { $in: ['Finalizado', 'Cancelado', 'Concluído'] } }).limit(50).sort({ updatedAt: -1 });
-        res.json({ active: ativos, archived: arquivados });
-    } catch (err) {
-        res.status(500).json({ error: "Erro ao buscar dados" });
-    }
-});
-
-app.post('/api/update-status', async (req, res) => {
-    const { id, status } = req.body;
-    try {
-        const pedido = await Pedido.findOneAndUpdate({ id: id }, { status: status, updatedAt: Date.now() }, { new: true });
-        if (['Finalizado', 'Cancelado', 'Concluído'].includes(status)) {
-            await Mensagem.deleteMany({ pedidoId: id.toString() });
-        }
-        io.emit('statusAtualizado', { id, novoStatus: status });
+        const { aberta } = req.body; 
+        await Config.findOneAndUpdate(
+            { chave: 'global' },
+            { cozinhaAberta: aberta },
+            { upsert: true }
+        );
+        io.emit('cozinhaStatusMudou', { aberta });
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ success: false });
-    }
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 // --- ROTAS DO NOVO SISTEMA DE ADICIONAIS NO BANCO ---
