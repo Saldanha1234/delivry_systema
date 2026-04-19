@@ -43,17 +43,15 @@
             align-items: center;
             gap: 8px;
             background: rgba(255, 255, 255, 0.05);
-            padding: 5px 12px;
+            padding: 5px 10px;
             border-radius: 50px;
             border: 1px solid var(--border-color);
             margin-right: 10px;
-            transition: var(--transition-smooth);
         }
         .kitchen-label { font-size: 9px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; }
         
-        /* Cores dinâmicas para o switch da cozinha seguindo o padrão de alerta/pronto */
-        input#kitchenInput:checked + .slider { background-color: var(--status-ready) !important; }
-        input#kitchenInput:not(:checked) + .slider { background-color: var(--status-alert) !important; }
+        /* Cores dinâmicas para o switch da cozinha */
+        input#kitchenInput:checked + .slider { background-color: var(--status-ready); }
 
         @keyframes pulse-red {
             0% { opacity: 1; }
@@ -170,15 +168,11 @@
             .desktop-label { display: block; text-align: center; font-weight: 800; font-size: 11px; color: var(--accent-primary); margin-bottom: 10px; letter-spacing: 1px; }
         }
 
-        /* AJUSTE MOBILE TOPBAR PARA CABER TUDO SEM JUNTAR */
+        /* AJUSTE MOBILE TOPBAR PARA CABER TUDO */
         @media (max-width: 600px) {
             .top-bar { padding: 0 8px; }
-            #clock { display: none; } 
-            .kitchen-control { margin-right: 5px; padding: 4px 8px; gap: 5px; }
+            #clock { display: none; }
             .kitchen-label { font-size: 8px; }
-            .switch { width: 34px; height: 18px; }
-            .slider:before { height: 12px; width: 12px; left: 3px; bottom: 3px; }
-            input:checked + .slider:before { transform: translateX(16px); }
         }
     </style>
 </head>
@@ -190,7 +184,7 @@
         <div style="display: flex; align-items: center;">
             <div class="kitchen-control">
                 <span class="kitchen-label">Cozinha</span>
-                <label class="switch" style="width: 38px; height: 20px;">
+                <label class="switch" style="width: 36px; height: 18px;">
                     <input type="checkbox" id="kitchenInput" onchange="alternarCozinha(this.checked)">
                     <span class="slider" style="border-radius: 20px;"></span>
                 </label>
@@ -324,6 +318,18 @@
         const socket = io();
         const listaPedidosRaw = <%- JSON.stringify(pedidos) %>;
 
+        // --- SINCRONIZAÇÃO INICIAL DO MODO LENTO COM O SERVIDOR ---
+        socket.emit('solicitarStatusModoLento');
+
+        socket.on('statusModoLentoAtual', (ativo) => {
+            document.getElementById('slowModeInput').checked = ativo;
+            localStorage.setItem('modoLentoStatus', ativo);
+        });
+
+        function alternarModoLento(ativo) {
+            socket.emit('toggleModoLento', ativo);
+        }
+
         // --- LÓGICA DE MONITORAMENTO DE ALTA DEMANDA ---
         function verificarDemanda() {
             const pendentes = document.querySelectorAll('#pendentes .order-card').length;
@@ -340,31 +346,17 @@
             }
         }
 
-        // --- LÓGICA DA COZINHA (ABERTO/FECHADO) ---
         function alternarCozinha(aberta) {
-            // Emite para o servidor a mudança de estado
-            socket.emit('toggle-cozinha', { active: aberta });
+            // Se houver lógica de fechamento geral, você pode emitir aqui
             localStorage.setItem('cozinhaStatus', aberta);
-            console.log("Cozinha status enviado:", aberta);
         }
 
-        // Recuperar estado da cozinha ao recarregar
+        // Recuperar estado da cozinha local
         const cozinhaSalva = localStorage.getItem('cozinhaStatus');
-        if (cozinhaSalva === null) {
-            document.getElementById('kitchenInput').checked = true;
-            localStorage.setItem('cozinhaStatus', 'true');
-        } else {
+        if (cozinhaSalva !== null) {
             document.getElementById('kitchenInput').checked = (cozinhaSalva === 'true');
-        }
-
-        // --- LÓGICA DO MODO LENTO ---
-        function alternarModoLento(ativo) {
-            socket.emit('toggle-modo-lento', { active: ativo });
-            localStorage.setItem('modoLentoStatus', ativo);
-        }
-
-        if (localStorage.getItem('modoLentoStatus') === 'true') {
-            document.getElementById('slowModeInput').checked = true;
+        } else {
+            document.getElementById('kitchenInput').checked = true;
         }
 
         function formatTime(ms) {
@@ -410,9 +402,6 @@
             let totalRev = 0;
             concluidos.forEach(p => {
                 if (p.total) { totalRev += parseFloat(p.total); } 
-                else if (p.itens) {
-                    p.itens.forEach(item => { totalRev += (parseFloat(item.preco) * parseInt(item.quantidade)); });
-                }
             });
             const count = concluidos.length;
             const media = count > 0 ? (totalRev / count) : 0;
@@ -426,7 +415,6 @@
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             document.querySelectorAll('.nav-item')[index].classList.add('active');
-            window.scrollTo(0, 0);
         }
 
         document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -475,6 +463,7 @@
             if(audio) audio.play().catch(e => console.log("Audio block"));
             setTimeout(() => window.location.reload(), 1000); 
         });
+        
         socket.on('statusAtualizado', () => window.location.reload());
 
         window.onload = () => {

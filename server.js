@@ -20,8 +20,8 @@ const ConfigSchema = new mongoose.Schema({
     chave: { type: String, default: 'global' },
     pixProvedor: { type: String, default: 'mercadopago' },
     pixToken: String,
-    manutencao: { type: Boolean, default: false }, // ESTE É O FECHADO DO SITE
-    cozinhaAberta: { type: Boolean, default: true }, // NOVO: FECHADO DA COZINHA
+    manutencao: { type: Boolean, default: false },
+    modoLento: { type: Boolean, default: false }, // NOVO CAMPO PARA O MODO LENTO
     nomeSite: { type: String, default: 'Meu Delivery' },
     fusoHorario: { type: String, default: 'America/Sao_Paulo' },
     agenda: { type: Array, default: [] },
@@ -139,8 +139,7 @@ app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 const checarAberta = async () => {
     try {
         const config = await Config.findOne({ chave: 'global' });
-        // Site em manutenção ou Cozinha fechada manualmente mata a abertura
-        if (!config || config.manutencao || config.cozinhaAberta === false) return false; 
+        if (!config || config.manutencao) return false; 
 
         const fuso = config.fusoHorario || 'America/Sao_Paulo';
         const agora = new Date();
@@ -168,7 +167,6 @@ app.use(async (req, res, next) => {
     try {
         const config = await Config.findOne({ chave: 'global' });
         res.locals.estaAberto = await checarAberta();
-        res.locals.cozinhaStatus = config ? config.cozinhaAberta : true; // Para uso no front
         res.locals.nomeSite = config ? config.nomeSite : "Meu Delivery";
         next();
     } catch (err) {
@@ -178,22 +176,7 @@ app.use(async (req, res, next) => {
     }
 });
 
-// --- ROTA EXCLUSIVA FECHADO COZINHA ---
-app.post('/update-status-cozinha', async (req, res) => {
-    try {
-        const { aberta } = req.body; 
-        await Config.findOneAndUpdate(
-            { chave: 'global' },
-            { cozinhaAberta: aberta },
-            { upsert: true }
-        );
-        io.emit('cozinhaStatusMudou', { aberta });
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
-});
-
-// --- ROTAS DO NOVO SISTEMA DE ADICIONAIS NO BANCO ---
-
+// --- ROTAS DOS ADICIONAIS ---
 app.get('/get-adicionais', async (req, res) => {
     try {
         const lista = await CategoriaAdicional.find();
@@ -234,7 +217,6 @@ app.get('/get-vendas-mensal', async (req, res) => {
 });
 
 // --- ROTAS DE CATEGORIAS E PRODUTOS ---
-
 app.get('/get-categorias', async (req, res) => {
     try { const categorias = await Categoria.find(); res.json(categorias); } catch (err) { res.status(500).json([]); }
 });
@@ -264,7 +246,6 @@ app.delete('/delete-produto/:id', async (req, res) => {
 });
 
 // --- ROTAS DE CONFIGURAÇÃO ---
-
 app.post('/update-config-site', async (req, res) => {
     try {
         const { 
@@ -307,7 +288,6 @@ app.post('/update-config-pix', async (req, res) => {
 });
 
 // --- ROTAS DE PEDIDOS E TELAS ---
-
 app.get('/', async (req, res) => {
     try {
         const produtos = await Produto.find();
@@ -403,9 +383,22 @@ app.get('/status/:id', async (req, res) => {
     } catch (err) { res.status(500).send("Erro."); }
 });
 
-// --- CHAT SOCKET.IO ---
+// --- CHAT E SINCRONIZAÇÃO MODO LENTO SOCKET.IO ---
 
 io.on('connection', (socket) => {
+    // Sincroniza o status do modo lento assim que alguém conecta
+    socket.on('solicitarStatusModoLento', async () => {
+        const config = await Config.findOne({ chave: 'global' });
+        socket.emit('statusModoLentoAtual', config ? config.modoLento : false);
+    });
+
+    // Escuta a alteração vinda de operacoes.js
+    socket.on('toggleModoLento', async (estado) => {
+        await Config.findOneAndUpdate({ chave: 'global' }, { modoLento: estado }, { upsert: true });
+        // Avisa TODOS os dispositivos (PC, Celular, etc)
+        io.emit('statusModoLentoAtual', estado);
+    });
+
     socket.on('join', async (pedidoId) => {
         if(!pedidoId) return;
         socket.join(pedidoId.toString());
