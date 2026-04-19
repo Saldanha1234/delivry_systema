@@ -36,6 +36,25 @@
             background: var(--status-alert); 
             animation: pulse-red 1s infinite;
         }
+
+        /* NOVO BOTÃO COZINHA (DESIGN IGUAL MODO LENTO) */
+        .kitchen-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 12px;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            margin-right: 10px;
+            transition: var(--transition-smooth);
+        }
+        .kitchen-label { font-size: 9px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; }
+        
+        /* Cores dinâmicas para o switch da cozinha seguindo o padrão de alerta/pronto */
+        input#kitchenInput:checked + .slider { background-color: var(--status-ready) !important; }
+        input#kitchenInput:not(:checked) + .slider { background-color: var(--status-alert) !important; }
+
         @keyframes pulse-red {
             0% { opacity: 1; }
             50% { opacity: 0.7; }
@@ -121,7 +140,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 100px; }
         .top-bar { height: 60px; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 1100; }
-        #clock { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 0.9rem; }
+        #clock { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 0.8rem; }
         .search-container { padding: 12px 15px; background: var(--bg-deep); }
         .search-input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-surface); color: white; font-size: 14px; outline: none; }
         .metrics-bar { display: flex; justify-content: space-around; padding: 10px 15px; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--border-color); font-family: 'JetBrains Mono', monospace; font-size: 10px; }
@@ -150,14 +169,36 @@
             .tab-content { display: flex !important; width: 24%; background: var(--bg-surface); padding: 15px; border-radius: 15px; min-height: 80vh; }
             .desktop-label { display: block; text-align: center; font-weight: 800; font-size: 11px; color: var(--accent-primary); margin-bottom: 10px; letter-spacing: 1px; }
         }
+
+        /* AJUSTE MOBILE TOPBAR PARA CABER TUDO SEM JUNTAR */
+        @media (max-width: 600px) {
+            .top-bar { padding: 0 8px; }
+            #clock { display: none; } 
+            .kitchen-control { margin-right: 5px; padding: 4px 8px; gap: 5px; }
+            .kitchen-label { font-size: 8px; }
+            .switch { width: 34px; height: 18px; }
+            .slider:before { height: 12px; width: 12px; left: 3px; bottom: 3px; }
+            input:checked + .slider:before { transform: translateX(16px); }
+        }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <div style="font-weight:800; letter-spacing: -1px;">Açai<span style="color:var(--accent-primary)">Roxinho</span></div>
-        <div id="clock">00:00:00</div>
-        <div id="status-indicator" class="status-online">ON-LINE</div>
+        <div style="font-weight:800; letter-spacing: -1px; font-size: 14px;">Açai<span style="color:var(--accent-primary)">Roxinho</span></div>
+        
+        <div style="display: flex; align-items: center;">
+            <div class="kitchen-control">
+                <span class="kitchen-label">Cozinha</span>
+                <label class="switch" style="width: 38px; height: 20px;">
+                    <input type="checkbox" id="kitchenInput" onchange="alternarCozinha(this.checked)">
+                    <span class="slider" style="border-radius: 20px;"></span>
+                </label>
+            </div>
+
+            <div id="clock" style="margin-right: 10px;">00:00:00</div>
+            <div id="status-indicator" class="status-online">ON-LINE</div>
+        </div>
     </div>
 
     <div class="floating-control">
@@ -299,13 +340,29 @@
             }
         }
 
+        // --- LÓGICA DA COZINHA (ABERTO/FECHADO) ---
+        function alternarCozinha(aberta) {
+            // Emite para o servidor a mudança de estado
+            socket.emit('toggle-cozinha', { active: aberta });
+            localStorage.setItem('cozinhaStatus', aberta);
+            console.log("Cozinha status enviado:", aberta);
+        }
+
+        // Recuperar estado da cozinha ao recarregar
+        const cozinhaSalva = localStorage.getItem('cozinhaStatus');
+        if (cozinhaSalva === null) {
+            document.getElementById('kitchenInput').checked = true;
+            localStorage.setItem('cozinhaStatus', 'true');
+        } else {
+            document.getElementById('kitchenInput').checked = (cozinhaSalva === 'true');
+        }
+
         // --- LÓGICA DO MODO LENTO ---
         function alternarModoLento(ativo) {
             socket.emit('toggle-modo-lento', { active: ativo });
             localStorage.setItem('modoLentoStatus', ativo);
         }
 
-        // Recuperar estado do modo lento ao recarregar a página
         if (localStorage.getItem('modoLentoStatus') === 'true') {
             document.getElementById('slowModeInput').checked = true;
         }
@@ -342,9 +399,10 @@
         }
 
         setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR');
+            const relogio = document.getElementById('clock');
+            if(relogio) relogio.innerText = new Date().toLocaleTimeString('pt-BR');
             updateLiveTimers();
-            verificarDemanda(); // Atualiza o alerta de alta demanda em tempo real
+            verificarDemanda();
         }, 1000);
 
         function calcularFaturamento() {
