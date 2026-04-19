@@ -21,6 +21,30 @@
             --transition-smooth: all 0.3s ease;
         }
 
+        /* ESTILO DE ATRASO */
+        .order-card.delayed {
+            border-color: var(--status-alert) !important;
+            animation: alertPulse 2s infinite;
+        }
+        
+        .delay-tag {
+            font-size: 9px;
+            font-weight: 800;
+            color: var(--status-alert);
+            background: rgba(255, 75, 75, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid rgba(255, 75, 75, 0.2);
+        }
+
+        @keyframes alertPulse {
+            0% { box-shadow: 0 0 0px rgba(255, 75, 75, 0); }
+            50% { box-shadow: 0 0 15px rgba(255, 75, 75, 0.2); }
+            100% { box-shadow: 0 0 0px rgba(255, 75, 75, 0); }
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
@@ -45,7 +69,6 @@
             background: var(--bg-surface); color: white; font-size: 14px; outline: none;
         }
 
-        /* BARRA DE MÉTRICAS */
         .metrics-bar {
             display: flex;
             justify-content: space-around;
@@ -177,10 +200,20 @@
         <div id="pendentes" class="tab-content active">
             <div class="desktop-label">PENDENTES</div>
             <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" onclick="abrirDetalhes('<%= p.id %>', 'Pendente')">
+                <div class="order-card search-item sla-monitor" 
+                     data-id="<%= p.id %>" 
+                     data-status="Pendente"
+                     data-time="<%= p.createdAt %>"
+                     data-cliente="<%= p.cliente.toLowerCase() %>" 
+                     onclick="abrirDetalhes('<%= p.id %>', 'Pendente')">
                     <div class="card-header">
                         <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
-                        <span style="font-size: 10px; color: var(--text-dim);"><%= new Date(p.createdAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) %></span>
+                        <div style="display: flex; align-items: center;">
+                            <span class="time-display" style="font-size: 10px; color: var(--text-dim);">
+                                <%= new Date(p.createdAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) %>
+                            </span>
+                            <span class="delay-info"></span>
+                        </div>
                     </div>
                     <span class="client-name"><%= p.cliente %></span>
                     <div class="status-badge" style="color: var(--accent-primary)">Novo</div>
@@ -192,8 +225,16 @@
         <div id="preparo" class="tab-content">
             <div class="desktop-label">EM PREPARO</div>
             <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" onclick="abrirDetalhes('<%= p.id %>', 'Preparando')">
-                    <div class="card-header"><span class="order-number">#<%= p.id.toString().slice(-4) %></span></div>
+                <div class="order-card search-item sla-monitor" 
+                     data-id="<%= p.id %>" 
+                     data-status="Preparando"
+                     data-time="<%= p.updatedAt || p.createdAt %>"
+                     data-cliente="<%= p.cliente.toLowerCase() %>" 
+                     onclick="abrirDetalhes('<%= p.id %>', 'Preparando')">
+                    <div class="card-header">
+                        <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
+                        <span class="delay-info"></span>
+                    </div>
                     <span class="client-name"><%= p.cliente %></span>
                     <div class="status-badge" style="color: #f1c40f">Preparando</div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
@@ -239,36 +280,51 @@
 
     <script>
         const socket = io();
-        // Transformar dados do EJS para uso no Script
         const listaPedidosRaw = <%- JSON.stringify(pedidos) %>;
 
         function calcularFaturamento() {
             const concluidos = listaPedidosRaw.filter(p => p.status === 'Concluído');
             let totalRev = 0;
-
             concluidos.forEach(p => {
-                // Tenta calcular o total do pedido somando p.total ou iterando itens se necessário
-                // Baseado no seu sistema de comanda digital:
-                if (p.total) {
-                    totalRev += parseFloat(p.total);
-                } else if (p.itens) {
-                    p.itens.forEach(item => {
-                        totalRev += (parseFloat(item.preco) * parseInt(item.quantidade));
-                    });
+                if (p.total) { totalRev += parseFloat(p.total); } 
+                else if (p.itens) {
+                    p.itens.forEach(item => { totalRev += (parseFloat(item.preco) * parseInt(item.quantidade)); });
                 }
             });
-
             const count = concluidos.length;
             const media = count > 0 ? (totalRev / count) : 0;
-
             document.getElementById('m-revenue').innerText = `R$ ${totalRev.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('m-total-count').innerText = count;
             document.getElementById('m-average').innerText = `R$ ${media.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         }
 
+        // MOTOR DE MONITORAMENTO DE SLA (7min e 15min)
+        function monitorarSLA() {
+            const cards = document.querySelectorAll('.sla-monitor');
+            const agora = Date.now();
+
+            cards.forEach(card => {
+                const status = card.getAttribute('data-status');
+                const startTime = new Date(card.getAttribute('data-time')).getTime();
+                const delayInfo = card.querySelector('.delay-info');
+                
+                const diffMin = Math.floor((agora - startTime) / 60000);
+                let limite = status === 'Pendente' ? 7 : 15;
+                
+                if (diffMin >= limite) {
+                    const extra = diffMin - limite;
+                    card.classList.add('delayed');
+                    delayInfo.innerHTML = `<span class="delay-tag">ATRASADO ${extra > 0 ? extra + 'm' : ''}</span>`;
+                } else {
+                    card.classList.remove('delayed');
+                    delayInfo.innerHTML = '';
+                }
+            });
+        }
+
         setInterval(() => {
-            const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString('pt-BR');
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR');
+            monitorarSLA(); // Atualiza os atrasos a cada segundo
         }, 1000);
 
         function showTab(tabId, index) {
@@ -340,6 +396,7 @@
 
         window.onload = () => {
             calcularFaturamento();
+            monitorarSLA();
         };
     </script>
 </body>
