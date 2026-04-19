@@ -18,134 +18,102 @@
             --status-ready: #00ff88;
             --status-alert: #ff4b4b;
             --border-color: rgba(255, 255, 255, 0.08);
-            --transition-smooth: all 0.3s ease;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* ESTILO DE ATRASO */
+        /* PERSONALIZAÇÃO DOS CARDS (CONFORME IMAGEM) */
+        .order-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* ANIMAÇÃO AO CLICAR */
+        .order-card:active {
+            transform: scale(0.96);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        /* ESTILO DE ATRASO DINÂMICO */
         .order-card.delayed {
             border-color: var(--status-alert) !important;
             animation: alertPulse 2s infinite;
         }
-        
-        .delay-tag {
-            font-size: 9px;
-            font-weight: 800;
-            color: var(--status-alert);
-            background: rgba(255, 75, 75, 0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 8px;
-            font-family: 'JetBrains Mono', monospace;
-            border: 1px solid rgba(255, 75, 75, 0.2);
-        }
 
         @keyframes alertPulse {
             0% { box-shadow: 0 0 0px rgba(255, 75, 75, 0); }
-            50% { box-shadow: 0 0 15px rgba(255, 75, 75, 0.2); }
+            50% { box-shadow: 0 0 15px rgba(255, 75, 75, 0.3); }
             100% { box-shadow: 0 0 0px rgba(255, 75, 75, 0); }
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            background-color: var(--bg-deep);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            line-height: 1.5;
-            min-height: 100vh;
-        }
-
-        .top-bar {
-            height: 60px; padding: 0 15px; display: flex; justify-content: space-between;
-            align-items: center; background: var(--bg-surface); border-bottom: 1px solid var(--border-color);
-            position: sticky; top: 0; z-index: 1100;
-        }
-
-        #clock { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 0.9rem; }
-
-        .search-container { padding: 12px 15px; background: var(--bg-deep); }
-        .search-input {
-            width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border-color);
-            background: var(--bg-surface); color: white; font-size: 14px; outline: none;
-        }
-
-        .metrics-bar {
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 15px;
-            background: rgba(255, 255, 255, 0.02);
-            border-bottom: 1px solid var(--border-color);
-            font-family: 'JetBrains Mono', monospace;
+        .delay-tag {
             font-size: 10px;
-        }
-        .metric-item { color: var(--text-dim); text-align: center; }
-        .metric-item span { display: block; color: var(--status-ready); font-weight: 800; font-size: 12px; }
-
-        .status-nav {
-            display: flex; background: var(--bg-surface); position: sticky;
-            top: 60px; z-index: 1000; border-bottom: 1px solid var(--border-color);
-        }
-
-        .nav-item {
-            flex: 1; padding: 12px 0; text-align: center; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-dim);
+            font-weight: 800;
+            color: var(--status-alert);
+            background: rgba(255, 75, 75, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-left: 10px;
+            font-family: 'JetBrains Mono', monospace;
         }
 
-        .nav-item.active {
-            color: var(--accent-primary); background: rgba(130, 87, 229, 0.05);
-            box-shadow: inset 0 -3px 0 var(--accent-primary);
+        /* ESTRUTURA INTERNA DO CARD */
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .order-number { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 15px; font-weight: 700; }
+        .timer-live { font-family: 'JetBrains Mono', monospace; color: var(--text-main); font-size: 13px; opacity: 0.9; }
+        
+        .client-name { 
+            font-size: 1.2rem; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            margin-bottom: 4px; 
+            color: var(--text-main); 
+            display: block;
         }
 
-        .nav-item .count {
-            font-size: 10px; background: rgba(255,255,255,0.1);
-            padding: 1px 7px; border-radius: 10px; font-weight: 800;
+        .order-info-line {
+            font-size: 13px;
+            color: var(--text-dim);
+            font-weight: 600;
         }
-
-        .nav-item.active .count { background: var(--accent-primary); color: white; }
-        .nav-item .label { font-size: 10px; font-weight: 800; text-transform: uppercase; }
-
-        .container { padding: 15px; width: 100%; display: flex; flex-direction: column; gap: 15px; }
-        .tab-content { display: none; width: 100%; flex-direction: column; gap: 12px; }
-        .tab-content.active { display: flex; }
-
-        .order-card {
-            background: var(--bg-card); border-radius: 16px; padding: 18px;
-            border: 1px solid var(--border-color); position: relative;
-            cursor: pointer; transition: var(--transition-smooth);
-        }
-        .order-card:active { transform: scale(0.98); }
-
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .order-number { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 14px; }
-        .client-name { font-size: 1.15rem; font-weight: 800; text-transform: uppercase; margin: 5px 0; color: var(--text-main); }
 
         .status-badge {
-            display: inline-block; padding: 4px 10px; border-radius: 6px;
+            margin-top: 12px;
+            display: inline-block; padding: 4px 12px; border-radius: 8px;
             font-size: 10px; font-weight: 800; border: 1px solid var(--border-color);
             background: rgba(255,255,255,0.03); text-transform: uppercase;
         }
 
-        #modalDetalhes {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); backdrop-filter: blur(8px);
-            z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px;
-        }
-
-        .modal-body {
-            background: var(--bg-card); width: 100%; max-width: 400px;
-            padding: 25px; border-radius: 20px; border: 1px solid var(--border-color);
-            max-height: 90vh; overflow-y: auto;
-        }
-
-        .modal-actions {
-            display: flex; flex-direction: column; gap: 10px; margin-top: 20px;
-        }
-
-        .btn {
-            padding: 14px; border-radius: 10px; border: none; font-weight: 800;
-            font-size: 12px; cursor: pointer; text-transform: uppercase;
-            transition: var(--transition-smooth); display: flex; justify-content: center; align-items: center;
-        }
+        /* RESTANTE DO CSS ORIGINAL PRESERVADO */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; }
+        .top-bar { height: 60px; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 1100; }
+        #clock { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 0.9rem; }
+        .search-container { padding: 12px 15px; background: var(--bg-deep); }
+        .search-input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-surface); color: white; font-size: 14px; outline: none; }
+        .metrics-bar { display: flex; justify-content: space-around; padding: 10px 15px; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--border-color); font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+        .metric-item { color: var(--text-dim); text-align: center; }
+        .metric-item span { display: block; color: var(--status-ready); font-weight: 800; font-size: 12px; }
+        .status-nav { display: flex; background: var(--bg-surface); position: sticky; top: 60px; z-index: 1000; border-bottom: 1px solid var(--border-color); }
+        .nav-item { flex: 1; padding: 12px 0; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-dim); }
+        .nav-item.active { color: var(--accent-primary); background: rgba(130, 87, 229, 0.05); box-shadow: inset 0 -3px 0 var(--accent-primary); }
+        .nav-item .count { font-size: 10px; background: rgba(255,255,255,0.1); padding: 1px 7px; border-radius: 10px; font-weight: 800; }
+        .nav-item.active .count { background: var(--accent-primary); color: white; }
+        .nav-item .label { font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .container { padding: 15px; width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .tab-content { display: none; width: 100%; flex-direction: column; gap: 12px; }
+        .tab-content.active { display: flex; }
+        #modalDetalhes { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-body { background: var(--bg-card); width: 100%; max-width: 400px; padding: 25px; border-radius: 20px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
+        .modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .btn { padding: 14px; border-radius: 10px; border: none; font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; transition: var(--transition-smooth); display: flex; justify-content: center; align-items: center; }
         .btn-primary { background: var(--accent-primary); color: white; width: 100%; }
         .btn-cancel { background: transparent; color: var(--status-alert); border: 1px solid rgba(255, 75, 75, 0.2); width: 100%; }
         .btn-dark { background: #2a2a35; color: white; width: 100%; margin-top: 5px; }
@@ -196,7 +164,6 @@
     </nav>
 
     <main class="container">
-        
         <div id="pendentes" class="tab-content active">
             <div class="desktop-label">PENDENTES</div>
             <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
@@ -208,14 +175,13 @@
                      onclick="abrirDetalhes('<%= p.id %>', 'Pendente')">
                     <div class="card-header">
                         <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
-                        <div style="display: flex; align-items: center;">
-                            <span class="time-display" style="font-size: 10px; color: var(--text-dim);">
-                                <%= new Date(p.createdAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) %>
-                            </span>
-                            <span class="delay-info"></span>
-                        </div>
+                        <span class="timer-live" data-start="<%= p.createdAt %>">00:00</span>
                     </div>
                     <span class="client-name"><%= p.cliente %></span>
+                    <div class="order-info-line">
+                        <%= p.itens ? p.itens.length : 0 %> itens • <%= p.pagamento || 'Pix' %>
+                        <span class="delay-info"></span>
+                    </div>
                     <div class="status-badge" style="color: var(--accent-primary)">Novo</div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
@@ -233,9 +199,13 @@
                      onclick="abrirDetalhes('<%= p.id %>', 'Preparando')">
                     <div class="card-header">
                         <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
-                        <span class="delay-info"></span>
+                        <span class="timer-live" data-start="<%= p.updatedAt || p.createdAt %>">00:00</span>
                     </div>
                     <span class="client-name"><%= p.cliente %></span>
+                    <div class="order-info-line">
+                        <%= p.itens ? p.itens.length : 0 %> itens • <%= p.pagamento || 'Pix' %>
+                        <span class="delay-info"></span>
+                    </div>
                     <div class="status-badge" style="color: #f1c40f">Preparando</div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
@@ -246,9 +216,13 @@
             <div class="desktop-label">PRONTOS</div>
             <% pedidos.filter(p => p.status === 'Pronto').forEach(p => { %>
                 <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" onclick="abrirDetalhes('<%= p.id %>', 'Pronto')">
-                    <div class="card-header"><span class="order-number">#<%= p.id.toString().slice(-4) %></span></div>
+                    <div class="card-header">
+                        <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
+                        <span style="font-size: 11px; opacity: 0.5;">Pronto</span>
+                    </div>
                     <span class="client-name"><%= p.cliente %></span>
-                    <div class="status-badge" style="color: var(--status-ready)">Pronto</div>
+                    <div class="order-info-line"><%= p.itens ? p.itens.length : 0 %> itens • Pix</div>
+                    <div class="status-badge" style="color: var(--status-ready)">Aguardando Retirada</div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
@@ -258,14 +232,17 @@
             <div class="desktop-label">ENCERRADOS</div>
             <% pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Concluído').forEach(p => { %>
                 <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" style="opacity: 0.6" onclick="abrirDetalhes('<%= p.id %>', '<%= p.status %>')">
-                    <div class="card-header"><span class="order-number">#<%= p.id.toString().slice(-4) %></span></div>
+                    <div class="card-header">
+                        <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
+                        <span style="font-size: 11px;"><%= p.status === 'Concluído' ? 'Finalizado' : 'Em Rota' %></span>
+                    </div>
                     <span class="client-name"><%= p.cliente %></span>
-                    <div class="status-badge"><%= p.status === 'Concluído' ? 'Finalizado' : 'Em Rota' %></div>
+                    <div class="order-info-line">Total: R$ <%= p.total %></div>
+                    <div class="status-badge"><%= p.status === 'Concluído' ? 'Finalizado' : 'Saiu' %></div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
         </div>
-
     </main>
 
     <div id="modalDetalhes" onclick="fecharModal()">
@@ -282,28 +259,25 @@
         const socket = io();
         const listaPedidosRaw = <%- JSON.stringify(pedidos) %>;
 
-        function calcularFaturamento() {
-            const concluidos = listaPedidosRaw.filter(p => p.status === 'Concluído');
-            let totalRev = 0;
-            concluidos.forEach(p => {
-                if (p.total) { totalRev += parseFloat(p.total); } 
-                else if (p.itens) {
-                    p.itens.forEach(item => { totalRev += (parseFloat(item.preco) * parseInt(item.quantidade)); });
-                }
-            });
-            const count = concluidos.length;
-            const media = count > 0 ? (totalRev / count) : 0;
-            document.getElementById('m-revenue').innerText = `R$ ${totalRev.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('m-total-count').innerText = count;
-            document.getElementById('m-average').innerText = `R$ ${media.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        function formatTime(ms) {
+            const totalSecs = Math.floor(ms / 1000);
+            const mins = Math.floor(totalSecs / 60);
+            const secs = totalSecs % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
 
-        // MOTOR DE MONITORAMENTO DE SLA (7min e 15min)
-        function monitorarSLA() {
-            const cards = document.querySelectorAll('.sla-monitor');
+        // MOTOR DE TEMPO REAL E SLA
+        function updateLiveTimers() {
             const agora = Date.now();
+            
+            // Atualiza os contadores de cada card
+            document.querySelectorAll('.timer-live').forEach(timer => {
+                const start = new Date(timer.getAttribute('data-start')).getTime();
+                timer.innerText = formatTime(agora - start);
+            });
 
-            cards.forEach(card => {
+            // Lógica de SLA (Atraso)
+            document.querySelectorAll('.sla-monitor').forEach(card => {
                 const status = card.getAttribute('data-status');
                 const startTime = new Date(card.getAttribute('data-time')).getTime();
                 const delayInfo = card.querySelector('.delay-info');
@@ -324,8 +298,24 @@
 
         setInterval(() => {
             document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR');
-            monitorarSLA(); // Atualiza os atrasos a cada segundo
+            updateLiveTimers();
         }, 1000);
+
+        function calcularFaturamento() {
+            const concluidos = listaPedidosRaw.filter(p => p.status === 'Concluído');
+            let totalRev = 0;
+            concluidos.forEach(p => {
+                if (p.total) { totalRev += parseFloat(p.total); } 
+                else if (p.itens) {
+                    p.itens.forEach(item => { totalRev += (parseFloat(item.preco) * parseInt(item.quantidade)); });
+                }
+            });
+            const count = concluidos.length;
+            const media = count > 0 ? (totalRev / count) : 0;
+            document.getElementById('m-revenue').innerText = `R$ ${totalRev.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('m-total-count').innerText = count;
+            document.getElementById('m-average').innerText = `R$ ${media.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        }
 
         function showTab(tabId, index) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -357,30 +347,19 @@
         function abrirDetalhes(id, status) {
             const wrap = document.getElementById(`wrapper-${id}`);
             const containerAcoes = document.getElementById('modal-actions-container');
-            
             if(wrap) {
                 document.getElementById('comanda-interna').innerHTML = wrap.innerHTML;
                 containerAcoes.innerHTML = ''; 
-
                 if (status === 'Pendente') {
-                    containerAcoes.innerHTML = `
-                        <button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Preparando')">ACEITAR PEDIDO</button>
-                        <button class="btn btn-cancel" onclick="atualizarStatus('${id}', 'Cancelado')">RECUSAR PEDIDO</button>
-                    `;
+                    containerAcoes.innerHTML = `<button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Preparando')">ACEITAR PEDIDO</button>
+                                               <button class="btn btn-cancel" onclick="atualizarStatus('${id}', 'Cancelado')">RECUSAR PEDIDO</button>`;
                 } else if (status === 'Preparando') {
-                    containerAcoes.innerHTML = `
-                        <button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Pronto')">CONCLUIR PREPARO</button>
-                    `;
+                    containerAcoes.innerHTML = `<button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Pronto')">CONCLUIR PREPARO</button>`;
                 } else if (status === 'Pronto') {
-                    containerAcoes.innerHTML = `
-                        <button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Saiu para Entrega')">ENVIAR / ENTREGAR</button>
-                    `;
+                    containerAcoes.innerHTML = `<button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Saiu para Entrega')">ENVIAR / ENTREGAR</button>`;
                 } else if (status === 'Saiu para Entrega') {
-                    containerAcoes.innerHTML = `
-                        <button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Concluído')">FINALIZAR E ENCERRAR</button>
-                    `;
+                    containerAcoes.innerHTML = `<button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Concluído')">FINALIZAR E ENCERRAR</button>`;
                 }
-
                 document.getElementById('modalDetalhes').style.display = "flex";
             }
         }
@@ -396,7 +375,7 @@
 
         window.onload = () => {
             calcularFaturamento();
-            monitorarSLA();
+            updateLiveTimers();
         };
     </script>
 </body>
