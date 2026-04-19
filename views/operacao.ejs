@@ -32,215 +32,101 @@
         }
 
         .top-bar {
-            height: 60px;
-            padding: 0 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-surface);
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            z-index: 1100;
+            height: 60px; padding: 0 15px; display: flex; justify-content: space-between;
+            align-items: center; background: var(--bg-surface); border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 1100;
         }
 
-        #clock {
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--accent-primary);
-            font-size: 0.9rem;
-        }
+        #clock { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 0.9rem; }
 
-        .search-container {
-            padding: 12px 15px;
-            background: var(--bg-deep);
-        }
-
+        .search-container { padding: 12px 15px; background: var(--bg-deep); }
         .search-input {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-surface);
-            color: white;
-            font-size: 14px;
-            outline: none;
+            width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border-color);
+            background: var(--bg-surface); color: white; font-size: 14px; outline: none;
         }
-
-        .search-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 10px var(--accent-glow); }
 
         .status-nav {
-            display: flex;
-            background: var(--bg-surface);
-            position: sticky;
-            top: 60px;
-            z-index: 1000;
-            border-bottom: 1px solid var(--border-color);
+            display: flex; background: var(--bg-surface); position: sticky;
+            top: 60px; z-index: 1000; border-bottom: 1px solid var(--border-color);
         }
 
         .nav-item {
-            flex: 1;
-            padding: 12px 0;
-            text-align: center;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            color: var(--text-dim);
-            transition: var(--transition-smooth);
+            flex: 1; padding: 12px 0; text-align: center; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-dim);
         }
 
         .nav-item.active {
-            color: var(--accent-primary);
-            background: rgba(130, 87, 229, 0.05);
+            color: var(--accent-primary); background: rgba(130, 87, 229, 0.05);
             box-shadow: inset 0 -3px 0 var(--accent-primary);
         }
 
         .nav-item .count {
-            font-size: 10px;
-            background: rgba(255,255,255,0.1);
-            padding: 1px 7px;
-            border-radius: 10px;
-            font-weight: 800;
+            font-size: 10px; background: rgba(255,255,255,0.1);
+            padding: 1px 7px; border-radius: 10px; font-weight: 800;
         }
 
         .nav-item.active .count { background: var(--accent-primary); color: white; }
         .nav-item .label { font-size: 10px; font-weight: 800; text-transform: uppercase; }
 
-        .container {
-            padding: 15px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .tab-content {
-            display: none;
-            width: 100%;
-            flex-direction: column;
-            gap: 12px;
-        }
-
+        .container { padding: 15px; width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .tab-content { display: none; width: 100%; flex-direction: column; gap: 12px; }
         .tab-content.active { display: flex; }
 
         .order-card {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 18px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            background: var(--bg-card); border-radius: 16px; padding: 18px;
+            border: 1px solid var(--border-color); position: relative;
+            cursor: pointer; transition: var(--transition-smooth);
         }
+        .order-card:active { transform: scale(0.98); }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .order-number {
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--accent-primary);
-            font-size: 14px;
-        }
-
-        .client-name {
-            font-size: 1.15rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            margin: 5px 0;
-            display: block;
-            color: var(--text-main);
-        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .order-number { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 14px; }
+        .client-name { font-size: 1.15rem; font-weight: 800; text-transform: uppercase; margin: 5px 0; color: var(--text-main); }
 
         .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 800;
-            border: 1px solid var(--border-color);
-            background: rgba(255,255,255,0.03);
-            text-transform: uppercase;
+            display: inline-block; padding: 4px 10px; border-radius: 6px;
+            font-size: 10px; font-weight: 800; border: 1px solid var(--border-color);
+            background: rgba(255,255,255,0.03); text-transform: uppercase;
         }
 
-        .card-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 15px;
-        }
-
-        .btn {
-            padding: 12px;
-            border-radius: 10px;
-            border: none;
-            font-weight: 800;
-            font-size: 11px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: var(--transition-smooth);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .btn-full { grid-column: span 2; }
-        .btn-primary { background: var(--accent-primary); color: white; }
-        .btn-dark { background: #2a2a35; color: white; border: 1px solid var(--border-color); }
-        .btn-cancel { background: transparent; color: var(--status-alert); border: 1px solid rgba(255, 75, 75, 0.2); }
-
+        /* MODAL */
         #modalDetalhes {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            backdrop-filter: blur(8px);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); backdrop-filter: blur(8px);
+            z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px;
         }
 
         .modal-body {
-            background: var(--bg-card);
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
+            background: var(--bg-card); width: 100%; max-width: 400px;
+            padding: 25px; border-radius: 20px; border: 1px solid var(--border-color);
+            max-height: 90vh; overflow-y: auto;
         }
+
+        .modal-actions {
+            display: flex; flex-direction: column; gap: 10px; margin-top: 20px;
+        }
+
+        .btn {
+            padding: 14px; border-radius: 10px; border: none; font-weight: 800;
+            font-size: 12px; cursor: pointer; text-transform: uppercase;
+            transition: var(--transition-smooth); display: flex; justify-content: center; align-items: center;
+        }
+        .btn-primary { background: var(--accent-primary); color: white; width: 100%; }
+        .btn-cancel { background: transparent; color: var(--status-alert); border: 1px solid rgba(255, 75, 75, 0.2); width: 100%; }
+        .btn-dark { background: #2a2a35; color: white; width: 100%; margin-top: 5px; }
 
         @media (min-width: 1024px) {
             .container { flex-direction: row; align-items: flex-start; justify-content: center; }
             .status-nav { display: none; }
-            .tab-content {
-                display: flex !important;
-                background: var(--bg-surface);
-                padding: 15px;
-                border-radius: 15px;
-                min-height: 80vh;
-                width: 24%;
-            }
-            .desktop-label {
-                display: block;
-                text-align: center;
-                font-weight: 800;
-                font-size: 11px;
-                color: var(--accent-primary);
-                margin-bottom: 10px;
-                letter-spacing: 1px;
-            }
+            .tab-content { display: flex !important; width: 24%; background: var(--bg-surface); padding: 15px; border-radius: 15px; min-height: 80vh; }
+            .desktop-label { display: block; text-align: center; font-weight: 800; font-size: 11px; color: var(--accent-primary); margin-bottom: 10px; letter-spacing: 1px; }
         }
-        @media (max-width: 1023px) { .desktop-label { display: none; } }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <div style="font-weight:800; letter-spacing: -1px;">ELITE<span style="color:var(--accent-primary)">KDS</span></div>
+        <div style="font-weight:800; letter-spacing: -1px;">Açai<span style="color:var(--accent-primary)">Roxinho</span></div>
         <div id="clock">00:00:00</div>
         <div style="font-size: 9px; color: var(--status-ready); font-weight: 800;">ON-LINE</div>
     </div>
@@ -273,19 +159,13 @@
         <div id="pendentes" class="tab-content active">
             <div class="desktop-label">PENDENTES</div>
             <% pedidos.filter(p => p.status === 'Pendente').forEach(p => { %>
-                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
+                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" onclick="abrirDetalhes('<%= p.id %>', 'Pendente')">
                     <div class="card-header">
                         <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
                         <span style="font-size: 10px; color: var(--text-dim);"><%= new Date(p.createdAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) %></span>
                     </div>
                     <span class="client-name"><%= p.cliente %></span>
-                    <div class="status-badge" style="color: var(--accent-primary)">Aguardando</div>
-                    
-                    <div class="card-actions">
-                        <button class="btn btn-primary btn-full" onclick="atualizarStatus('<%= p.id %>', 'Preparando')">ACEITAR PEDIDO</button>
-                        <button class="btn btn-dark" onclick="abrirDetalhes('<%= p.id %>')">DETALHES</button>
-                        <button class="btn btn-cancel" onclick="atualizarStatus('<%= p.id %>', 'Cancelado')">RECUSAR</button>
-                    </div>
+                    <div class="status-badge" style="color: var(--accent-primary)">Novo</div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
@@ -294,14 +174,10 @@
         <div id="preparo" class="tab-content">
             <div class="desktop-label">EM PREPARO</div>
             <% pedidos.filter(p => p.status === 'Preparando').forEach(p => { %>
-                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
+                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" onclick="abrirDetalhes('<%= p.id %>', 'Preparando')">
                     <div class="card-header"><span class="order-number">#<%= p.id.toString().slice(-4) %></span></div>
                     <span class="client-name"><%= p.cliente %></span>
-                    <div class="status-badge" style="color: #f1c40f">Em Produção</div>
-                    <div class="card-actions">
-                        <button class="btn btn-primary btn-full" onclick="atualizarStatus('<%= p.id %>', 'Pronto')">CONCLUIR PREPARO</button>
-                        <button class="btn btn-dark btn-full" onclick="abrirDetalhes('<%= p.id %>')">VER COMANDA</button>
-                    </div>
+                    <div class="status-badge" style="color: #f1c40f">Preparando</div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
@@ -310,13 +186,10 @@
         <div id="prontos" class="tab-content">
             <div class="desktop-label">PRONTOS</div>
             <% pedidos.filter(p => p.status === 'Pronto').forEach(p => { %>
-                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>">
+                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" onclick="abrirDetalhes('<%= p.id %>', 'Pronto')">
                     <div class="card-header"><span class="order-number">#<%= p.id.toString().slice(-4) %></span></div>
                     <span class="client-name"><%= p.cliente %></span>
-                    <div class="status-badge" style="color: var(--status-ready)">Aguardando Retirada</div>
-                    <div class="card-actions">
-                        <button class="btn btn-primary btn-full" onclick="atualizarStatus('<%= p.id %>', 'Saiu para Entrega')">ENVIAR / ENTREGAR</button>
-                    </div>
+                    <div class="status-badge" style="color: var(--status-ready)">Pronto</div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
@@ -325,13 +198,10 @@
         <div id="encerrados" class="tab-content">
             <div class="desktop-label">ENCERRADOS</div>
             <% pedidos.filter(p => p.status === 'Saiu para Entrega' || p.status === 'Concluído').forEach(p => { %>
-                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" style="opacity: 0.7">
-                    <span class="order-number">#<%= p.id.toString().slice(-4) %></span>
+                <div class="order-card search-item" data-id="<%= p.id %>" data-cliente="<%= p.cliente.toLowerCase() %>" style="opacity: 0.6" onclick="abrirDetalhes('<%= p.id %>', '<%= p.status %>')">
+                    <div class="card-header"><span class="order-number">#<%= p.id.toString().slice(-4) %></span></div>
                     <span class="client-name"><%= p.cliente %></span>
-                    <div class="status-badge"><%= p.status %></div>
-                    <% if(p.status === 'Saiu para Entrega') { %>
-                        <button class="btn btn-primary btn-full" style="margin-top:10px" onclick="atualizarStatus('<%= p.id %>', 'Concluído')">FINALIZAR E ENCERRAR</button>
-                    <% } %>
+                    <div class="status-badge"><%= p.status === 'Concluído' ? 'Finalizado' : 'Em Rota' %></div>
                     <div id="wrapper-<%= p.id %>" style="display:none"><%- include('partials/card-comanda', {p: p}) %></div>
                 </div>
             <% }) %>
@@ -342,7 +212,11 @@
     <div id="modalDetalhes" onclick="fecharModal()">
         <div class="modal-body" onclick="event.stopPropagation()">
             <div id="comanda-interna"></div>
-            <button class="btn btn-primary btn-full" style="margin-top:20px" onclick="fecharModal()">VOLTAR</button>
+            
+            <div id="modal-actions-container" class="modal-actions">
+                </div>
+
+            <button class="btn btn-dark" onclick="fecharModal()">VOLTAR</button>
         </div>
     </div>
 
@@ -373,27 +247,49 @@
         });
 
         async function atualizarStatus(id, novoStatus) {
-            // Se o status for 'Finalizado', enviamos 'Concluído' para o servidor
-            // Isso garante que o status.ejs do cliente limpe o localStorage corretamente.
-            const statusSync = (novoStatus === 'Finalizado') ? 'Concluído' : novoStatus;
-
             try {
                 const res = await fetch('/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, novoStatus: statusSync })
+                    body: JSON.stringify({ id, novoStatus })
                 });
                 if (res.ok) window.location.reload();
             } catch (err) { console.error(err); }
         }
 
-        function abrirDetalhes(id) {
+        function abrirDetalhes(id, status) {
             const wrap = document.getElementById(`wrapper-${id}`);
+            const containerAcoes = document.getElementById('modal-actions-container');
+            
             if(wrap) {
                 document.getElementById('comanda-interna').innerHTML = wrap.innerHTML;
+                containerAcoes.innerHTML = ''; // Limpa botões
+
+                // Injeção de botões baseada no status
+                if (status === 'Pendente') {
+                    containerAcoes.innerHTML = `
+                        <button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Preparando')">ACEITAR PEDIDO</button>
+                        <button class="btn btn-cancel" onclick="atualizarStatus('${id}', 'Cancelado')">RECUSAR PEDIDO</button>
+                    `;
+                } else if (status === 'Preparando') {
+                    containerAcoes.innerHTML = `
+                        <button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Pronto')">CONCLUIR PREPARO</button>
+                    `;
+                } else if (status === 'Pronto') {
+                    containerAcoes.innerHTML = `
+                        <button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Saiu para Entrega')">ENVIAR / ENTREGAR</button>
+                    `;
+                } else if (status === 'Saiu para Entrega') {
+                    containerAcoes.innerHTML = `
+                        <button class="btn btn-primary" onclick="atualizarStatus('${id}', 'Concluído')">FINALIZAR E ENCERRAR</button>
+                    `;
+                }
+                // Se for 'Concluído', o container fica vazio (apenas visualização)
+
                 document.getElementById('modalDetalhes').style.display = "flex";
             }
         }
+
         function fecharModal() { document.getElementById('modalDetalhes').style.display = "none"; }
 
         socket.on('novoPedido', () => { 
