@@ -12,6 +12,15 @@
         .step.active { opacity: 1; font-weight: 800; transform: scale(1.1); }
         .icon { display: block; font-size: 1.5rem; margin-bottom: 5px; }
 
+              /* Cor personalizada apenas para a mensagem de recepção */
+      .msg-recepcao {
+      background-color: #6112df !important; /* Mude aqui para a cor que desejar */
+      color: white !important;               /* Cor do texto */
+      align-self: flex-start;                /* Alinha à esquerda como o Admin */
+      border-bottom-left-radius: 2px;
+    }
+
+      
         /* --- AVISO MODO LENTO --- */
         #modo-lento-aviso {
             display: none;
@@ -75,13 +84,6 @@
             .icon { font-size: 1.2rem; }
             .step { font-size: 0.7rem; }
 
-            /* Cor personalizada apenas para a mensagem de recepção */
-      .msg-recepcao {
-      background-color: #5b09c5 !important; /* Mude aqui para a cor que desejar */
-      color: white !important;               /* Cor do texto */
-      align-self: flex-start;                /* Alinha à esquerda como o Admin */
-      border-bottom-left-radius: 2px;
-}
         }
     </style>
 </head>
@@ -212,7 +214,8 @@
             const box = document.getElementById('chat-content');
             const div = document.createElement('div');
             const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            div.className = `m-st msg-recepcao`; 
+            
+            div.className = `m-st msg-recepcao`; // Estilo do cliente (ou use 'adm' se preferir cinza)
             div.innerHTML = `
                 <span class="msg-info-st">AçaiRoxinho</span>
                 Olá! 👋 Recebemos seu pedido. Se precisar de algo e a resposta demorar por aqui, chame-nos em nossos canais oficiais:
