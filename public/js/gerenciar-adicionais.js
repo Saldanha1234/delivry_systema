@@ -13,38 +13,38 @@
     const styleSheetAd = document.createElement("style");
     styleSheetAd.innerText = `
         .painel-adicionais-container { font-family: 'Segoe UI', sans-serif; padding: 20px; color: #333; }
-        .btn-principal-ad { background: #27ae60; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3); }
-        .btn-principal-ad:hover { background: #219150; transform: translateY(-2px); }
+        .btn-principal-ad { background: #670da3; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3); }
+        .btn-principal-ad:hover { background: #5a0c9c; transform: translateY(-2px); }
         
-        .categoria-card { background: white; margin-top: 15px; border-radius: 10px; border-left: 6px solid #27ae60; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: visible; position: relative; }
+        .categoria-card { background: white; margin-top: 15px; border-radius: 10px; border-left: 6px solid #670da3; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: visible; position: relative; }
         .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; cursor: pointer; }
         
         .categoria-acoes { position: relative; display: flex; align-items: center; z-index: 100; }
         .menu-dot-ad { cursor: pointer; font-size: 24px; padding: 5px 12px; color: #888; transition: 0.2s; border-radius: 50%; }
-        .menu-dot-ad:hover { background: #eee; color: #000; }
+        .menu-dot-ad:hover { background: #111010; color: #670da3; }
         
-        .dropdown-menu-ad { position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ddd; border-radius: 8px; display: none; z-index: 1000; min-width: 180px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .dropdown-menu-ad { position: absolute; right: 0; top: 100%; background: white; border: 1px solid #111010; border-radius: 8px; display: none; z-index: 1000; min-width: 180px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
         .dropdown-menu-ad.show { display: block; }
-        .dropdown-item-ad { padding: 12px 16px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #f0f0f0; transition: 0.2s; text-align: left; }
-        .dropdown-item-ad:hover { background: #f8f9fa; color: #27ae60; }
+        .dropdown-item-ad { padding: 12px 16px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #111010; transition: 0.2s; text-align: left; }
+        .dropdown-item-ad:hover { background: #111010; color: #670da3; }
         
-        .adicionais-lista { padding: 20px; background: #f9fbfb; border-top: 1px solid #eee; border-radius: 0 0 10px 10px; }
+        .adicionais-lista { padding: 20px; background: #111010; border-top: 1px solid #670da3; border-radius: 0 0 10px 10px; }
         
-        .btn-novo-item-ad { background: #fff; color: #27ae60; border: 2px dashed #27ae60; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; }
-        .btn-novo-item-ad:hover { background: #e8f5e9; }
+        .btn-novo-item-ad { background: #111010; color: #670da3; border: 2px dashed #670da3; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; }
+        .btn-novo-item-ad:hover { background: #111010; }
 
         .adicional-item { display: flex; justify-content: space-between; padding: 15px; background: white; margin-bottom: 10px; border-radius: 8px; border: 1px solid #e0e0e0; align-items: center; position: relative; }
         .item-indisponivel { opacity: 0.5; background: #f0f0f0; cursor: not-allowed; }
         .badge-indisponivel { background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px; }
         
-        .preco-bruto { text-decoration: line-through; color: #999; font-size: 13px; margin-right: 8px; }
-        .preco-final { color: #27ae60; font-weight: bold; font-size: 15px; }
+        .preco-bruto { text-decoration: line-through; color: #670da3; font-size: 13px; margin-right: 8px; }
+        .preco-final { color: #111010; font-weight: bold; font-size: 15px; }
 
         .modal-full-ad { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-content-ad { width: 95%; max-width: 550px; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         .form-group-ad { margin-bottom: 20px; }
-        .form-group-ad label { font-weight: 600; display: block; margin-bottom: 8px; color: #555; }
-        .form-group-ad input, .form-group-ad select { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+        .form-group-ad label { font-weight: 600; display: block; margin-bottom: 8px; color: #670da3; }
+        .form-group-ad input, .form-group-ad select { width: 100%; padding: 14px; border: 1px solid rgba(0,0,0,0.6); border-radius: 8px; font-size: 15px; }
     `;
     document.head.appendChild(styleSheetAd);
 
