@@ -7,9 +7,9 @@ let listaProdutosLocal = [];
 
 // --- 0. INJEÇÃO DE CSS ---
 const styles = `
-    .painel-unico-admin { font-family: sans-serif; max-width: 800px; margin: 20px auto; background: #f4f4f4; padding: 15px; border-radius: 8px; }
+    .painel-unico-admin { font-family: sans-serif; max-width: 800px; margin: 20px auto; background: #111010; padding: 15px; border-radius: 8px; }
     .header-painel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .btn-add-principal { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+    .btn-add-principal { background: #670da3; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
     
     .item-categoria-container { background: white; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; }
     .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid #eee; }
@@ -17,15 +17,15 @@ const styles = `
     .seta { margin-right: 15px; font-weight: bold; transition: 0.3s; }
     .cat-nome { font-weight: bold; font-size: 1.1em; outline: none; }
     
-    .produtos-lista { padding: 10px 15px; background: #fafafa; border-top: 1px solid #eee; }
-    .btn-add-produto { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px dashed #ccc; background: #fff; cursor: pointer; border-radius: 4px; }
+    .produtos-lista { padding: 10px 15px; background: rgba(0,0,0,0.1); border-top: 1px solid rgba(0,0,0,0.1); }
+    .btn-add-produto { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px dashed #ccc; background: rgba(0,0,0,0.1); cursor: pointer; border-radius: 4px; }
     
-    .produto-linha { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 4px; cursor: pointer; }
+    .produto-linha { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.1); background: white; margin-bottom: 5px; border-radius: 4px; cursor: pointer; }
     .prod-info-wrapper { display: flex; align-items: center; flex-grow: 1; }
     .prod-img-min { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 12px; background: #eee; }
     .prod-txt-container { display: flex; flex-direction: column; }
     .prod-nome-txt { font-weight: bold; }
-    .prod-preco-txt { font-size: 0.9em; color: #28a745; font-weight: bold; }
+    .prod-preco-txt { font-size: 0.9em; color: #670da3; font-weight: bold; }
 
     .dropdown { position: relative; display: inline-block; }
     .dropdown-content { 
