@@ -60,6 +60,11 @@
         .m-st.cli .msg-info-st { color: rgba(255,255,255,0.9); }
         .m-st.adm { background: #f1f1f1; align-self: flex-start; color: #333; border-bottom-left-radius: 2px; border-left: 4px solid var(--primary); }
         
+        /* Estilo para os ícones sociais na mensagem de boas-vindas */
+        .social-icons-welcome { display: flex; gap: 15px; margin-top: 10px; justify-content: flex-start; }
+        .social-icons-welcome a { color: white; font-size: 1.2rem; text-decoration: none; transition: 0.3s; }
+        .social-icons-welcome a:hover { opacity: 0.8; }
+
         .chat-input-st { display: flex; border-top: 1px solid #eee; padding: 10px; background: white; }
         .chat-input-st input { flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 8px; outline: none; font-size: 0.85rem; }
         .chat-input-st button { background: var(--primary); color: white; border: none; margin-left: 8px; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
@@ -159,18 +164,12 @@
             }
         }
 
-        // Long Polling de segurança para status com tratamento de erro
         setInterval(async () => {
             try {
                 const res = await fetch('/api/pedido/' + pedidoId);
-                
                 if (!res.ok) throw new Error('Falha na rede');
-
                 const data = await res.json();
-                
-                // Se chegou aqui, a conexão está OK, removemos o aviso se estiver visível
                 document.getElementById('modo-lento-aviso').style.display = 'none';
-
                 if (data.status && data.status !== statusAtual) {
                     if (data.status === 'Cancelado' || data.status === 'Concluído') {
                         localStorage.removeItem('ultimoPedidoId');
@@ -178,8 +177,6 @@
                     window.location.reload();
                 }
             } catch (err) {
-                console.error("Erro na atualização automática - Entrando em Modo Lento");
-                // Mostra a mensagem bonitinha que você pediu
                 document.getElementById('modo-lento-aviso').style.display = 'block';
             }
         }, 5000);
@@ -196,8 +193,30 @@
         socket.on('historico', (historico) => {
             const box = document.getElementById('chat-content');
             box.innerHTML = '';
+            
+            // Inserir mensagem de recepção automática antes do histórico
+            enviarMensagemRecepcao();
+
             historico.forEach(msg => adicionarMensagemNaTela(msg));
         });
+
+        function enviarMensagemRecepcao() {
+            const box = document.getElementById('chat-content');
+            const div = document.createElement('div');
+            const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+            div.className = `m-st cli`; // Estilo do cliente (ou use 'adm' se preferir cinza)
+            div.innerHTML = `
+                <span class="msg-info-st">Sistema</span>
+                Olá! 👋 Recebemos seu pedido. Se precisar de algo e a resposta demorar por aqui, chame-nos em nossos canais oficiais:
+                <div class="social-icons-welcome">
+                    <a href="https://wa.link/3s32fj" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a href="https://www.instagram.com/guilherme_giuliani" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+                <span class="msg-time-st">${horaAtual}</span>
+            `;
+            box.appendChild(div);
+        }
 
         function adicionarMensagemNaTela(msg) {
             const box = document.getElementById('chat-content');
@@ -206,6 +225,7 @@
             const ehAdmin = msg.usuario === 'Admin';
             const nomeParaExibir = ehAdmin ? 'Suporte' : msg.usuario;
             
+            // Garantir que a hora seja sempre o tempo real se não vier do banco
             const agora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             const horaParaExibir = msg.hora || agora;
             
@@ -230,7 +250,7 @@
                 usuario: clienteNome,
                 texto: input.value,
                 pedidoId: pedidoId,
-                hora: horaAtual
+                hora: horaAtual // Envia a hora exata do clique
             });
 
             input.value = '';
