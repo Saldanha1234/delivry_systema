@@ -1,6 +1,7 @@
 /**
  * SISTEMA DE GERENCIAMENTO DE ADICIONAIS - CLIENT-SIDE
  * Versão Corrigida: Categorias e Adicionais funcionando de forma independente.
+ * Cores Ajustadas: Tema Dark (Preto e Roxo)
  */
 
 {
@@ -12,39 +13,52 @@
 
     const styleSheetAd = document.createElement("style");
     styleSheetAd.innerText = `
-        .painel-adicionais-container { font-family: 'Segoe UI', sans-serif; padding: 20px; color: #333; }
-        .btn-principal-ad { background: #670da3; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3); }
-        .btn-principal-ad:hover { background: #5a0c9c; transform: translateY(-2px); }
+        .painel-adicionais-container { font-family: 'Segoe UI', sans-serif; padding: 20px; color: #ffffff; background: #000000; }
         
-        .categoria-card { background: white; margin-top: 15px; border-radius: 10px; border-left: 6px solid #670da3; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: visible; position: relative; }
-        .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; cursor: pointer; }
+        /* Botões Principais em Roxo */
+        .btn-principal-ad { background: #8a2be2; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; box-shadow: 0 4px 10px rgba(138, 43, 226, 0.3); }
+        .btn-principal-ad:hover { background: #7b1fa2; transform: translateY(-2px); }
         
+        /* Cards da Categoria */
+        .categoria-card { background: #1a1a1a; margin-top: 15px; border-radius: 10px; border-left: 6px solid #8a2be2; box-shadow: 0 4px 12px rgba(0,0,0,0.5); overflow: visible; position: relative; }
+        .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; cursor: pointer; color: #ffffff; }
+        
+        /* Menu e Dropdowns */
         .categoria-acoes { position: relative; display: flex; align-items: center; z-index: 100; }
-        .menu-dot-ad { cursor: pointer; font-size: 24px; padding: 5px 12px; color: #111010; transition: 0.2s; border-radius: 50%; }
-        .menu-dot-ad:hover { background: #111010; color: #670da3; }
+        .menu-dot-ad { cursor: pointer; font-size: 24px; padding: 5px 12px; color: #bbbbbb; transition: 0.2s; border-radius: 50%; }
+        .menu-dot-ad:hover { background: #333333; color: #ffffff; }
         
-        .dropdown-menu-ad { position: absolute; right: 0; top: 100%; background: white; border: 1px solid #111010; border-radius: 8px; display: none; z-index: 1000; min-width: 180px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .dropdown-menu-ad { position: absolute; right: 0; top: 100%; background: #252525; border: 1px solid #444; border-radius: 8px; display: none; z-index: 1000; min-width: 180px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .dropdown-menu-ad.show { display: block; }
-        .dropdown-item-ad { padding: 12px 16px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #111010; transition: 0.2s; text-align: left; }
-        .dropdown-item-ad:hover { background: #111010; color: #670da3; }
+        .dropdown-item-ad { padding: 12px 16px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #333; transition: 0.2s; text-align: left; color: #eeeeee; }
+        .dropdown-item-ad:hover { background: #333333; color: #a855f7; }
         
-        .adicionais-lista { padding: 20px; background: #111010; border-top: 1px solid #670da3; border-radius: 0 0 10px 10px; }
+        /* Listas e Itens */
+        .adicionais-lista { padding: 20px; background: #121212; border-top: 1px solid #333; border-radius: 0 0 10px 10px; }
         
-        .btn-novo-item-ad { background: #111010; color: #670da3; border: 2px dashed #670da3; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; }
-        .btn-novo-item-ad:hover { background: #111010; }
+        .btn-novo-item-ad { background: transparent; color: #a855f7; border: 2px dashed #8a2be2; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; }
+        .btn-novo-item-ad:hover { background: rgba(138, 43, 226, 0.1); }
 
-        .adicional-item { display: flex; justify-content: space-between; padding: 15px; background: white; margin-bottom: 10px; border-radius: 8px; border: 1px solid #111010; align-items: center; position: relative; }
-        .item-indisponivel { opacity: 0.5; background: #111010; cursor: not-allowed; }
-        .badge-indisponivel { background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px; }
+        .adicional-item { display: flex; justify-content: space-between; padding: 15px; background: #222222; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; align-items: center; position: relative; color: #ffffff; }
+        .item-indisponivel { opacity: 0.4; background: #1a1a1a; cursor: not-allowed; }
+        .badge-indisponivel { background: #ff4d4d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px; }
         
-        .preco-bruto { text-decoration: line-through; color: #670da3; font-size: 13px; margin-right: 8px; }
-        .preco-final { color: #111010; font-weight: bold; font-size: 15px; }
+        .preco-bruto { text-decoration: line-through; color: #888; font-size: 13px; margin-right: 8px; }
+        .preco-final { color: #a855f7; font-weight: bold; font-size: 15px; }
 
-        .modal-full-ad { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .modal-content-ad { width: 95%; max-width: 550px; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        /* Modais */
+        .modal-full-ad { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+        .modal-content-ad { width: 95%; max-width: 550px; background: #1a1a1a; padding: 35px; border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,1); color: #ffffff; border: 1px solid #333; }
         .form-group-ad { margin-bottom: 20px; }
-        .form-group-ad label { font-weight: 600; display: block; margin-bottom: 8px; color: #670da3; }
-        .form-group-ad input, .form-group-ad select { width: 100%; padding: 14px; border: 1px solid rgba(0,0,0,0.6); border-radius: 8px; font-size: 15px; }
+        .form-group-ad label { font-weight: 600; display: block; margin-bottom: 8px; color: #bbbbbb; }
+        .form-group-ad input, .form-group-ad select { width: 100%; padding: 14px; border: 1px solid #444; border-radius: 8px; font-size: 15px; background: #252525; color: white; }
+        .form-group-ad input:focus { border-color: #8a2be2; outline: none; }
+        
+        /* Scrollbar para o Dark Theme */
+        div::-webkit-scrollbar { width: 8px; }
+        div::-webkit-scrollbar-track { background: #1a1a1a; }
+        div::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        div::-webkit-scrollbar-thumb:hover { background: #8a2be2; }
     `;
     document.head.appendChild(styleSheetAd);
 
@@ -60,14 +74,14 @@
         } catch (err) { console.error("Erro ao carregar:", err); }
     }
 
-    // --- LÓGICA DE CATEGORIAS (CORRIGIDA) ---
+    // --- LÓGICA DE CATEGORIAS ---
     window.abrirModalEditarCat = function(id) {
         const cat = categoriasAdicionais.find(c => c._id === id);
         const modal = document.createElement('div');
         modal.className = 'modal-full-ad';
         modal.innerHTML = `
             <div class="modal-content-ad">
-                <h2>⚙️ Configurar Categoria: ${cat.nome}</h2>
+                <h2 style="color:#a855f7">⚙️ Configurar Categoria: ${cat.nome}</h2>
                 <div class="form-group-ad">
                     <label>Nome da Categoria</label>
                     <input type="text" id="edit-cat-nome" value="${cat.nome}">
@@ -79,14 +93,14 @@
                         <option value="obrigatorio" ${cat.status === 'obrigatorio' ? 'selected' : ''}>Obrigatório</option>
                     </select>
                 </div>
-                <h3>Vincular a Produtos</h3>
-                <div style="max-height: 200px; overflow-y: auto; border: 1px solid rgba(0,0,0,0.6); padding: 10px; border-radius:8px;">
+                <h3 style="color:#bbbbbb">Vincular a Produtos</h3>
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #333; padding: 10px; border-radius:8px; background:#121212;">
                     ${produtosDoBanco.map(prod => {
                         const vinculado = cat.produtosVinculados.includes(prod._id);
                         return `
-                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid rgba(0,0,0,0.6);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #222;">
                                 <span>${prod.nome}</span>
-                                <button class="btn-principal-ad" style="padding:5px 10px; margin:0; background:${vinculado ? '#e74c3c' : '#27ae60'}" 
+                                <button class="btn-principal-ad" style="padding:5px 10px; margin:0; background:${vinculado ? '#e74c3c' : '#8a2be2'}" 
                                     onclick="vincularProdutoLocal('${cat._id}', '${prod._id}', ${vinculado})">
                                     ${vinculado ? 'Remover' : 'Adicionar'}
                                 </button>
@@ -96,7 +110,7 @@
                 </div>
                 <div style="margin-top:25px; display:flex; gap:10px;">
                     <button class="btn-principal-ad" style="flex:1" onclick="salvarCategoriaLocal('${cat._id}')">Salvar</button>
-                    <button class="btn-principal-ad" style="background:#888; flex:1" onclick="this.closest('.modal-full-ad').remove()">Fechar</button>
+                    <button class="btn-principal-ad" style="background:#444; flex:1" onclick="this.closest('.modal-full-ad').remove()">Fechar</button>
                 </div>
             </div>
         `;
@@ -132,7 +146,7 @@
         modal.className = 'modal-full-ad';
         modal.innerHTML = `
             <div class="modal-content-ad">
-                <h2>📝 Editar Adicional: ${item.nome}</h2>
+                <h2 style="color:#a855f7">📝 Editar Adicional: ${item.nome}</h2>
                 <div class="form-group-ad">
                     <label>Nome do Adicional</label>
                     <input type="text" id="edit-item-nome" value="${item.nome}">
@@ -156,7 +170,7 @@
                 </div>
                 <div style="margin-top:25px; display:flex; gap:10px;">
                     <button class="btn-principal-ad" style="flex:1" onclick="salvarItemLocal('${catId}', ${index})">Atualizar</button>
-                    <button class="btn-principal-ad" style="background:#888; flex:1" onclick="this.closest('.modal-full-ad').remove()">Cancelar</button>
+                    <button class="btn-principal-ad" style="background:#444; flex:1" onclick="this.closest('.modal-full-ad').remove()">Cancelar</button>
                 </div>
             </div>
         `;
@@ -195,13 +209,13 @@
                 <div class="categoria-header" onclick="toggleAdLista('${cat._id}')">
                     <div>
                         <strong>${cat.nome}</strong> 
-                        <span style="color:#27ae60; margin-left:10px; font-size:12px; border:1px solid #27ae60; padding:2px 6px; border-radius:4px;">${cat.status.toUpperCase()}</span>
+                        <span style="color:#a855f7; margin-left:10px; font-size:12px; border:1px solid #8a2be2; padding:2px 6px; border-radius:4px;">${cat.status.toUpperCase()}</span>
                     </div>
                     <div class="categoria-acoes" onclick="event.stopPropagation()">
                         <span class="menu-dot-ad" onclick="showDropAd(event)">⋮</span>
                         <div class="dropdown-menu-ad">
                             <div class="dropdown-item-ad" onclick="abrirModalEditarCat('${cat._id}')">⚙️ Configurar Categoria</div>
-                            <div class="dropdown-item-ad" style="color:#e74c3c" onclick="excluirCatReal('${cat._id}')">🗑️ Excluir Categoria</div>
+                            <div class="dropdown-item-ad" style="color:#ff4d4d" onclick="excluirCatReal('${cat._id}')">🗑️ Excluir Categoria</div>
                         </div>
                     </div>
                 </div>
@@ -224,7 +238,7 @@
                                     <span class="menu-dot-ad" onclick="showDropAd(event)">⋮</span>
                                     <div class="dropdown-menu-ad">
                                         <div class="dropdown-item-ad" onclick="abrirModalEditarItem('${cat._id}', ${idx})">✏️ Editar Item</div>
-                                        <div class="dropdown-item-ad" style="color:#e74c3c" onclick="removerItemReal('${cat._id}', ${idx})">🗑️ Remover</div>
+                                        <div class="dropdown-item-ad" style="color:#ff4d4d" onclick="removerItemReal('${cat._id}', ${idx})">🗑️ Remover</div>
                                     </div>
                                 </div>
                             </div>
