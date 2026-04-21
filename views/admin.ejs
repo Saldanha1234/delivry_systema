@@ -18,8 +18,10 @@
             --white: #ffffff;
             --text-main: #333333;
             --border-color: #e0e0e0;
-            --chat-bg: #f0f2f5;
-            --sidebar-bg: #fcfcfc;
+            --chat-bg: #f4f7f6;
+            --sidebar-bg: #ffffff;
+            --msg-cliente: #ffffff;
+            --msg-admin: #ffca2c;
         }
 
         /* CONFIGURAÇÃO MODO ESCURO */
@@ -28,9 +30,10 @@
             --white: #1e1e1e;
             --text-main: #f0f0f0;
             --border-color: #333333;
-            --chat-bg: #181818;
-            --sidebar-bg: #1a1a1a;
+            --chat-bg: #1a1a1a;
+            --sidebar-bg: #1e1e1e;
             --dark: #ffffff; 
+            --msg-cliente: #2a2a2a;
         }
         
         * { box-sizing: border-box; }
@@ -58,7 +61,6 @@
             flex-shrink: 0;
         }
 
-        /* CORREÇÃO DO ENQUADRAMENTO DAS CATEGORIAS (TABS) */
         .tab-container { 
             display: flex; 
             background: var(--white); 
@@ -70,10 +72,9 @@
             top: 0; 
             z-index: 1000;
             white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
         }
-        .tab-container::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+        .tab-container::-webkit-scrollbar { display: none; }
 
         .tab-btn { 
             padding: 14px 18px; 
@@ -87,97 +88,195 @@
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            flex-shrink: 0; /* IMPEDE QUE AS CATEGORIAS SE ACHATEM */
+            flex-shrink: 0;
         }
         .tab-btn.active { color: var(--dark); border-bottom-color: var(--primary); }
 
         .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
 
-        .card-box { 
+        /* --- NOVO DESIGN DO SISTEMA DE CHAT --- */
+        .suporte-container { 
+            display: flex; 
+            height: 78vh; 
             background: var(--white); 
-            padding: 15px; 
-            border-radius: 10px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
-            margin-bottom: 20px;
+            border-radius: 16px; 
+            overflow: hidden; 
             border: 1px solid var(--border-color);
-            overflow-x: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         }
 
-        .finance-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 15px; 
-            margin-bottom: 25px; 
+        .chat-sidebar-list { 
+            width: 320px; 
+            background: var(--sidebar-bg); 
+            border-right: 1px solid var(--border-color); 
+            display: flex; 
+            flex-direction: column; 
         }
-        .stat-card { 
-            background: var(--white); 
-            padding: 20px; 
+
+        .sidebar-header {
+            padding: 15px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 900;
+            color: #999;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .chat-selector { flex: 1; overflow-y: auto; padding: 10px; }
+
+        .chat-item { 
+            padding: 15px; 
             border-radius: 12px; 
-            border-left: 6px solid var(--primary); 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-            transition: transform 0.2s;
+            margin-bottom: 10px; 
+            border: 1px solid transparent; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        .stat-card h4 { margin: 0 0 8px 0; font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 1px;}
-        .stat-card .value { font-size: 1.4rem; font-weight: 800; color: var(--dark); }
-        .stat-card .date-label { font-size: 0.75rem; color: var(--info); font-weight: 600; display: block; margin-top: 5px; }
+        
+        .chat-item:hover { background: var(--border-color); }
+
+        .chat-item.active { 
+            background: var(--primary); 
+            border-color: var(--primary);
+            color: #181818;
+            box-shadow: 0 4px 12px rgba(255, 202, 44, 0.3);
+        }
+
+        .chat-item.has-new { 
+            position: relative;
+            border-left: 5px solid var(--danger); 
+        }
+        
+        .chat-item.has-new::after {
+            content: '';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+            background: var(--danger);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        .chat-main-area { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
+
+        .chat-messages { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+        }
+
+        /* ESTILIZAÇÃO DAS BOLHAS */
+        .msg { 
+            padding: 12px 16px; 
+            border-radius: 18px; 
+            font-size: 0.9rem; 
+            max-width: 75%; 
+            line-height: 1.5; 
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .msg small {
+            display: block;
+            font-size: 0.65rem;
+            margin-bottom: 4px;
+            font-weight: 700;
+            opacity: 0.7;
+        }
+
+        .msg.cliente { 
+            background: var(--msg-cliente); 
+            align-self: flex-start; 
+            border-bottom-left-radius: 4px;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .msg.admin { 
+            background: var(--primary); 
+            align-self: flex-end; 
+            color: #181818;
+            border-bottom-right-radius: 4px;
+            font-weight: 500;
+        }
+
+        .chat-input-area { 
+            padding: 15px 20px; 
+            display: flex; 
+            gap: 10px; 
+            background: var(--white);
+            border-top: 1px solid var(--border-color); 
+        }
+
+        .chat-input-area input { 
+            flex: 1; 
+            padding: 12px 20px; 
+            border-radius: 30px; 
+            border: 1px solid var(--border-color); 
+            background: var(--bg); 
+            color: var(--text-main); 
+            outline: none; 
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        
+        .chat-input-area input:focus { border-color: var(--primary); background: var(--white); }
+
+        .chat-input-area button { 
+            background: #181818; 
+            color: white; 
+            border: none; 
+            width: 45px; 
+            height: 45px; 
+            border-radius: 50%; 
+            cursor: pointer; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, background 0.2s;
+        }
+        
+        .chat-input-area button:hover { background: var(--primary); color: #181818; transform: scale(1.05); }
+
+        /* DEMAIS ELEMENTOS */
+        .card-box { 
+            background: var(--white); padding: 15px; border-radius: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;
+            border: 1px solid var(--border-color); overflow-x: auto;
+        }
+
+        .stat-card { 
+            background: var(--white); padding: 20px; border-radius: 12px; 
+            border-left: 6px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
 
         .banner-operacao {
-            background: #181818; 
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 10px solid var(--primary);
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
+            background: #181818; color: white; padding: 20px; border-radius: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-left: 10px solid var(--primary); margin-bottom: 20px;
         }
-        .btn-abrir-kds {
-            background: var(--primary);
-            color: #181818;
-            padding: 12px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 900;
-            font-size: 0.8rem;
-            transition: 0.2s;
-            text-align: center;
-        }
-
-        .suporte-container { display: flex; height: 75vh; background: var(--white); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); }
-        .chat-sidebar-list { width: 300px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
-        .chat-selector { flex: 1; overflow-y: auto; padding: 10px; }
-        .chat-item { padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
-        .chat-item.active { background: rgba(255, 202, 44, 0.1); border-color: var(--primary); }
-        .chat-item.has-new { border-left: 4px solid var(--danger); animation: pulse 1.5s infinite; }
-        
-        .chat-main-area { flex: 1; display: flex; flex-direction: column; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; background: var(--chat-bg); display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; max-width: 85%; line-height: 1.4; }
-        .msg.cliente { background: var(--white); align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: var(--text-main); }
-        .msg.admin { background: var(--primary); align-self: flex-end; font-weight: 600; color: #181818; }
-
-        .chat-input-area { padding: 10px; display: flex; gap: 8px; border-top: 1px solid var(--border-color); }
-        .chat-input-area input { flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--white); color: var(--text-main); outline: none; }
-        .chat-input-area button { background: #181818; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
 
         .btn-theme { 
-            padding: 8px 12px; 
-            cursor: pointer; 
-            border-radius: 6px; 
-            border: 1px solid var(--border-color); 
-            background: var(--white); 
-            color: var(--text-main); 
-            font-weight: bold;
-            font-size: 0.8rem;
+            padding: 8px 12px; cursor: pointer; border-radius: 6px; 
+            border: 1px solid var(--border-color); background: var(--white); 
+            color: var(--text-main); font-weight: bold; font-size: 0.8rem;
         }
 
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); overflow-y: auto; }
-        .modal-content { background: var(--white); margin: 10% auto; padding: 20px; border-radius: 15px; width: 95%; max-width: 500px; color: var(--text-main); }
-        
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .modal-content { background: var(--white); margin: 10% auto; padding: 20px; border-radius: 15px; width: 95%; max-width: 500px; }
+
         .switch { position: relative; display: inline-block; width: 46px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 20px; }
@@ -185,15 +284,10 @@
         input:checked + .slider { background: var(--success); }
         input:checked + .slider:before { transform: translateX(24px); }
 
-        /* RESPONSIVIDADE MOBILE FINAL */
         @media (max-width: 768px) {
-            .admin-nav { padding: 10px; }
             .suporte-container { flex-direction: column; height: 80vh; }
-            .chat-sidebar-list { width: 100%; height: 150px; border-right: none; border-bottom: 1px solid var(--border-color); }
-            .banner-operacao { text-align: center; justify-content: center; }
-            .btn-abrir-kds { width: 100%; }
-            .tab-btn { padding: 12px 15px; font-size: 0.7rem; }
-            .finance-grid { grid-template-columns: 1fr; }
+            .chat-sidebar-list { width: 100%; height: 180px; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .tab-btn { padding: 12px 10px; font-size: 0.65rem; }
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -223,25 +317,35 @@
             <div id="aba-suporte" class="tab-content active">
                 <div class="suporte-container">
                     <div class="chat-sidebar-list">
-                        <div style="padding:10px; font-weight:bold; background:var(--border-color); font-size:0.6rem; letter-spacing:1px; text-align: center;">CHATS ATIVOS</div>
+                        <div class="sidebar-header">CHATS ATIVOS</div>
                         <div class="chat-selector" id="lista-pedidos-chat">
                             <% let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
                                ativosNoChat.forEach(p => { %>
                                  <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
-                                    <strong>#<%= p.id %> - <%= p.cliente %></strong>
+                                    <div style="background: var(--border-color); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.7rem;">
+                                        <%= p.cliente.charAt(0).toUpperCase() %>
+                                    </div>
+                                    <div style="flex:1">
+                                        <div style="font-weight: bold; font-size: 0.85rem;">#<%= p.id %></div>
+                                        <div style="font-size: 0.75rem; opacity: 0.8;"><%= p.cliente %></div>
+                                    </div>
                                 </div>
                             <% }) %>
                         </div>
                     </div>
                     <div class="chat-main-area">
                         <div class="chat-messages" id="chat-box">
-                            <div style="text-align:center; margin-top:50px; color:#aaa;">
-                                <h3>Selecione um cliente</h3>
+                            <div style="text-align:center; margin-top:80px; color:#aaa;">
+                                <div style="font-size: 3rem; margin-bottom: 10px;">💬</div>
+                                <h3>Selecione um cliente para iniciar</h3>
+                                <p style="font-size: 0.8rem;">As mensagens em tempo real aparecerão aqui.</p>
                             </div>
                         </div>
                         <div class="chat-input-area">
-                            <input type="text" id="admin-msg" placeholder="Resposta...">
-                            <button onclick="enviarParaCliente()">➤</button>
+                            <input type="text" id="admin-msg" placeholder="Escreva sua mensagem aqui..." onkeypress="if(event.key === 'Enter') enviarParaCliente()">
+                            <button onclick="enviarParaCliente()">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -253,7 +357,7 @@
                         <h2 style="margin:0; font-size: 1.2rem;">Painel de Produção</h2>
                         <p style="margin:5px 0 0 0; opacity:0.8; font-size: 0.8rem;">Gerencie a cozinha em tempo real.</p>
                     </div>
-                    <a href="/operacao" target="_blank" class="btn-abrir-kds">ABRIR COMANDAS (KDS) ➔</a>
+                    <a href="/operacao" target="_blank" style="background: var(--primary); color: #181818; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 900; font-size: 0.8rem;">ABRIR COMANDAS (KDS) ➔</a>
                 </div>
             </div>
 
@@ -267,33 +371,6 @@
             </div>
 
             <div id="aba-financeiro" class="tab-content">
-                <% 
-                    const dataAtual = new Date();
-                    const hojeStr = dataAtual.toLocaleDateString('pt-BR');
-                    const nomeMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-                    
-                    let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hojeStr);
-                    let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
-                    let entregasDia = pedidosHoje.length;
-                %>
-                <div class="finance-grid">
-                    <div class="stat-card" style="border-left-color: var(--success);">
-                        <h4>💰 Vendas de Hoje</h4>
-                        <div class="value">R$ <%= totalDia.toFixed(2) %></div>
-                        <span class="date-label"><%= hojeStr %></span>
-                    </div>
-                    <div class="stat-card" style="border-left-color: var(--info);">
-                        <h4>📦 Concluídos</h4>
-                        <div class="value"><%= entregasDia %></div>
-                        <span class="date-label">Hoje</span>
-                    </div>
-                    <div class="stat-card" style="border-left-color: #555;">
-                        <h4>📊 Acumulado (<%= nomeMeses[dataAtual.getMonth()] %>)</h4>
-                        <div class="value">R$ <%= (config.vendasMes || 0).toFixed(2) %></div>
-                        <span class="date-label">Total do mês</span>
-                    </div>
-                </div>
-
                 <div class="card-box">
                     <h3 style="margin-top:0; font-size: 1rem;">⚡ Configuração de Pix</h3>
                     <form id="form-config-pix" style="display:grid; gap:15px; max-width: 500px;">
@@ -308,7 +385,7 @@
                             <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px;">Chave de API / Token</label>
                             <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" style="width:100%; padding:10px; border-radius:6px;">
                         </div>
-                        <button type="button" onclick="salvarConfigPix()" style="background:#181818; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.8rem;">ATUALIZAR CREDENCIAIS</button>
+                        <button type="button" onclick="salvarConfigPix()" style="background:#181818; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ATUALIZAR CREDENCIAIS</button>
                     </form>
                 </div>
             </div>
@@ -316,7 +393,6 @@
             <div id="aba-configuracao" class="tab-content">
                 <div class="card-box">
                     <h3 style="margin-top:0; font-size: 1rem;">⚙️ Configurações Gerais</h3>
-                    
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid var(--border-color);">
                         <div>
                             <strong style="font-size: 0.9rem;">Modo Manutenção</strong><br>
@@ -327,52 +403,6 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-
-                    <div style="padding:15px 0; border-bottom:1px solid var(--border-color);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <strong style="font-size: 0.9rem;">Limitar por Cidade</strong>
-                            <label class="switch">
-                                <input type="checkbox" id="conf-cidadeAtiva" onchange="toggleCamposCidade(); salvarConfigSite();" <%= config.cidadeAtiva ? 'checked' : '' %>>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div id="container-campos-cidade" style="display: <%= config.cidadeAtiva ? 'grid' : 'none' %>; grid-template-columns: 1fr 80px; gap:10px;">
-                            <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" style="padding:8px;">
-                            <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" style="padding:8px;">
-                        </div>
-                    </div>
-
-                    <div style="padding:15px 0; display:flex; justify-content:space-between; align-items:center;">
-                        <strong style="font-size: 0.9rem;">Horários</strong>
-                        <button onclick="abrirModalHorarios()" style="background:var(--info); color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 0.75rem;">DEFINIR AGENDA</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="modalHorarios" class="modal">
-                <div class="modal-content">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 style="margin:0; font-size: 1.2rem;">Horários</h2>
-                        <span onclick="fecharModalHorarios()" style="cursor:pointer; font-size: 2rem;">&times;</span>
-                    </div>
-                    <div id="lista-dias-funcionamento">
-                        <% const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-                           diasSemana.forEach((dia, i) => { 
-                           const agendaDia = (config.agenda && config.agenda[i]) || { aberto: false, inicio: '18:00', fim: '23:00' }; %>
-                            <div class="dia-config" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
-                                <span style="font-weight: bold; width: 80px; font-size: 0.85rem;"><%= dia %></span>
-                                <div class="horarios-inputs" id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>; gap: 5px;">
-                                    <input type="time" class="input-inicio" value="<%= agendaDia.inicio %>" style="padding: 5px;">
-                                    <input type="time" class="input-fim" value="<%= agendaDia.fim %>" style="padding: 5px;">
-                                </div>
-                                <label class="switch" style="transform: scale(0.8);">
-                                    <input type="checkbox" class="check-dia" onchange="toggleDia(<%= i %>)" <%= agendaDia.aberto ? 'checked' : '' %>>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                        <% }) %>
-                    </div>
-                    <button onclick="salvarHorarios()" style="width: 100%; background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor:pointer;">SALVAR ALTERAÇÕES</button>
                 </div>
             </div>
 
@@ -401,11 +431,6 @@
             document.getElementById('theme-toggle').innerText = "☀️ Claro";
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            if(typeof renderizarPainelCategorias === "function") renderizarPainelCategorias('container-gerenciador-produtos');
-            if(typeof renderizarPainelAdicionais === "function") renderizarPainelAdicionais('container-gerenciador-adicionais');
-        });
-
         function openTab(evt, tabName) {
             const contents = document.getElementsByClassName("tab-content");
             for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
@@ -415,39 +440,9 @@
             if(evt) evt.currentTarget.classList.add("active");
         }
 
-        function abrirModalHorarios() { document.getElementById('modalHorarios').style.display = 'block'; }
-        function fecharModalHorarios() { document.getElementById('modalHorarios').style.display = 'none'; }
-        function toggleDia(index) {
-            const isChecked = document.querySelectorAll('.check-dia')[index].checked;
-            document.getElementById(`box-horario-${index}`).style.display = isChecked ? 'flex' : 'none';
-        }
-        function toggleCamposCidade() {
-            const isChecked = document.getElementById('conf-cidadeAtiva').checked;
-            document.getElementById('container-campos-cidade').style.display = isChecked ? 'grid' : 'none';
-        }
-
-        async function salvarHorarios() {
-            const agenda = [];
-            const checks = document.querySelectorAll('.check-dia');
-            const incios = document.querySelectorAll('.input-inicio');
-            const fins = document.querySelectorAll('.input-fim');
-            checks.forEach((check, i) => {
-                agenda.push({ aberto: check.checked, inicio: incios[i].value, fim: fins[i].value });
-            });
-            const res = await fetch('/update-horarios', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agenda })
-            });
-            if (res.ok) { alert("✅ Horários atualizados!"); fecharModalHorarios(); }
-        }
-
         async function salvarConfigSite() {
             const dados = {
-                manutencao: document.getElementById('conf-manutencao').checked,
-                cidadeAtiva: document.getElementById('conf-cidadeAtiva').checked,
-                cidadeNome: document.getElementById('conf-cidadeNome').value,
-                cidadeEstado: document.getElementById('conf-cidadeEstado').value
+                manutencao: document.getElementById('conf-manutencao').checked
             };
             await fetch('/update-config-site', {
                 method: 'POST',
@@ -469,6 +464,7 @@
             if (res.ok) alert("✅ Pix configurado!");
         }
 
+        // LÓGICA DE CHAT ORIGINAL (PRESERVADA)
         function selecionarChat(id, cliente) {
             pedidoAtivoId = id;
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
@@ -496,7 +492,7 @@
         function renderizarMensagem(msg) {
             const div = document.createElement('div');
             div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
-            div.innerHTML = `<small style="display:block; font-size:10px; opacity:0.6;">${msg.usuario}</small>${msg.texto}`;
+            div.innerHTML = `<small>${msg.usuario}</small>${msg.texto}`;
             const box = document.getElementById('chat-box');
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
