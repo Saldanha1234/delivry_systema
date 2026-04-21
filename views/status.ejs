@@ -74,6 +74,14 @@
             #chat-wrapper { width: 280px; right: -10px; bottom: 80px; }
             .icon { font-size: 1.2rem; }
             .step { font-size: 0.7rem; }
+
+            /* Cor personalizada apenas para a mensagem de recepção */
+      .msg-recepcao {
+      background-color: #5b09c5 !important; /* Mude aqui para a cor que desejar */
+      color: white !important;               /* Cor do texto */
+      align-self: flex-start;                /* Alinha à esquerda como o Admin */
+      border-bottom-left-radius: 2px;
+}
         }
     </style>
 </head>
@@ -204,10 +212,9 @@
             const box = document.getElementById('chat-content');
             const div = document.createElement('div');
             const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            
-            div.className = `m-st cli`; // Estilo do cliente (ou use 'adm' se preferir cinza)
+            div.className = `m-st msg-recepcao`; 
             div.innerHTML = `
-                <span class="msg-info-st">Sistema</span>
+                <span class="msg-info-st">AçaiRoxinho</span>
                 Olá! 👋 Recebemos seu pedido. Se precisar de algo e a resposta demorar por aqui, chame-nos em nossos canais oficiais:
                 <div class="social-icons-welcome">
                     <a href="https://wa.link/3s32fj" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
