@@ -20,7 +20,7 @@
         .categoria-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; cursor: pointer; }
         
         .categoria-acoes { position: relative; display: flex; align-items: center; z-index: 100; }
-        .menu-dot-ad { cursor: pointer; font-size: 24px; padding: 5px 12px; color: #888; transition: 0.2s; border-radius: 50%; }
+        .menu-dot-ad { cursor: pointer; font-size: 24px; padding: 5px 12px; color: #111010; transition: 0.2s; border-radius: 50%; }
         .menu-dot-ad:hover { background: #111010; color: #670da3; }
         
         .dropdown-menu-ad { position: absolute; right: 0; top: 100%; background: white; border: 1px solid #111010; border-radius: 8px; display: none; z-index: 1000; min-width: 180px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
@@ -33,8 +33,8 @@
         .btn-novo-item-ad { background: #111010; color: #670da3; border: 2px dashed #670da3; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; transition: 0.3s; }
         .btn-novo-item-ad:hover { background: #111010; }
 
-        .adicional-item { display: flex; justify-content: space-between; padding: 15px; background: white; margin-bottom: 10px; border-radius: 8px; border: 1px solid #e0e0e0; align-items: center; position: relative; }
-        .item-indisponivel { opacity: 0.5; background: #f0f0f0; cursor: not-allowed; }
+        .adicional-item { display: flex; justify-content: space-between; padding: 15px; background: white; margin-bottom: 10px; border-radius: 8px; border: 1px solid #111010; align-items: center; position: relative; }
+        .item-indisponivel { opacity: 0.5; background: #111010; cursor: not-allowed; }
         .badge-indisponivel { background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px; }
         
         .preco-bruto { text-decoration: line-through; color: #670da3; font-size: 13px; margin-right: 8px; }
