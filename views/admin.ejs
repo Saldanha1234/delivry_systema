@@ -7,29 +7,30 @@
     <title>Admin | Gestão Total</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* DESIGN LIMPO E PROFISSIONAL */
+        /* DESIGN ALPHA GROUP - PRETO E ROXO */
         :root { 
-            --primary: #ffca2c; 
-            --dark: #181818; 
-            --bg: #f8f9fa; 
+            --primary: #8a2be2; 
+            --dark: #000000; 
+            --bg: #0a0a0a; 
+            --card-bg: #121212;
             --success: #2ecc71; 
             --danger: #ff4757; 
             --info: #3498db;
             --white: #ffffff;
-            --text-main: #333333;
-            --border-color: #e0e0e0;
-            --chat-bg: #f0f2f5;
-            --sidebar-bg: #fcfcfc;
+            --text-main: #f0f0f0;
+            --border-color: #222222;
+            --chat-bg: #0f0f0f;
+            --sidebar-bg: #151515;
         }
 
-        /* CONFIGURAÇÃO MODO ESCURO */
-        body.dark-mode {
-            --bg: #121212;
-            --white: #1e1e1e;
+        /* CONFIGURAÇÃO MODO ESCURO FORÇADO */
+        body.dark-mode, body {
+            --bg: #0a0a0a;
+            --white: #121212;
             --text-main: #f0f0f0;
-            --border-color: #333333;
-            --chat-bg: #181818;
-            --sidebar-bg: #1a1a1a;
+            --border-color: #222222;
+            --chat-bg: #0f0f0f;
+            --sidebar-bg: #151515;
             --dark: #ffffff; 
         }
         
@@ -45,51 +46,66 @@
         }
 
         .admin-layout { display: flex; flex-direction: column; height: 100vh; }
-        .admin-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 90px; }
 
         .admin-nav { 
-            background: var(--white); 
+            background: var(--bg); 
             padding: 12px 20px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
             border-bottom: 1px solid var(--border-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
             flex-shrink: 0;
         }
 
-        /* CORREÇÃO DO ENQUADRAMENTO DAS CATEGORIAS (TABS) */
+        /* CATEGORIAS NO RODAPÉ (FIXO) */
         .tab-container { 
             display: flex; 
-            background: var(--white); 
-            border-bottom: 1px solid var(--border-color); 
-            padding: 0 10px; 
-            gap: 5px; 
-            overflow-x: auto; 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000;
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Firefox */
+            background: #000000; 
+            border-top: 1px solid var(--border-color); 
+            padding: 10px 0; 
+            position: fixed; 
+            bottom: 0; 
+            left: 0;
+            width: 100%;
+            z-index: 2000;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.8);
         }
-        .tab-container::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
         .tab-btn { 
-            padding: 14px 18px; 
             border: none; 
             background: none; 
             cursor: pointer; 
-            font-weight: 700; 
-            color: #888; 
+            color: #ffffff; 
             transition: 0.2s; 
-            border-bottom: 3px solid transparent;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            flex-shrink: 0; /* IMPEDE QUE AS CATEGORIAS SE ACHATEM */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            flex: 1;
+            opacity: 0.5;
         }
-        .tab-btn.active { color: var(--dark); border-bottom-color: var(--primary); }
+
+        /* ÍCONES BRANCOS COMO NA IMAGEM */
+        .tab-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: #ffffff;
+        }
+
+        .tab-btn.active { 
+            color: var(--primary); 
+            opacity: 1;
+        }
+        
+        .tab-btn.active svg {
+            fill: var(--primary);
+        }
 
         .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
@@ -98,7 +114,7 @@
             background: var(--white); 
             padding: 15px; 
             border-radius: 10px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2); 
             margin-bottom: 20px;
             border: 1px solid var(--border-color);
             overflow-x: auto;
@@ -115,15 +131,15 @@
             padding: 20px; 
             border-radius: 12px; 
             border-left: 6px solid var(--primary); 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             transition: transform 0.2s;
         }
-        .stat-card h4 { margin: 0 0 8px 0; font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 1px;}
-        .stat-card .value { font-size: 1.4rem; font-weight: 800; color: var(--dark); }
-        .stat-card .date-label { font-size: 0.75rem; color: var(--info); font-weight: 600; display: block; margin-top: 5px; }
+        .stat-card h4 { margin: 0 0 8px 0; font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px;}
+        .stat-card .value { font-size: 1.4rem; font-weight: 800; color: var(--text-main); }
+        .stat-card .date-label { font-size: 0.75rem; color: var(--primary); font-weight: 600; display: block; margin-top: 5px; }
 
         .banner-operacao {
-            background: #181818; 
+            background: #111; 
             color: white;
             padding: 20px;
             border-radius: 12px;
@@ -137,7 +153,7 @@
         }
         .btn-abrir-kds {
             background: var(--primary);
-            color: #181818;
+            color: #fff;
             padding: 12px 20px;
             border-radius: 8px;
             text-decoration: none;
@@ -150,49 +166,47 @@
         .suporte-container { display: flex; height: 75vh; background: var(--white); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); }
         .chat-sidebar-list { width: 300px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
         .chat-selector { flex: 1; overflow-y: auto; padding: 10px; }
-        .chat-item { padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
-        .chat-item.active { background: rgba(255, 202, 44, 0.1); border-color: var(--primary); }
+        .chat-item { padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; font-size: 0.85rem; color: #ccc; }
+        .chat-item.active { background: rgba(138, 43, 226, 0.1); border-color: var(--primary); color: #fff; }
         .chat-item.has-new { border-left: 4px solid var(--danger); animation: pulse 1.5s infinite; }
         
         .chat-main-area { flex: 1; display: flex; flex-direction: column; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 15px; background: var(--chat-bg); display: flex; flex-direction: column; gap: 10px; }
         .msg { padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; max-width: 85%; line-height: 1.4; }
-        .msg.cliente { background: var(--white); align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: var(--text-main); }
-        .msg.admin { background: var(--primary); align-self: flex-end; font-weight: 600; color: #181818; }
+        .msg.cliente { background: #222; align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.3); color: #fff; }
+        .msg.admin { background: var(--primary); align-self: flex-end; font-weight: 600; color: #fff; }
 
         .chat-input-area { padding: 10px; display: flex; gap: 8px; border-top: 1px solid var(--border-color); }
-        .chat-input-area input { flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--white); color: var(--text-main); outline: none; }
-        .chat-input-area button { background: #181818; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+        .chat-input-area input { flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: #1a1a1a; color: #fff; outline: none; }
+        .chat-input-area button { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
 
         .btn-theme { 
             padding: 8px 12px; 
             cursor: pointer; 
             border-radius: 6px; 
             border: 1px solid var(--border-color); 
-            background: var(--white); 
-            color: var(--text-main); 
+            background: #1a1a1a; 
+            color: #fff; 
             font-weight: bold;
             font-size: 0.8rem;
         }
 
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); overflow-y: auto; }
-        .modal-content { background: var(--white); margin: 10% auto; padding: 20px; border-radius: 15px; width: 95%; max-width: 500px; color: var(--text-main); }
+        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); overflow-y: auto; }
+        .modal-content { background: #111; margin: 10% auto; padding: 20px; border-radius: 15px; width: 95%; max-width: 500px; color: #fff; border: 1px solid var(--primary); }
         
         .switch { position: relative; display: inline-block; width: 46px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 20px; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #333; transition: .4s; border-radius: 20px; }
         .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background: var(--success); }
+        input:checked + .slider { background: var(--primary); }
         input:checked + .slider:before { transform: translateX(24px); }
 
-        /* RESPONSIVIDADE MOBILE FINAL */
         @media (max-width: 768px) {
             .admin-nav { padding: 10px; }
             .suporte-container { flex-direction: column; height: 80vh; }
             .chat-sidebar-list { width: 100%; height: 150px; border-right: none; border-bottom: 1px solid var(--border-color); }
             .banner-operacao { text-align: center; justify-content: center; }
             .btn-abrir-kds { width: 100%; }
-            .tab-btn { padding: 12px 15px; font-size: 0.7rem; }
             .finance-grid { grid-template-columns: 1fr; }
         }
 
@@ -200,30 +214,22 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
-<body>
+<body class="dark-mode">
 
     <div class="admin-layout">
         <div class="admin-main">
             <nav class="admin-nav">
-                <div class="logo" style="font-weight:900; font-size: 1.3rem;">ADMIN<span style="color:var(--primary)">PANEL</span></div>
+                <div class="logo" style="font-weight:900; font-size: 1.3rem;">ALPHA<span style="color:var(--primary)">GROUP</span></div>
                 <div style="display: flex; gap: 5px;">
-                    <button id="theme-toggle" class="btn-theme" onclick="toggleTheme()">🌙 Noturno</button>
+                    <button id="theme-toggle" class="btn-theme" onclick="toggleTheme()">☀️ Claro</button>
                     <button onclick="location.reload()" class="btn-theme">🔄 Sync</button>
                 </div>
             </nav>
 
-            <div class="tab-container">
-                <button class="tab-btn active" onclick="openTab(event, 'aba-suporte')">💬 Suporte</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">📋 Operação</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">🍔 Cardápio</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Financeiro</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">⚙️ Ajustes</button>
-            </div>
-
             <div id="aba-suporte" class="tab-content active">
                 <div class="suporte-container">
                     <div class="chat-sidebar-list">
-                        <div style="padding:10px; font-weight:bold; background:var(--border-color); font-size:0.6rem; letter-spacing:1px; text-align: center;">CHATS ATIVOS</div>
+                        <div style="padding:10px; font-weight:bold; background:var(--primary); color:#fff; font-size:0.6rem; letter-spacing:1px; text-align: center;">CHATS ATIVOS</div>
                         <div class="chat-selector" id="lista-pedidos-chat">
                             <% let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
                                ativosNoChat.forEach(p => { %>
@@ -235,7 +241,7 @@
                     </div>
                     <div class="chat-main-area">
                         <div class="chat-messages" id="chat-box">
-                            <div style="text-align:center; margin-top:50px; color:#aaa;">
+                            <div style="text-align:center; margin-top:50px; color:#666;">
                                 <h3>Selecione um cliente</h3>
                             </div>
                         </div>
@@ -287,7 +293,7 @@
                         <div class="value"><%= entregasDia %></div>
                         <span class="date-label">Hoje</span>
                     </div>
-                    <div class="stat-card" style="border-left-color: #555;">
+                    <div class="stat-card" style="border-left-color: var(--primary);">
                         <h4>📊 Acumulado (<%= nomeMeses[dataAtual.getMonth()] %>)</h4>
                         <div class="value">R$ <%= (config.vendasMes || 0).toFixed(2) %></div>
                         <span class="date-label">Total do mês</span>
@@ -298,17 +304,17 @@
                     <h3 style="margin-top:0; font-size: 1rem;">⚡ Configuração de Pix</h3>
                     <form id="form-config-pix" style="display:grid; gap:15px; max-width: 500px;">
                         <div>
-                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px;">Provedor</label>
-                            <select id="conf-pixProvedor" style="width:100%; padding:10px; border-radius:6px;">
+                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px; color: var(--primary);">Provedor</label>
+                            <select id="conf-pixProvedor" style="width:100%; padding:10px; border-radius:6px; background: #1a1a1a; color: #fff; border: 1px solid #333;">
                                 <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
                                 <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
                             </select>
                         </div>
                         <div>
-                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px;">Chave de API / Token</label>
-                            <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" style="width:100%; padding:10px; border-radius:6px;">
+                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px; color: var(--primary);">Chave de API / Token</label>
+                            <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" style="width:100%; padding:10px; border-radius:6px; background: #1a1a1a; color: #fff; border: 1px solid #333;">
                         </div>
-                        <button type="button" onclick="salvarConfigPix()" style="background:#181818; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.8rem;">ATUALIZAR CREDENCIAIS</button>
+                        <button type="button" onclick="salvarConfigPix()" style="background:var(--primary); color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.8rem;">ATUALIZAR CREDENCIAIS</button>
                     </form>
                 </div>
             </div>
@@ -337,14 +343,14 @@
                             </label>
                         </div>
                         <div id="container-campos-cidade" style="display: <%= config.cidadeAtiva ? 'grid' : 'none' %>; grid-template-columns: 1fr 80px; gap:10px;">
-                            <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" style="padding:8px;">
-                            <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" style="padding:8px;">
+                            <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" style="padding:8px; background: #1a1a1a; color: #fff; border: 1px solid #333;">
+                            <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" style="padding:8px; background: #1a1a1a; color: #fff; border: 1px solid #333;">
                         </div>
                     </div>
 
                     <div style="padding:15px 0; display:flex; justify-content:space-between; align-items:center;">
                         <strong style="font-size: 0.9rem;">Horários</strong>
-                        <button onclick="abrirModalHorarios()" style="background:var(--info); color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 0.75rem;">DEFINIR AGENDA</button>
+                        <button onclick="abrirModalHorarios()" style="background:var(--primary); color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 0.75rem;">DEFINIR AGENDA</button>
                     </div>
                 </div>
             </div>
@@ -362,8 +368,8 @@
                             <div class="dia-config" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
                                 <span style="font-weight: bold; width: 80px; font-size: 0.85rem;"><%= dia %></span>
                                 <div class="horarios-inputs" id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>; gap: 5px;">
-                                    <input type="time" class="input-inicio" value="<%= agendaDia.inicio %>" style="padding: 5px;">
-                                    <input type="time" class="input-fim" value="<%= agendaDia.fim %>" style="padding: 5px;">
+                                    <input type="time" class="input-inicio" value="<%= agendaDia.inicio %>" style="padding: 5px; background: #1a1a1a; color: #fff; border: 1px solid #333;">
+                                    <input type="time" class="input-fim" value="<%= agendaDia.fim %>" style="padding: 5px; background: #1a1a1a; color: #fff; border: 1px solid #333;">
                                 </div>
                                 <label class="switch" style="transform: scale(0.8);">
                                     <input type="checkbox" class="check-dia" onchange="toggleDia(<%= i %>)" <%= agendaDia.aberto ? 'checked' : '' %>>
@@ -376,6 +382,29 @@
                 </div>
             </div>
 
+        </div>
+
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="openTab(event, 'aba-suporte')">
+                <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                Chat
+            </button>
+            <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-4v-4h4v4zm0-6h-4V7h4v4z"/></svg>
+                Operação
+            </button>
+            <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">
+                <svg viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
+                Cardápio
+            </button>
+            <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">
+                <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                Financeiro
+            </button>
+            <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">
+                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                Ajustes
+            </button>
         </div>
     </div>
 
@@ -396,7 +425,7 @@
             }
         }
 
-        if(localStorage.getItem('admin-theme') === 'dark') {
+        if(localStorage.getItem('admin-theme') === 'dark' || !localStorage.getItem('admin-theme')) {
             document.body.classList.add('dark-mode');
             document.getElementById('theme-toggle').innerText = "☀️ Claro";
         }
