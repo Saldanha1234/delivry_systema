@@ -2,515 +2,517 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="/style.css">
-    <title>Admin | Gestão Total</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ALPHA GROUP | PREMIUM ADMIN PANEL</title>
+    
     <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        /* DESIGN LIMPO E PROFISSIONAL */
-        :root { 
-            --primary: #ffca2c; 
-            --dark: #181818; 
-            --bg: #f8f9fa; 
-            --success: #2ecc71; 
-            --danger: #ff4757; 
-            --info: #3498db;
-            --white: #ffffff;
-            --text-main: #333333;
-            --border-color: #e0e0e0;
-            --chat-bg: #f0f2f5;
-            --sidebar-bg: #fcfcfc;
+        /* SISTEMA DE CORES ALPHA - BLACK & PURPLE */
+        :root {
+            --bg-deep: #050505;
+            --bg-surface: #0f0f12;
+            --bg-card: #16161d;
+            --purple-primary: #8B5CF6;
+            --purple-dark: #6D28D9;
+            --purple-glow: rgba(139, 92, 246, 0.15);
+            --border-subtle: #26262e;
+            --text-high: #ffffff;
+            --text-mid: #94a3b8;
+            --text-low: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --safe-area-bottom: env(safe-area-inset-bottom);
         }
 
-        /* CONFIGURAÇÃO MODO ESCURO */
-        body.dark-mode {
-            --bg: #121212;
-            --white: #1e1e1e;
-            --text-main: #f0f0f0;
-            --border-color: #333333;
-            --chat-bg: #181818;
-            --sidebar-bg: #1a1a1a;
-            --dark: #ffffff; 
-        }
-        
-        * { box-sizing: border-box; }
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--bg); 
-            color: var(--text-main);
-            transition: background 0.3s, color 0.3s;
-            overflow-x: hidden;
+        /* RESET E ESTRUTURA BASE */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            scrollbar-width: none;
         }
 
-        .admin-layout { display: flex; flex-direction: column; height: 100vh; }
-        .admin-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        *::-webkit-scrollbar { display: none; }
 
-        .admin-nav { 
-            background: var(--white); 
-            padding: 12px 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid var(--border-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            flex-shrink: 0;
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-high);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            line-height: 1.5;
         }
 
-        /* CORREÇÃO DO ENQUADRAMENTO DAS CATEGORIAS (TABS) */
-        .tab-container { 
-            display: flex; 
-            background: var(--white); 
-            border-bottom: 1px solid var(--border-color); 
-            padding: 0 10px; 
-            gap: 5px; 
-            overflow-x: auto; 
-            position: sticky; 
-            top: 0; 
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        header {
+            height: 70px;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
             z-index: 1000;
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Firefox */
         }
-        .tab-container::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
-        .tab-btn { 
-            padding: 14px 18px; 
-            border: none; 
-            background: none; 
-            cursor: pointer; 
-            font-weight: 700; 
-            color: #888; 
-            transition: 0.2s; 
-            border-bottom: 3px solid transparent;
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-box {
+            width: 32px;
+            height: 32px;
+            background: var(--purple-primary);
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .brand-name {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            color: var(--text-high);
+        }
+
+        .brand-name span { color: var(--purple-primary); }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
             font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .dot-pulse {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 20px 120px 20px;
+        }
+
+        .section-header {
+            margin: 32px 0 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-header:first-child { margin-top: 0; }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            flex-shrink: 0; /* IMPEDE QUE AS CATEGORIAS SE ACHATEM */
+            letter-spacing: 1.5px;
+            color: var(--text-low);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .tab-btn.active { color: var(--dark); border-bottom-color: var(--primary); }
 
-        .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
-        .tab-content.active { display: block; }
+        .section-title i { color: var(--purple-primary); width: 16px; }
 
-        .card-box { 
-            background: var(--white); 
-            padding: 15px; 
-            border-radius: 10px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .card-alpha {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-alpha:active { transform: scale(0.98); border-color: var(--purple-primary); }
+
+        .card-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
             margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
+            color: var(--purple-primary);
         }
 
-        .finance-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 15px; 
-            margin-bottom: 25px; 
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-high);
         }
-        .stat-card { 
-            background: var(--white); 
-            padding: 20px; 
-            border-radius: 12px; 
-            border-left: 6px solid var(--primary); 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-            transition: transform 0.2s;
-        }
-        .stat-card h4 { margin: 0 0 8px 0; font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 1px;}
-        .stat-card .value { font-size: 1.4rem; font-weight: 800; color: var(--dark); }
-        .stat-card .date-label { font-size: 0.75rem; color: var(--info); font-weight: 600; display: block; margin-top: 5px; }
 
-        .banner-operacao {
-            background: #181818; 
-            color: white;
-            padding: 20px;
+        .card-desc {
+            font-size: 0.85rem;
+            color: var(--text-mid);
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .input-group { margin-bottom: 16px; }
+
+        .label-premium {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--purple-primary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .input-alpha {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
             border-radius: 12px;
+            padding: 14px 16px;
+            color: var(--text-high);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-alpha:focus {
+            border-color: var(--purple-primary);
+            box-shadow: 0 0 0 4px var(--purple-glow);
+        }
+
+        .btn-premium {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            background: var(--purple-primary);
+            color: #fff;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn-premium.outline {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-high);
+        }
+
+        /* CHAT SYSTEM - LÓGICA DE INTERFACE */
+        .chat-view {
+            height: 450px;
+            background: var(--bg-surface);
+            border-radius: 24px;
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header-info {
+            padding: 15px 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-subtle);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-left: 10px solid var(--primary);
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
         }
-        .btn-abrir-kds {
-            background: var(--primary);
-            color: #181818;
-            padding: 12px 20px;
-            border-radius: 8px;
+
+        .chat-header-info .client-meta h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-high);
+        }
+
+        .chat-header-info .client-meta span {
+            font-size: 0.7rem;
+            color: var(--purple-primary);
+            font-weight: 600;
+        }
+
+        .messages-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .msg-bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 0.85rem;
+        }
+
+        .msg-client {
+            align-self: flex-start;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-high);
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg-admin {
+            align-self: flex-end;
+            background: var(--purple-primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* NAVIGATION FOOTER */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: calc(80px + var(--safe-area-bottom));
+            background: rgba(15, 15, 18, 0.95);
+            backdrop-filter: blur(25px);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: var(--safe-area-bottom);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-low);
             text-decoration: none;
-            font-weight: 900;
-            font-size: 0.8rem;
-            transition: 0.2s;
-            text-align: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+            gap: 4px;
         }
 
-        .suporte-container { display: flex; height: 75vh; background: var(--white); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); }
-        .chat-sidebar-list { width: 300px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
-        .chat-selector { flex: 1; overflow-y: auto; padding: 10px; }
-        .chat-item { padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
-        .chat-item.active { background: rgba(255, 202, 44, 0.1); border-color: var(--primary); }
-        .chat-item.has-new { border-left: 4px solid var(--danger); animation: pulse 1.5s infinite; }
-        
-        .chat-main-area { flex: 1; display: flex; flex-direction: column; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; background: var(--chat-bg); display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; max-width: 85%; line-height: 1.4; }
-        .msg.cliente { background: var(--white); align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: var(--text-main); }
-        .msg.admin { background: var(--primary); align-self: flex-end; font-weight: 600; color: #181818; }
+        .nav-item.active { color: var(--purple-primary); }
 
-        .chat-input-area { padding: 10px; display: flex; gap: 8px; border-top: 1px solid var(--border-color); }
-        .chat-input-area input { flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--white); color: var(--text-main); outline: none; }
-        .chat-input-area button { background: #181818; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .btn-theme { 
-            padding: 8px 12px; 
-            cursor: pointer; 
-            border-radius: 6px; 
-            border: 1px solid var(--border-color); 
-            background: var(--white); 
-            color: var(--text-main); 
-            font-weight: bold;
-            font-size: 0.8rem;
+        /* LISTA DE CHATS ATIVOS */
+        .chat-list {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 15px;
+            margin-bottom: 10px;
         }
 
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); overflow-y: auto; }
-        .modal-content { background: var(--white); margin: 10% auto; padding: 20px; border-radius: 15px; width: 95%; max-width: 500px; color: var(--text-main); }
-        
-        .switch { position: relative; display: inline-block; width: 46px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background: var(--success); }
-        input:checked + .slider:before { transform: translateX(24px); }
-
-        /* RESPONSIVIDADE MOBILE FINAL */
-        @media (max-width: 768px) {
-            .admin-nav { padding: 10px; }
-            .suporte-container { flex-direction: column; height: 80vh; }
-            .chat-sidebar-list { width: 100%; height: 150px; border-right: none; border-bottom: 1px solid var(--border-color); }
-            .banner-operacao { text-align: center; justify-content: center; }
-            .btn-abrir-kds { width: 100%; }
-            .tab-btn { padding: 12px 15px; font-size: 0.7rem; }
-            .finance-grid { grid-template-columns: 1fr; }
+        .chat-user-thumb {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 60px;
+            cursor: pointer;
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .avatar {
+            width: 50px;
+            height: 50px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-subtle);
+            border-radius: 15px;
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+            position: relative;
+        }
+
+        .chat-user-thumb.active .avatar { border-color: var(--purple-primary); box-shadow: 0 0 10px var(--purple-glow); }
+        .avatar-online {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background: var(--success);
+            border: 2px solid var(--bg-deep);
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body>
 
-    <div class="admin-layout">
-        <div class="admin-main">
-            <nav class="admin-nav">
-                <div class="logo" style="font-weight:900; font-size: 1.3rem;">ADMIN<span style="color:var(--primary)">PANEL</span></div>
-                <div style="display: flex; gap: 5px;">
-                    <button id="theme-toggle" class="btn-theme" onclick="toggleTheme()">🌙 Noturno</button>
-                    <button onclick="location.reload()" class="btn-theme">🔄 Sync</button>
-                </div>
-            </nav>
-
-            <div class="tab-container">
-                <button class="tab-btn active" onclick="openTab(event, 'aba-suporte')">💬 Suporte</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">📋 Operação</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">🍔 Cardápio</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Financeiro</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">⚙️ Ajustes</button>
-            </div>
-
-            <div id="aba-suporte" class="tab-content active">
-                <div class="suporte-container">
-                    <div class="chat-sidebar-list">
-                        <div style="padding:10px; font-weight:bold; background:var(--border-color); font-size:0.6rem; letter-spacing:1px; text-align: center;">CHATS ATIVOS</div>
-                        <div class="chat-selector" id="lista-pedidos-chat">
-                            <% let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
-                               ativosNoChat.forEach(p => { %>
-                                 <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
-                                    <strong>#<%= p.id %> - <%= p.cliente %></strong>
-                                </div>
-                            <% }) %>
-                        </div>
-                    </div>
-                    <div class="chat-main-area">
-                        <div class="chat-messages" id="chat-box">
-                            <div style="text-align:center; margin-top:50px; color:#aaa;">
-                                <h3>Selecione um cliente</h3>
-                            </div>
-                        </div>
-                        <div class="chat-input-area">
-                            <input type="text" id="admin-msg" placeholder="Resposta...">
-                            <button onclick="enviarParaCliente()">➤</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="aba-pedidos" class="tab-content">
-                <div class="banner-operacao">
-                    <div>
-                        <h2 style="margin:0; font-size: 1.2rem;">Painel de Produção</h2>
-                        <p style="margin:5px 0 0 0; opacity:0.8; font-size: 0.8rem;">Gerencie a cozinha em tempo real.</p>
-                    </div>
-                    <a href="/operacao" target="_blank" class="btn-abrir-kds">ABRIR COMANDAS (KDS) ➔</a>
-                </div>
-            </div>
-
-            <div id="aba-cardapio" class="tab-content">
-                <div class="card-box">
-                    <div id="container-gerenciador-produtos"></div>
-                </div>
-                <div class="card-box">
-                    <div id="container-gerenciador-adicionais"></div>
-                </div>
-            </div>
-
-            <div id="aba-financeiro" class="tab-content">
-                <% 
-                    const dataAtual = new Date();
-                    const hojeStr = dataAtual.toLocaleDateString('pt-BR');
-                    const nomeMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-                    
-                    let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hojeStr);
-                    let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
-                    let entregasDia = pedidosHoje.length;
-                %>
-                <div class="finance-grid">
-                    <div class="stat-card" style="border-left-color: var(--success);">
-                        <h4>💰 Vendas de Hoje</h4>
-                        <div class="value">R$ <%= totalDia.toFixed(2) %></div>
-                        <span class="date-label"><%= hojeStr %></span>
-                    </div>
-                    <div class="stat-card" style="border-left-color: var(--info);">
-                        <h4>📦 Concluídos</h4>
-                        <div class="value"><%= entregasDia %></div>
-                        <span class="date-label">Hoje</span>
-                    </div>
-                    <div class="stat-card" style="border-left-color: #555;">
-                        <h4>📊 Acumulado (<%= nomeMeses[dataAtual.getMonth()] %>)</h4>
-                        <div class="value">R$ <%= (config.vendasMes || 0).toFixed(2) %></div>
-                        <span class="date-label">Total do mês</span>
-                    </div>
-                </div>
-
-                <div class="card-box">
-                    <h3 style="margin-top:0; font-size: 1rem;">⚡ Configuração de Pix</h3>
-                    <form id="form-config-pix" style="display:grid; gap:15px; max-width: 500px;">
-                        <div>
-                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px;">Provedor</label>
-                            <select id="conf-pixProvedor" style="width:100%; padding:10px; border-radius:6px;">
-                                <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
-                                <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px;">Chave de API / Token</label>
-                            <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" style="width:100%; padding:10px; border-radius:6px;">
-                        </div>
-                        <button type="button" onclick="salvarConfigPix()" style="background:#181818; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.8rem;">ATUALIZAR CREDENCIAIS</button>
-                    </form>
-                </div>
-            </div>
-
-            <div id="aba-configuracao" class="tab-content">
-                <div class="card-box">
-                    <h3 style="margin-top:0; font-size: 1rem;">⚙️ Configurações Gerais</h3>
-                    
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid var(--border-color);">
-                        <div>
-                            <strong style="font-size: 0.9rem;">Modo Manutenção</strong><br>
-                            <small style="color:#888;">Forçar fechamento do site.</small>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="conf-manutencao" onchange="salvarConfigSite()" <%= config.manutencao ? 'checked' : '' %>>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <div style="padding:15px 0; border-bottom:1px solid var(--border-color);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <strong style="font-size: 0.9rem;">Limitar por Cidade</strong>
-                            <label class="switch">
-                                <input type="checkbox" id="conf-cidadeAtiva" onchange="toggleCamposCidade(); salvarConfigSite();" <%= config.cidadeAtiva ? 'checked' : '' %>>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div id="container-campos-cidade" style="display: <%= config.cidadeAtiva ? 'grid' : 'none' %>; grid-template-columns: 1fr 80px; gap:10px;">
-                            <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" style="padding:8px;">
-                            <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" style="padding:8px;">
-                        </div>
-                    </div>
-
-                    <div style="padding:15px 0; display:flex; justify-content:space-between; align-items:center;">
-                        <strong style="font-size: 0.9rem;">Horários</strong>
-                        <button onclick="abrirModalHorarios()" style="background:var(--info); color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 0.75rem;">DEFINIR AGENDA</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="modalHorarios" class="modal">
-                <div class="modal-content">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 style="margin:0; font-size: 1.2rem;">Horários</h2>
-                        <span onclick="fecharModalHorarios()" style="cursor:pointer; font-size: 2rem;">&times;</span>
-                    </div>
-                    <div id="lista-dias-funcionamento">
-                        <% const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-                           diasSemana.forEach((dia, i) => { 
-                           const agendaDia = (config.agenda && config.agenda[i]) || { aberto: false, inicio: '18:00', fim: '23:00' }; %>
-                            <div class="dia-config" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
-                                <span style="font-weight: bold; width: 80px; font-size: 0.85rem;"><%= dia %></span>
-                                <div class="horarios-inputs" id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>; gap: 5px;">
-                                    <input type="time" class="input-inicio" value="<%= agendaDia.inicio %>" style="padding: 5px;">
-                                    <input type="time" class="input-fim" value="<%= agendaDia.fim %>" style="padding: 5px;">
-                                </div>
-                                <label class="switch" style="transform: scale(0.8);">
-                                    <input type="checkbox" class="check-dia" onchange="toggleDia(<%= i %>)" <%= agendaDia.aberto ? 'checked' : '' %>>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                        <% }) %>
-                    </div>
-                    <button onclick="salvarHorarios()" style="width: 100%; background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor:pointer;">SALVAR ALTERAÇÕES</button>
-                </div>
-            </div>
-
+<div class="app-container">
+    
+    <header>
+        <div class="header-brand">
+            <div class="logo-box">A</div>
+            <div class="brand-name">ALPHA<span>GROUP</span></div>
         </div>
-    </div>
+        <div class="header-actions">
+            <div class="status-badge"><div class="dot-pulse"></div> LIVE</div>
+            <i data-lucide="user-circle" style="color: var(--text-low)"></i>
+        </div>
+    </header>
 
-    <script>
-        const socket = io();
-        let pedidoAtivoId = null;
+    <main id="main-scroll">
+        
+        <div id="tab-home" class="tab-panel active fade-in">
+            <div class="section-header">
+                <div class="section-title"><i data-lucide="trending-up"></i> Performance Hoje</div>
+            </div>
+            <div class="cards-grid" style="grid-template-columns: 1fr 1fr;">
+                <div class="card-alpha">
+                    <span class="label-premium">Vendas</span>
+                    <h2 id="total-vendas">R$ 0,00</h2>
+                </div>
+                <div class="card-alpha">
+                    <span class="label-premium">Pedidos</span>
+                    <h2 id="total-pedidos">0</h2>
+                </div>
+            </div>
 
-        function toggleTheme() {
-            const body = document.body;
-            const btn = document.getElementById('theme-toggle');
-            body.classList.toggle('dark-mode');
-            if(body.classList.contains('dark-mode')) {
-                btn.innerText = "☀️ Claro";
-                localStorage.setItem('admin-theme', 'dark');
-            } else {
-                btn.innerText = "🌙 Noturno";
-                localStorage.setItem('admin-theme', 'light');
-            }
-        }
+            <div class="section-header">
+                <div class="section-title"><i data-lucide="shield-check"></i> Gateway</div>
+            </div>
+            <div class="card-alpha">
+                <div class="input-group">
+                    <label class="label-premium">Token de Acesso</label>
+                    <input type="password" class="input-alpha" id="pix-token" placeholder="••••••••">
+                </div>
+                <button class="btn-premium" onclick="salvarConfig('pix')"><i data-lucide="save"></i> ATUALIZAR</button>
+            </div>
+        </div>
 
-        if(localStorage.getItem('admin-theme') === 'dark') {
-            document.body.classList.add('dark-mode');
-            document.getElementById('theme-toggle').innerText = "☀️ Claro";
-        }
+        <div id="tab-chat" class="tab-panel fade-in">
+            <div class="section-header">
+                <div class="section-title"><i data-lucide="messages-square"></i> Atendimento</div>
+            </div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            if(typeof renderizarPainelCategorias === "function") renderizarPainelCategorias('container-gerenciador-produtos');
-            if(typeof renderizarPainelAdicionais === "function") renderizarPainelAdicionais('container-gerenciador-adicionais');
-        });
+            <div class="chat-list" id="active-chats">
+                <div class="chat-user-thumb active" onclick="selecionarChat('Guilherme', '#4582')">
+                    <div class="avatar">G<div class="avatar-online"></div></div>
+                    <span style="font-size: 0.6rem; margin-top: 5px;">Guilherme</span>
+                </div>
+                <div class="chat-user-thumb" onclick="selecionarChat('Marcos', '#4583')">
+                    <div class="avatar">M</div>
+                    <span style="font-size: 0.6rem; margin-top: 5px;">Marcos</span>
+                </div>
+            </div>
 
-        function openTab(evt, tabName) {
-            const contents = document.getElementsByClassName("tab-content");
-            for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
-            const btns = document.getElementsByClassName("tab-btn");
-            for (let i = 0; i < btns.length; i++) btns[i].classList.remove("active");
-            document.getElementById(tabName).classList.add("active");
-            if(evt) evt.currentTarget.classList.add("active");
-        }
+            <div class="chat-view">
+                <div class="chat-header-info">
+                    <div class="client-meta">
+                        <h4 id="chat-client-name">Guilherme</h4>
+                        <span id="chat-order-id">Pedido: #4582</span>
+                    </div>
+                    <i data-lucide="info" style="width: 18px; color: var(--text-low)"></i>
+                </div>
 
-        function abrirModalHorarios() { document.getElementById('modalHorarios').style.display = 'block'; }
-        function fecharModalHorarios() { document.getElementById('modalHorarios').style.display = 'none'; }
-        function toggleDia(index) {
-            const isChecked = document.querySelectorAll('.check-dia')[index].checked;
-            document.getElementById(`box-horario-${index}`).style.display = isChecked ? 'flex' : 'none';
-        }
-        function toggleCamposCidade() {
-            const isChecked = document.getElementById('conf-cidadeAtiva').checked;
-            document.getElementById('container-campos-cidade').style.display = isChecked ? 'grid' : 'none';
-        }
+                <div class="messages-area" id="chat-messages">
+                    <div class="msg-bubble msg-client">Olá, meu pedido ainda não chegou. Poderia verificar?</div>
+                    <div class="msg-bubble msg-admin">Claro! O entregador já saiu da loja e está a caminho.</div>
+                </div>
 
-        async function salvarHorarios() {
-            const agenda = [];
-            const checks = document.querySelectorAll('.check-dia');
-            const incios = document.querySelectorAll('.input-inicio');
-            const fins = document.querySelectorAll('.input-fim');
-            checks.forEach((check, i) => {
-                agenda.push({ aberto: check.checked, inicio: incios[i].value, fim: fins[i].value });
-            });
-            const res = await fetch('/update-horarios', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agenda })
-            });
-            if (res.ok) { alert("✅ Horários atualizados!"); fecharModalHorarios(); }
-        }
+                <div style="padding: 15px; background: var(--bg-card); display: flex; gap: 10px;">
+                    <input type="text" class="input-alpha" placeholder="Digite sua mensagem...">
+                    <button class="btn-premium" style="width: 50px; padding: 0;"><i data-lucide="send"></i></button>
+                </div>
+            </div>
+        </div>
 
-        async function salvarConfigSite() {
-            const dados = {
-                manutencao: document.getElementById('conf-manutencao').checked,
-                cidadeAtiva: document.getElementById('conf-cidadeAtiva').checked,
-                cidadeNome: document.getElementById('conf-cidadeNome').value,
-                cidadeEstado: document.getElementById('conf-cidadeEstado').value
-            };
-            await fetch('/update-config-site', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
-        }
+    </main>
 
-        async function salvarConfigPix() {
-            const dados = {
-                pixProvedor: document.getElementById('conf-pixProvedor').value,
-                pixToken: document.getElementById('conf-pixToken').value
-            };
-            const res = await fetch('/update-config-pix', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
-            if (res.ok) alert("✅ Pix configurado!");
-        }
+    <nav class="mobile-nav">
+        <a href="javascript:void(0)" class="nav-item active" onclick="switchTab('home', this)">
+            <i data-lucide="layout-grid"></i><span>Painel</span>
+        </a>
+        <a href="javascript:void(0)" class="nav-item" onclick="switchTab('chat', this)">
+            <i data-lucide="message-circle"></i><span>Chat</span>
+        </a>
+        <a href="javascript:void(0)" class="nav-item">
+            <i data-lucide="settings"></i><span>Config</span>
+        </a>
+    </nav>
+</div>
 
-        function selecionarChat(id, cliente) {
-            pedidoAtivoId = id;
-            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
-            const target = document.getElementById(`chat-item-${id}`);
-            if(target) target.classList.add('active');
-            socket.emit('join', id);
-            socket.emit('lerMensagens', id);
-        }
+<script>
+    lucide.createIcons();
 
-        socket.on('historico', (h) => {
-            const box = document.getElementById('chat-box');
-            box.innerHTML = '';
-            h.forEach(renderizarMensagem);
-        });
+    function switchTab(targetId, element) {
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        element.classList.add('active');
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+        document.getElementById('tab-' + targetId).classList.add('active');
+    }
 
-        socket.on('novaMensagem', (msg) => {
-            if (msg.pedidoId === pedidoAtivoId) {
-                renderizarMensagem(msg);
-            } else {
-                const item = document.getElementById(`chat-item-${msg.pedidoId}`);
-                if(item) item.classList.add('has-new');
-            }
-        });
+    // Lógica para trocar o contexto do chat dinamicamente
+    function selecionarChat(nome, pedido) {
+        document.getElementById('chat-client-name').innerText = nome;
+        document.getElementById('chat-order-id').innerText = `Pedido: ${pedido}`;
+        
+        // Simulação de troca de mensagens
+        const area = document.getElementById('chat-messages');
+        area.innerHTML = `<div class="msg-bubble msg-client">Olá, sou o ${nome}. Preciso de ajuda com o pedido ${pedido}.</div>`;
+    }
 
-        function renderizarMensagem(msg) {
-            const div = document.createElement('div');
-            div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
-            div.innerHTML = `<small style="display:block; font-size:10px; opacity:0.6;">${msg.usuario}</small>${msg.texto}`;
-            const box = document.getElementById('chat-box');
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
-        }
+    async function salvarConfig(categoria) {
+        console.log("Salvando:", categoria);
+        alert("Configuração Alpha atualizada com sucesso!");
+    }
+</script>
 
-        function enviarParaCliente() {
-            const input = document.getElementById('admin-msg');
-            if(!input.value || !pedidoAtivoId) return;
-            socket.emit('enviarMensagem', { usuario: 'Admin', texto: input.value, pedidoId: pedidoAtivoId });
-            input.value = '';
-        }
-    </script>
-
-    <script src="/js/gerenciar-produtos.js"></script>
-    <script src="/js/gerenciar-adicionais.js"></script>
 </body>
 </html>
