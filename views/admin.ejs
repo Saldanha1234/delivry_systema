@@ -179,6 +179,24 @@
             padding-bottom: 10px;
         }
 
+        .chat-header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 15px;
+            font-weight: bold;
+            color: #fff;
+            font-size: 0.85rem; /* TÍTULO AUMENTADO */
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .chat-header-title svg {
+            width: 18px;
+            height: 18px;
+            fill: #fff;
+        }
+
         .chat-selector { 
             display: flex; 
             flex-direction: row; 
@@ -194,7 +212,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-width: 60px;
+            min-width: 65px;
             cursor: pointer; 
             transition: 0.3s; 
         }
@@ -233,14 +251,22 @@
         }
 
         .cliente-nome-label {
-            font-size: 0.6rem;
-            color: #888;
+            font-size: 0.65rem;
+            color: #fff;
             margin-top: 5px;
             text-align: center;
-            max-width: 65px;
+            max-width: 70px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-weight: 600;
+        }
+
+        .cliente-pedido-label {
+            font-size: 0.55rem;
+            color: #888;
+            text-align: center;
+            font-weight: bold;
         }
 
         .chat-main-area { 
@@ -269,6 +295,14 @@
         .msg { padding: 12px 16px; border-radius: 15px; font-size: 0.85rem; max-width: 75%; line-height: 1.4; position: relative; }
         .msg.cliente { background: #262626; align-self: flex-start; color: #fff; border-bottom-left-radius: 2px; }
         .msg.admin { background: var(--primary); align-self: flex-end; font-weight: 500; color: #fff; border-bottom-right-radius: 2px; }
+
+        .msg-time {
+            display: block;
+            font-size: 9px;
+            opacity: 0.7;
+            margin-top: 4px;
+            text-align: right;
+        }
 
         .chat-input-area { 
             padding: 15px; 
@@ -339,7 +373,7 @@
     <div class="admin-layout">
         <div class="admin-main">
             <nav class="admin-nav">
-                <div class="logo" style="font-weight:900; font-size: 1.3rem;">ALPHA<span style="color:var(--primary)">GROUP</span></div>
+                <div class="logo" style="font-weight:900; font-size: 1.3rem;">Açai<span style="color:var(--primary)">Roxinho</span></div>
                 <div style="display: flex; gap: 5px;">
                     <button id="theme-toggle" class="btn-theme" onclick="toggleTheme()">☀️ Claro</button>
                     <button onclick="location.reload()" class="btn-theme">🔄 Sync</button>
@@ -349,7 +383,11 @@
             <div id="aba-suporte" class="tab-content active">
                 <div class="suporte-container">
                     <div class="chat-sidebar-list">
-                        <div style="padding:5px 15px; font-weight:bold; color:#888; font-size:0.65rem; letter-spacing:1px; text-transform: uppercase;">Suporte em tempo real</div>
+                        <div class="chat-header-title">
+                            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                            Suporte em tempo real
+                        </div>
                         <div class="chat-selector" id="lista-pedidos-chat">
                             <% let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
                                ativosNoChat.forEach(p => { 
@@ -357,7 +395,7 @@
                                  <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
                                     <div class="avatar-circle"><%= inicial %></div>
                                     <span class="cliente-nome-label"><%= p.cliente %></span>
-                                </div>
+                                    <span class="cliente-pedido-label">#<%= p.id %></span> </div>
                             <% }) %>
                         </div>
                     </div>
@@ -487,7 +525,7 @@
                         <% const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
                            diasSemana.forEach((dia, i) => { 
                            const agendaDia = (config.agenda && config.agenda[i]) || { aberto: false, inicio: '18:00', fim: '23:00' }; %>
-                            <div class="dia-config" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                             <div class="dia-config" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
                                 <span style="font-weight: bold; width: 80px; font-size: 0.85rem;"><%= dia %></span>
                                 <div class="horarios-inputs" id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>; gap: 5px;">
                                     <input type="time" class="input-inicio" value="<%= agendaDia.inicio %>" style="padding: 5px; background: #1a1a1a; color: #fff; border: 1px solid #333;">
@@ -647,7 +685,17 @@
         function renderizarMensagem(msg) {
             const div = document.createElement('div');
             div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
-            div.innerHTML = `<small style="display:block; font-size:10px; opacity:0.6;">${msg.usuario}</small>${msg.texto}`;
+            
+            // PEGA HORÁRIO ATUAL EM TEMPO REAL 24H
+            const agora = new Date();
+            const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            div.innerHTML = `
+                <small style="display:block; font-size:10px; opacity:0.6;">${msg.usuario}</small>
+                ${msg.texto}
+                <span class="msg-time">${horaFormatada}</span>
+            `;
+            
             const box = document.getElementById('chat-box');
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
