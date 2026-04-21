@@ -2,266 +2,260 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="/style.css">
-    <title>Admin | Gestão Total</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ALPHA ADMIN | GESTÃO TOTAL</title>
+    
     <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
-        /* DESIGN LIMPO E PROFISSIONAL */
-        :root { 
-            --primary: #ffca2c; 
-            --dark: #181818; 
-            --bg: #f8f9fa; 
-            --success: #2ecc71; 
-            --danger: #ff4757; 
-            --info: #3498db;
-            --white: #ffffff;
-            --text-main: #333333;
-            --border-color: #e0e0e0;
-            --chat-bg: #f0f2f5;
-            --sidebar-bg: #fcfcfc;
+        :root {
+            --bg-deep: #050505;
+            --bg-surface: #0c0c10;
+            --bg-card: #14141c;
+            --purple-main: #8B5CF6;
+            --purple-dim: #6D28D9;
+            --purple-glow: rgba(139, 92, 246, 0.15);
+            --border: #1f1f27;
+            --text-high: #ffffff;
+            --text-mid: #94a3b8;
+            --text-low: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --info: #3b82f6;
         }
 
-        /* CONFIGURAÇÃO MODO ESCURO */
-        body.dark-mode {
-            --bg: #121212;
-            --white: #1e1e1e;
-            --text-main: #f0f0f0;
-            --border-color: #333333;
-            --chat-bg: #181818;
-            --sidebar-bg: #1a1a1a;
-            --dark: #ffffff; 
-        }
+        /* MODO ESCURO FORÇADO / DESIGN BASE */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
         
-        * { box-sizing: border-box; }
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--bg); 
-            color: var(--text-main);
-            transition: background 0.3s, color 0.3s;
-            overflow-x: hidden;
+        body { 
+            background: var(--bg-deep); 
+            color: var(--text-high); 
+            height: 100vh; 
+            overflow: hidden; 
         }
 
-        .admin-layout { display: flex; flex-direction: column; height: 100vh; }
-        .admin-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .app-shell { display: flex; flex-direction: column; height: 100vh; }
 
-        .admin-nav { 
-            background: var(--white); 
-            padding: 12px 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid var(--border-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            flex-shrink: 0;
+        /* HEADER */
+        header {
+            height: 70px;
+            padding: 0 20px;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
         }
 
-        /* CORREÇÃO DO ENQUADRAMENTO DAS CATEGORIAS (TABS) */
-        .tab-container { 
-            display: flex; 
-            background: var(--white); 
-            border-bottom: 1px solid var(--border-color); 
-            padding: 0 10px; 
-            gap: 5px; 
-            overflow-x: auto; 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000;
+        .brand { font-weight: 800; font-size: 1.2rem; }
+        .brand span { color: var(--purple-main); }
+
+        .header-actions { display: flex; gap: 10px; }
+
+        .btn-icon {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* TABS NAVEGAÇÃO */
+        .tab-nav {
+            display: flex;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
             white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
         }
-        .tab-container::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+        .tab-nav::-webkit-scrollbar { display: none; }
 
-        .tab-btn { 
-            padding: 14px 18px; 
-            border: none; 
-            background: none; 
-            cursor: pointer; 
-            font-weight: 700; 
-            color: #888; 
-            transition: 0.2s; 
-            border-bottom: 3px solid transparent;
+        .tab-btn {
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            color: var(--text-low);
+            font-weight: 700;
             font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            flex-shrink: 0; /* IMPEDE QUE AS CATEGORIAS SE ACHATEM */
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: 0.3s;
         }
-        .tab-btn.active { color: var(--dark); border-bottom-color: var(--primary); }
+        .tab-btn.active {
+            color: var(--purple-main);
+            border-bottom-color: var(--purple-main);
+            background: var(--purple-glow);
+        }
 
-        .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
+        /* CONTEÚDO */
+        main { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
 
-        .card-box { 
-            background: var(--white); 
-            padding: 15px; 
-            border-radius: 10px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .finance-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 15px; 
-            margin-bottom: 25px; 
-        }
-        .stat-card { 
-            background: var(--white); 
-            padding: 20px; 
-            border-radius: 12px; 
-            border-left: 6px solid var(--primary); 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-            transition: transform 0.2s;
-        }
-        .stat-card h4 { margin: 0 0 8px 0; font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 1px;}
-        .stat-card .value { font-size: 1.4rem; font-weight: 800; color: var(--dark); }
-        .stat-card .date-label { font-size: 0.75rem; color: var(--info); font-weight: 600; display: block; margin-top: 5px; }
-
-        .banner-operacao {
-            background: #181818; 
-            color: white;
+        .alpha-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
             padding: 20px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 10px solid var(--primary);
             margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .btn-abrir-kds {
-            background: var(--primary);
-            color: #181818;
-            padding: 12px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 900;
-            font-size: 0.8rem;
-            transition: 0.2s;
-            text-align: center;
         }
 
-        .suporte-container { display: flex; height: 75vh; background: var(--white); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); }
-        .chat-sidebar-list { width: 300px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
-        .chat-selector { flex: 1; overflow-y: auto; padding: 10px; }
-        .chat-item { padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
-        .chat-item.active { background: rgba(255, 202, 44, 0.1); border-color: var(--primary); }
-        .chat-item.has-new { border-left: 4px solid var(--danger); animation: pulse 1.5s infinite; }
-        
-        .chat-main-area { flex: 1; display: flex; flex-direction: column; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; background: var(--chat-bg); display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; max-width: 85%; line-height: 1.4; }
-        .msg.cliente { background: var(--white); align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: var(--text-main); }
-        .msg.admin { background: var(--primary); align-self: flex-end; font-weight: 600; color: #181818; }
+        /* FINANCEIRO GRID */
+        .finance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 18px;
+            border-top: 4px solid var(--purple-main);
+        }
+        .stat-card h4 { font-size: 0.65rem; text-transform: uppercase; color: var(--text-low); margin-bottom: 10px; }
+        .stat-card .value { font-size: 1.5rem; font-weight: 800; }
+        .stat-card .date-label { font-size: 0.7rem; color: var(--purple-main); font-weight: 600; }
 
-        .chat-input-area { padding: 10px; display: flex; gap: 8px; border-top: 1px solid var(--border-color); }
-        .chat-input-area input { flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid var(--border-color); background: var(--white); color: var(--text-main); outline: none; }
-        .chat-input-area button { background: #181818; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+        /* CHAT SYSTEM ALPHA */
+        .suporte-container {
+            display: flex;
+            height: 70vh;
+            background: var(--bg-card);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .chat-sidebar { width: 300px; border-right: 1px solid var(--border); background: var(--bg-surface); display: flex; flex-direction: column; }
+        .chat-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .chat-item {
+            padding: 15px;
+            border-radius: 12px;
+            background: var(--bg-card);
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .chat-item.active { border-color: var(--purple-main); background: var(--purple-glow); }
+        .chat-item.has-new { border-left: 4px solid var(--danger); }
 
-        .btn-theme { 
-            padding: 8px 12px; 
-            cursor: pointer; 
-            border-radius: 6px; 
-            border: 1px solid var(--border-color); 
-            background: var(--white); 
-            color: var(--text-main); 
-            font-weight: bold;
-            font-size: 0.8rem;
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: #08080a; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .msg { padding: 12px 16px; border-radius: 15px; font-size: 0.85rem; max-width: 80%; }
+        .msg.cliente { background: var(--bg-card); align-self: flex-start; border: 1px solid var(--border); }
+        .msg.admin { background: var(--purple-main); color: white; align-self: flex-end; font-weight: 600; }
+
+        .chat-input { padding: 15px; display: flex; gap: 10px; background: var(--bg-card); border-top: 1px solid var(--border); }
+        .chat-input input {
+            flex: 1; background: var(--bg-deep); border: 1px solid var(--border);
+            padding: 12px 18px; border-radius: 30px; color: white; outline: none;
+        }
+        .chat-input button {
+            background: var(--purple-main); color: white; border: none;
+            width: 45px; height: 45px; border-radius: 50%; cursor: pointer;
         }
 
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); overflow-y: auto; }
-        .modal-content { background: var(--white); margin: 10% auto; padding: 20px; border-radius: 15px; width: 95%; max-width: 500px; color: var(--text-main); }
-        
-        .switch { position: relative; display: inline-block; width: 46px; height: 22px; }
+        /* INPUTS ALPHA */
+        .alpha-input {
+            width: 100%; background: var(--bg-deep); border: 1px solid var(--border);
+            padding: 12px; border-radius: 10px; color: white; margin-top: 5px;
+        }
+        .alpha-btn {
+            background: var(--purple-main); color: white; border: none;
+            padding: 12px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;
+        }
+
+        /* SWITCH DESIGN */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background: var(--success); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #222; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background: var(--purple-main); }
         input:checked + .slider:before { transform: translateX(24px); }
 
-        /* RESPONSIVIDADE MOBILE FINAL */
-        @media (max-width: 768px) {
-            .admin-nav { padding: 10px; }
-            .suporte-container { flex-direction: column; height: 80vh; }
-            .chat-sidebar-list { width: 100%; height: 150px; border-right: none; border-bottom: 1px solid var(--border-color); }
-            .banner-operacao { text-align: center; justify-content: center; }
-            .btn-abrir-kds { width: 100%; }
-            .tab-btn { padding: 12px 15px; font-size: 0.7rem; }
-            .finance-grid { grid-template-columns: 1fr; }
-        }
+        /* MODAL */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); overflow-y: auto; }
+        .modal-content { background: var(--bg-card); margin: 5% auto; padding: 25px; border-radius: 25px; width: 90%; max-width: 500px; border: 1px solid var(--border); }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 768px) {
+            .suporte-container { flex-direction: column; }
+            .chat-sidebar { width: 100%; height: 200px; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="admin-layout">
-        <div class="admin-main">
-            <nav class="admin-nav">
-                <div class="logo" style="font-weight:900; font-size: 1.3rem;">ADMIN<span style="color:var(--primary)">PANEL</span></div>
-                <div style="display: flex; gap: 5px;">
-                    <button id="theme-toggle" class="btn-theme" onclick="toggleTheme()">🌙 Noturno</button>
-                    <button onclick="location.reload()" class="btn-theme">🔄 Sync</button>
-                </div>
-            </nav>
-
-            <div class="tab-container">
-                <button class="tab-btn active" onclick="openTab(event, 'aba-suporte')">💬 Suporte</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">📋 Operação</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">🍔 Cardápio</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Financeiro</button>
-                <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">⚙️ Ajustes</button>
+    <div class="app-shell">
+        <header>
+            <div class="brand">ALPHA<span>ADMIN</span></div>
+            <div class="header-actions">
+                <button onclick="location.reload()" class="btn-icon"><i data-lucide="refresh-cw"></i> Sync</button>
             </div>
+        </header>
 
+        <nav class="tab-nav">
+            <button class="tab-btn active" onclick="openTab(event, 'aba-suporte')">💬 Suporte</button>
+            <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">📋 Operação</button>
+            <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">🍔 Cardápio</button>
+            <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Financeiro</button>
+            <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">⚙️ Ajustes</button>
+        </nav>
+
+        <main>
             <div id="aba-suporte" class="tab-content active">
                 <div class="suporte-container">
-                    <div class="chat-sidebar-list">
-                        <div style="padding:10px; font-weight:bold; background:var(--border-color); font-size:0.6rem; letter-spacing:1px; text-align: center;">CHATS ATIVOS</div>
-                        <div class="chat-selector" id="lista-pedidos-chat">
+                    <div class="chat-sidebar">
+                        <div style="padding:15px; font-size:0.6rem; font-weight:800; letter-spacing:1px; color:var(--text-low); text-align:center;">CHATS ATIVOS</div>
+                        <div class="chat-list" id="lista-pedidos-chat">
                             <% let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
                                ativosNoChat.forEach(p => { %>
                                  <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
-                                    <strong>#<%= p.id %> - <%= p.cliente %></strong>
+                                    <div style="font-weight: 800; font-size: 0.8rem; margin-bottom: 4px;">#<%= p.id %></div>
+                                    <div style="font-size: 0.75rem; color: var(--text-mid);"><%= p.cliente %></div>
                                 </div>
                             <% }) %>
                         </div>
                     </div>
-                    <div class="chat-main-area">
+                    <div class="chat-main">
                         <div class="chat-messages" id="chat-box">
-                            <div style="text-align:center; margin-top:50px; color:#aaa;">
-                                <h3>Selecione um cliente</h3>
+                            <div style="text-align:center; margin-top:100px; color:var(--text-low);">
+                                <i data-lucide="message-circle" style="width:40px; height:40px; margin-bottom:10px;"></i>
+                                <h3>Selecione um cliente para conversar</h3>
                             </div>
                         </div>
-                        <div class="chat-input-area">
-                            <input type="text" id="admin-msg" placeholder="Resposta...">
-                            <button onclick="enviarParaCliente()">➤</button>
+                        <div class="chat-input">
+                            <input type="text" id="admin-msg" placeholder="Digite sua mensagem...">
+                            <button onclick="enviarParaCliente()"><i data-lucide="send"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div id="aba-pedidos" class="tab-content">
-                <div class="banner-operacao">
-                    <div>
-                        <h2 style="margin:0; font-size: 1.2rem;">Painel de Produção</h2>
-                        <p style="margin:5px 0 0 0; opacity:0.8; font-size: 0.8rem;">Gerencie a cozinha em tempo real.</p>
-                    </div>
-                    <a href="/operacao" target="_blank" class="btn-abrir-kds">ABRIR COMANDAS (KDS) ➔</a>
+                <div class="alpha-card" style="border-left: 6px solid var(--purple-main);">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 5px;">Painel de Produção</h2>
+                    <p style="color: var(--text-mid); font-size: 0.8rem; margin-bottom: 20px;">Gerencie a cozinha e entregas em tempo real.</p>
+                    <a href="/operacao" target="_blank" class="alpha-btn" style="text-decoration:none; display:block; text-align:center;">ABRIR KDS COMPLETO</a>
                 </div>
             </div>
 
             <div id="aba-cardapio" class="tab-content">
-                <div class="card-box">
+                <div class="alpha-card">
+                    <h3 style="font-size: 1rem; margin-bottom: 20px;"><i data-lucide="package" style="vertical-align: middle;"></i> Gerenciar Produtos</h3>
                     <div id="container-gerenciador-produtos"></div>
                 </div>
-                <div class="card-box">
+                <div class="alpha-card">
+                    <h3 style="font-size: 1rem; margin-bottom: 20px;"><i data-lucide="layers" style="vertical-align: middle;"></i> Gerenciar Adicionais</h3>
                     <div id="container-gerenciador-adicionais"></div>
                 </div>
             </div>
@@ -271,56 +265,50 @@
                     const dataAtual = new Date();
                     const hojeStr = dataAtual.toLocaleDateString('pt-BR');
                     const nomeMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-                    
                     let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hojeStr);
                     let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
-                    let entregasDia = pedidosHoje.length;
                 %>
                 <div class="finance-grid">
-                    <div class="stat-card" style="border-left-color: var(--success);">
-                        <h4>💰 Vendas de Hoje</h4>
+                    <div class="stat-card">
+                        <h4>Vendas de Hoje</h4>
                         <div class="value">R$ <%= totalDia.toFixed(2) %></div>
                         <span class="date-label"><%= hojeStr %></span>
                     </div>
-                    <div class="stat-card" style="border-left-color: var(--info);">
-                        <h4>📦 Concluídos</h4>
-                        <div class="value"><%= entregasDia %></div>
-                        <span class="date-label">Hoje</span>
+                    <div class="stat-card" style="border-color: var(--info);">
+                        <h4>Concluídos Hoje</h4>
+                        <div class="value"><%= pedidosHoje.length %></div>
+                        <span class="date-label">Pedidos</span>
                     </div>
-                    <div class="stat-card" style="border-left-color: #555;">
-                        <h4>📊 Acumulado (<%= nomeMeses[dataAtual.getMonth()] %>)</h4>
+                    <div class="stat-card" style="border-color: var(--success);">
+                        <h4>Faturamento <%= nomeMeses[dataAtual.getMonth()] %></h4>
                         <div class="value">R$ <%= (config.vendasMes || 0).toFixed(2) %></div>
-                        <span class="date-label">Total do mês</span>
+                        <span class="date-label">Acumulado</span>
                     </div>
                 </div>
 
-                <div class="card-box">
-                    <h3 style="margin-top:0; font-size: 1rem;">⚡ Configuração de Pix</h3>
-                    <form id="form-config-pix" style="display:grid; gap:15px; max-width: 500px;">
-                        <div>
-                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px;">Provedor</label>
-                            <select id="conf-pixProvedor" style="width:100%; padding:10px; border-radius:6px;">
-                                <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
-                                <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px;">Chave de API / Token</label>
-                            <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" style="width:100%; padding:10px; border-radius:6px;">
-                        </div>
-                        <button type="button" onclick="salvarConfigPix()" style="background:#181818; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.8rem;">ATUALIZAR CREDENCIAIS</button>
+                <div class="alpha-card">
+                    <h3 style="font-size: 1rem; margin-bottom: 20px;">Configurações de Pagamento (PIX)</h3>
+                    <form id="form-config-pix" style="display:grid; gap:15px;">
+                        <label class="input-label">Provedor</label>
+                        <select id="conf-pixProvedor" class="alpha-input">
+                            <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
+                            <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
+                        </select>
+                        <label class="input-label">Token / Chave API</label>
+                        <input type="password" id="conf-pixToken" class="alpha-input" value="<%= config.pixToken || '' %>">
+                        <button type="button" onclick="salvarConfigPix()" class="alpha-btn">SALVAR CREDENCIAIS</button>
                     </form>
                 </div>
             </div>
 
             <div id="aba-configuracao" class="tab-content">
-                <div class="card-box">
-                    <h3 style="margin-top:0; font-size: 1rem;">⚙️ Configurações Gerais</h3>
+                <div class="alpha-card">
+                    <h3 style="font-size: 1rem; margin-bottom: 25px;">Geral e Disponibilidade</h3>
                     
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid var(--border-color);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:15px; border-bottom:1px solid var(--border);">
                         <div>
-                            <strong style="font-size: 0.9rem;">Modo Manutenção</strong><br>
-                            <small style="color:#888;">Forçar fechamento do site.</small>
+                            <div style="font-weight:700; font-size:0.9rem;">Modo Manutenção</div>
+                            <div style="color:var(--text-low); font-size:0.75rem;">Oculta o site para clientes</div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="conf-manutencao" onchange="salvarConfigSite()" <%= config.manutencao ? 'checked' : '' %>>
@@ -328,54 +316,53 @@
                         </label>
                     </div>
 
-                    <div style="padding:15px 0; border-bottom:1px solid var(--border-color);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <strong style="font-size: 0.9rem;">Limitar por Cidade</strong>
+                    <div style="padding:20px 0; border-bottom:1px solid var(--border);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <div style="font-weight:700; font-size:0.9rem;">Limitar por Cidade</div>
                             <label class="switch">
                                 <input type="checkbox" id="conf-cidadeAtiva" onchange="toggleCamposCidade(); salvarConfigSite();" <%= config.cidadeAtiva ? 'checked' : '' %>>
                                 <span class="slider"></span>
                             </label>
                         </div>
                         <div id="container-campos-cidade" style="display: <%= config.cidadeAtiva ? 'grid' : 'none' %>; grid-template-columns: 1fr 80px; gap:10px;">
-                            <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" style="padding:8px;">
-                            <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" style="padding:8px;">
+                            <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" class="alpha-input">
+                            <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" class="alpha-input">
                         </div>
                     </div>
 
-                    <div style="padding:15px 0; display:flex; justify-content:space-between; align-items:center;">
-                        <strong style="font-size: 0.9rem;">Horários</strong>
-                        <button onclick="abrirModalHorarios()" style="background:var(--info); color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 0.75rem;">DEFINIR AGENDA</button>
+                    <div style="padding-top:20px; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:700; font-size:0.9rem;">Horários de Funcionamento</div>
+                        <button onclick="abrirModalHorarios()" class="btn-icon" style="background:var(--purple-glow); border-color:var(--purple-main); color:var(--purple-main);">CONFIGURAR</button>
                     </div>
                 </div>
             </div>
+        </main>
+    </div>
 
-            <div id="modalHorarios" class="modal">
-                <div class="modal-content">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 style="margin:0; font-size: 1.2rem;">Horários</h2>
-                        <span onclick="fecharModalHorarios()" style="cursor:pointer; font-size: 2rem;">&times;</span>
-                    </div>
-                    <div id="lista-dias-funcionamento">
-                        <% const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-                           diasSemana.forEach((dia, i) => { 
-                           const agendaDia = (config.agenda && config.agenda[i]) || { aberto: false, inicio: '18:00', fim: '23:00' }; %>
-                            <div class="dia-config" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
-                                <span style="font-weight: bold; width: 80px; font-size: 0.85rem;"><%= dia %></span>
-                                <div class="horarios-inputs" id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>; gap: 5px;">
-                                    <input type="time" class="input-inicio" value="<%= agendaDia.inicio %>" style="padding: 5px;">
-                                    <input type="time" class="input-fim" value="<%= agendaDia.fim %>" style="padding: 5px;">
-                                </div>
-                                <label class="switch" style="transform: scale(0.8);">
-                                    <input type="checkbox" class="check-dia" onchange="toggleDia(<%= i %>)" <%= agendaDia.aberto ? 'checked' : '' %>>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                        <% }) %>
-                    </div>
-                    <button onclick="salvarHorarios()" style="width: 100%; background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor:pointer;">SALVAR ALTERAÇÕES</button>
-                </div>
+    <div id="modalHorarios" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="font-size:1.1rem;">Agenda Semanal</h2>
+                <span onclick="fecharModalHorarios()" style="cursor:pointer; font-size:1.5rem;">&times;</span>
             </div>
-
+            <div id="lista-dias-funcionamento">
+                <% const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                   diasSemana.forEach((dia, i) => { 
+                   const agendaDia = (config.agenda && config.agenda[i]) || { aberto: false, inicio: '18:00', fim: '23:00' }; %>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
+                        <span style="font-weight:700; font-size:0.8rem; width:80px;"><%= dia %></span>
+                        <div id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>; gap:5px;">
+                            <input type="time" class="input-inicio alpha-input" style="margin:0; padding:5px;" value="<%= agendaDia.inicio %>">
+                            <input type="time" class="input-fim alpha-input" style="margin:0; padding:5px;" value="<%= agendaDia.fim %>">
+                        </div>
+                        <label class="switch" style="transform: scale(0.75);">
+                            <input type="checkbox" class="check-dia" onchange="toggleDia(<%= i %>)" <%= agendaDia.aberto ? 'checked' : '' %>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                <% }) %>
+            </div>
+            <button onclick="salvarHorarios()" class="alpha-btn" style="margin-top:20px; background:var(--success);">SALVAR ALTERAÇÕES</button>
         </div>
     </div>
 
@@ -383,29 +370,10 @@
         const socket = io();
         let pedidoAtivoId = null;
 
-        function toggleTheme() {
-            const body = document.body;
-            const btn = document.getElementById('theme-toggle');
-            body.classList.toggle('dark-mode');
-            if(body.classList.contains('dark-mode')) {
-                btn.innerText = "☀️ Claro";
-                localStorage.setItem('admin-theme', 'dark');
-            } else {
-                btn.innerText = "🌙 Noturno";
-                localStorage.setItem('admin-theme', 'light');
-            }
-        }
+        // INICIALIZAÇÃO DE ÍCONES
+        lucide.createIcons();
 
-        if(localStorage.getItem('admin-theme') === 'dark') {
-            document.body.classList.add('dark-mode');
-            document.getElementById('theme-toggle').innerText = "☀️ Claro";
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            if(typeof renderizarPainelCategorias === "function") renderizarPainelCategorias('container-gerenciador-produtos');
-            if(typeof renderizarPainelAdicionais === "function") renderizarPainelAdicionais('container-gerenciador-adicionais');
-        });
-
+        // NAVEGAÇÃO
         function openTab(evt, tabName) {
             const contents = document.getElementsByClassName("tab-content");
             for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
@@ -415,6 +383,7 @@
             if(evt) evt.currentTarget.classList.add("active");
         }
 
+        // LÓGICAS DE UI (MANTIDAS)
         function abrirModalHorarios() { document.getElementById('modalHorarios').style.display = 'block'; }
         function fecharModalHorarios() { document.getElementById('modalHorarios').style.display = 'none'; }
         function toggleDia(index) {
@@ -425,6 +394,8 @@
             const isChecked = document.getElementById('conf-cidadeAtiva').checked;
             document.getElementById('container-campos-cidade').style.display = isChecked ? 'grid' : 'none';
         }
+
+        // --- TODAS AS ROTAS ORIGINAIS PRESERVADAS ---
 
         async function salvarHorarios() {
             const agenda = [];
@@ -439,7 +410,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ agenda })
             });
-            if (res.ok) { alert("✅ Horários atualizados!"); fecharModalHorarios(); }
+            if (res.ok) { alert("✅ Agenda atualizada!"); fecharModalHorarios(); }
         }
 
         async function salvarConfigSite() {
@@ -466,8 +437,10 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
-            if (res.ok) alert("✅ Pix configurado!");
+            if (res.ok) alert("✅ Credenciais de pagamento atualizadas!");
         }
+
+        // --- LÓGICA DE CHAT MANTIDA ---
 
         function selecionarChat(id, cliente) {
             pedidoAtivoId = id;
@@ -496,7 +469,7 @@
         function renderizarMensagem(msg) {
             const div = document.createElement('div');
             div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
-            div.innerHTML = `<small style="display:block; font-size:10px; opacity:0.6;">${msg.usuario}</small>${msg.texto}`;
+            div.innerHTML = `<small style="display:block; font-size:9px; opacity:0.5; margin-bottom:4px;">${msg.usuario}</small>${msg.texto}`;
             const box = document.getElementById('chat-box');
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
@@ -508,6 +481,12 @@
             socket.emit('enviarMensagem', { usuario: 'Admin', texto: input.value, pedidoId: pedidoAtivoId });
             input.value = '';
         }
+
+        // CARREGAMENTO DOS COMPONENTES EXTERNOS
+        document.addEventListener('DOMContentLoaded', () => {
+            if(typeof renderizarPainelCategorias === "function") renderizarPainelCategorias('container-gerenciador-produtos');
+            if(typeof renderizarPainelAdicionais === "function") renderizarPainelAdicionais('container-gerenciador-adicionais');
+        });
     </script>
 
     <script src="/js/gerenciar-produtos.js"></script>
