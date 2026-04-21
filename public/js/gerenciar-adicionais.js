@@ -80,11 +80,11 @@
                     </select>
                 </div>
                 <h3>Vincular a Produtos</h3>
-                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius:8px;">
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid rgba(0,0,0,0.6); padding: 10px; border-radius:8px;">
                     ${produtosDoBanco.map(prod => {
                         const vinculado = cat.produtosVinculados.includes(prod._id);
                         return `
-                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #f9f9f9;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid rgba(0,0,0,0.6);">
                                 <span>${prod.nome}</span>
                                 <button class="btn-principal-ad" style="padding:5px 10px; margin:0; background:${vinculado ? '#e74c3c' : '#27ae60'}" 
                                     onclick="vincularProdutoLocal('${cat._id}', '${prod._id}', ${vinculado})">
