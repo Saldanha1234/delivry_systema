@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALPHA ADMIN | GESTÃO TOTAL</title>
+    <title>ALPHA ADMIN | EXCLUSIVE</title>
     
     <script src="/socket.io/socket.io.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,379 +11,340 @@
 
     <style>
         :root {
-            --bg-deep: #050505;
-            --bg-surface: #0c0c10;
-            --bg-card: #14141c;
-            --purple-main: #8B5CF6;
-            --purple-dim: #6D28D9;
-            --purple-glow: rgba(139, 92, 246, 0.15);
-            --border: #1f1f27;
-            --text-high: #ffffff;
-            --text-mid: #94a3b8;
-            --text-low: #64748b;
+            --bg: #050505;
+            --surface: #0f0f13;
+            --card: #16161d;
+            --primary: #8B5CF6;
+            --primary-glow: rgba(139, 92, 246, 0.2);
+            --text: #ffffff;
+            --text-dim: #94a3b8;
+            --border: rgba(255, 255, 255, 0.06);
             --success: #10b981;
-            --danger: #ef4444;
-            --info: #3b82f6;
         }
 
-        /* MODO ESCURO FORÇADO / DESIGN BASE */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        body { 
-            background: var(--bg-deep); 
-            color: var(--text-high); 
-            height: 100vh; 
-            overflow: hidden; 
-        }
+        body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
 
-        .app-shell { display: flex; flex-direction: column; height: 100vh; }
-
-        /* HEADER */
+        /* HEADER PREMIUM */
         header {
-            height: 70px;
-            padding: 0 20px;
-            background: rgba(5, 5, 5, 0.8);
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--border);
+            padding: 20px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            z-index: 100;
-        }
-
-        .brand { font-weight: 800; font-size: 1.2rem; }
-        .brand span { color: var(--purple-main); }
-
-        .header-actions { display: flex; gap: 10px; }
-
-        .btn-icon {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 600;
-            display: flex;
             align-items: center;
-            gap: 6px;
-        }
-
-        /* TABS NAVEGAÇÃO */
-        .tab-nav {
-            display: flex;
-            background: var(--bg-surface);
+            background: rgba(5, 5, 5, 0.7);
+            backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
-            overflow-x: auto;
-            white-space: nowrap;
-            scrollbar-width: none;
+            position: sticky; top: 0; z-index: 100;
         }
-        .tab-nav::-webkit-scrollbar { display: none; }
 
-        .tab-btn {
-            padding: 15px 20px;
-            background: none;
-            border: none;
-            color: var(--text-low);
+        .logo { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px; }
+        .logo span { color: var(--primary); text-shadow: 0 0 15px var(--primary-glow); }
+
+        .status-pill {
+            background: var(--surface);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            font-size: 0.7rem;
             font-weight: 700;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            display: flex;
+            align-items: center; gap: 8px;
+        }
+
+        .pulse { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success); animation: blink 2s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* NAVEGAÇÃO EM GRID (ORGANIZAÇÃO NOVA) */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 15px;
+        }
+
+        .nav-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 15px 10px;
+            border-radius: 18px;
+            text-align: center;
             cursor: pointer;
-            border-bottom: 2px solid transparent;
             transition: 0.3s;
         }
-        .tab-btn.active {
-            color: var(--purple-main);
-            border-bottom-color: var(--purple-main);
-            background: var(--purple-glow);
-        }
 
-        /* CONTEÚDO */
-        main { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
-        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .nav-item i { display: block; margin-bottom: 8px; color: var(--primary); }
+        .nav-item span { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--text-dim); }
+        .nav-item.active { background: var(--primary-glow); border-color: var(--primary); }
+        .nav-item.active span { color: white; }
+
+        /* ÁREA DE CONTEÚDO SCROLLABLE */
+        main { height: calc(100vh - 180px); overflow-y: auto; padding: 0 15px 100px 15px; }
+        .tab-content { display: none; animation: slideUp 0.4s ease; }
         .tab-content.active { display: block; }
 
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARDS E INPUTS */
         .alpha-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
+            background: var(--card);
+            border-radius: 24px;
             padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        /* FINANCEIRO GRID */
-        .finance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card {
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: 18px;
-            border-top: 4px solid var(--purple-main);
-        }
-        .stat-card h4 { font-size: 0.65rem; text-transform: uppercase; color: var(--text-low); margin-bottom: 10px; }
-        .stat-card .value { font-size: 1.5rem; font-weight: 800; }
-        .stat-card .date-label { font-size: 0.7rem; color: var(--purple-main); font-weight: 600; }
-
-        /* CHAT SYSTEM ALPHA */
-        .suporte-container {
-            display: flex;
-            height: 70vh;
-            background: var(--bg-card);
-            border-radius: 20px;
-            overflow: hidden;
+            margin-bottom: 15px;
             border: 1px solid var(--border);
         }
-        .chat-sidebar { width: 300px; border-right: 1px solid var(--border); background: var(--bg-surface); display: flex; flex-direction: column; }
-        .chat-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .chat-item {
-            padding: 15px;
-            border-radius: 12px;
-            background: var(--bg-card);
-            margin-bottom: 10px;
-            border: 1px solid var(--border);
-            cursor: pointer;
-        }
-        .chat-item.active { border-color: var(--purple-main); background: var(--purple-glow); }
-        .chat-item.has-new { border-left: 4px solid var(--danger); }
 
-        .chat-main { flex: 1; display: flex; flex-direction: column; background: #08080a; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { padding: 12px 16px; border-radius: 15px; font-size: 0.85rem; max-width: 80%; }
-        .msg.cliente { background: var(--bg-card); align-self: flex-start; border: 1px solid var(--border); }
-        .msg.admin { background: var(--purple-main); color: white; align-self: flex-end; font-weight: 600; }
+        .section-title { font-size: 0.9rem; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
 
-        .chat-input { padding: 15px; display: flex; gap: 10px; background: var(--bg-card); border-top: 1px solid var(--border); }
-        .chat-input input {
-            flex: 1; background: var(--bg-deep); border: 1px solid var(--border);
-            padding: 12px 18px; border-radius: 30px; color: white; outline: none;
-        }
-        .chat-input button {
-            background: var(--purple-main); color: white; border: none;
-            width: 45px; height: 45px; border-radius: 50%; cursor: pointer;
-        }
-
-        /* INPUTS ALPHA */
         .alpha-input {
-            width: 100%; background: var(--bg-deep); border: 1px solid var(--border);
-            padding: 12px; border-radius: 10px; color: white; margin-top: 5px;
+            width: 100%; background: var(--surface); border: 1px solid var(--border);
+            padding: 14px; border-radius: 14px; color: white; margin-bottom: 15px; outline: none;
         }
+
         .alpha-btn {
-            background: var(--purple-main); color: white; border: none;
-            padding: 12px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;
+            width: 100%; background: var(--primary); color: white; border: none;
+            padding: 15px; border-radius: 16px; font-weight: 800; cursor: pointer;
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.2);
         }
 
-        /* SWITCH DESIGN */
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        /* CHAT FLOATING SYSTEM (O QUE VOCÊ PEDIU) */
+        .chat-layout { display: flex; flex-direction: column; height: 60vh; }
+        
+        .chat-users {
+            display: flex; overflow-x: auto; gap: 10px; padding-bottom: 15px;
+            scrollbar-width: none;
+        }
+        .chat-users::-webkit-scrollbar { display: none; }
+
+        .user-bubble {
+            flex-shrink: 0; width: 60px; height: 60px; border-radius: 50%;
+            background: var(--card); border: 2px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.7rem; position: relative;
+        }
+        .user-bubble.active { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+        .user-bubble.has-new::after {
+            content: ''; position: absolute; top: 0; right: 0;
+            width: 15px; height: 15px; background: #ef4444; border-radius: 50%; border: 2px solid var(--bg);
+        }
+
+        .chat-window {
+            flex: 1; background: var(--surface); border-radius: 20px;
+            display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border);
+        }
+        .messages-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .m-msg { padding: 10px 15px; border-radius: 18px; font-size: 0.8rem; max-width: 80%; line-height: 1.4; }
+        .m-msg.cliente { background: var(--card); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .m-msg.admin { background: var(--primary); align-self: flex-end; border-bottom-right-radius: 4px; font-weight: 600; }
+
+        .chat-controls { padding: 10px; display: flex; gap: 8px; background: var(--card); }
+        .chat-controls input { flex: 1; background: var(--bg); border: none; padding: 12px; border-radius: 12px; color: white; outline: none; }
+        
+        /* FINANCEIRO STYLE */
+        .stat-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .stat-box { flex: 1; background: var(--card); padding: 15px; border-radius: 20px; border-left: 4px solid var(--primary); }
+        .stat-box small { color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase; font-weight: 800; }
+        .stat-box div { font-size: 1.1rem; font-weight: 800; margin-top: 5px; }
+
+        /* SWITCHES */
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #222; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background: var(--purple-main); }
-        input:checked + .slider:before { transform: translateX(24px); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #222; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background: var(--primary); }
+        input:checked + .slider:before { transform: translateX(22px); }
 
-        /* MODAL */
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); overflow-y: auto; }
-        .modal-content { background: var(--bg-card); margin: 5% auto; padding: 25px; border-radius: 25px; width: 90%; max-width: 500px; border: 1px solid var(--border); }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        @media (max-width: 768px) {
-            .suporte-container { flex-direction: column; }
-            .chat-sidebar { width: 100%; height: 200px; }
-        }
     </style>
 </head>
 <body>
 
-    <div class="app-shell">
-        <header>
-            <div class="brand">ALPHA<span>ADMIN</span></div>
-            <div class="header-actions">
-                <button onclick="location.reload()" class="btn-icon"><i data-lucide="refresh-cw"></i> Sync</button>
-            </div>
-        </header>
+    <header>
+        <div class="logo">ALPHA<span>GROUP</span></div>
+        <div class="status-pill">
+            <div class="pulse"></div> OPERACIONAL
+        </div>
+    </header>
 
-        <nav class="tab-nav">
-            <button class="tab-btn active" onclick="openTab(event, 'aba-suporte')">💬 Suporte</button>
-            <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">📋 Operação</button>
-            <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">🍔 Cardápio</button>
-            <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">💰 Financeiro</button>
-            <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">⚙️ Ajustes</button>
-        </nav>
+    <nav class="nav-grid">
+        <div class="nav-item active" onclick="openTab(event, 'aba-suporte')">
+            <i data-lucide="message-circle"></i>
+            <span>Chat</span>
+        </div>
+        <div class="nav-item" onclick="openTab(event, 'aba-cardapio')">
+            <i data-lucide="utensils"></i>
+            <span>Cardápio</span>
+        </div>
+        <div class="nav-item" onclick="openTab(event, 'aba-financeiro')">
+            <i data-lucide="wallet"></i>
+            <span>Grana</span>
+        </div>
+        <div class="nav-item" onclick="openTab(event, 'aba-pedidos')">
+            <i data-lucide="chef-hat"></i>
+            <span>KDS</span>
+        </div>
+        <div class="nav-item" onclick="openTab(event, 'aba-configuracao')">
+            <i data-lucide="settings"></i>
+            <span>Ajustes</span>
+        </div>
+        <div class="nav-item" onclick="location.reload()">
+            <i data-lucide="rotate-cw"></i>
+            <span>Sync</span>
+        </div>
+    </nav>
 
-        <main>
-            <div id="aba-suporte" class="tab-content active">
-                <div class="suporte-container">
-                    <div class="chat-sidebar">
-                        <div style="padding:15px; font-size:0.6rem; font-weight:800; letter-spacing:1px; color:var(--text-low); text-align:center;">CHATS ATIVOS</div>
-                        <div class="chat-list" id="lista-pedidos-chat">
-                            <% let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
-                               ativosNoChat.forEach(p => { %>
-                                 <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
-                                    <div style="font-weight: 800; font-size: 0.8rem; margin-bottom: 4px;">#<%= p.id %></div>
-                                    <div style="font-size: 0.75rem; color: var(--text-mid);"><%= p.cliente %></div>
-                                </div>
-                            <% }) %>
+    <main>
+        <div id="aba-suporte" class="tab-content active">
+            <div class="chat-layout">
+                <div class="chat-users" id="lista-pedidos-chat">
+                    <% let ativosNoChat = pedidos.filter(p => ['Pendente', 'Em Preparo', 'Pronto para Entrega', 'Em Rota'].includes(p.status)); 
+                       ativosNoChat.forEach(p => { %>
+                         <div class="user-bubble" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
+                            <%= p.cliente.substring(0,2).toUpperCase() %>
+                        </div>
+                    <% }) %>
+                </div>
+                <div class="chat-window">
+                    <div class="messages-area" id="chat-box">
+                        <div style="text-align:center; padding-top:40px; color:var(--text-dim);">
+                            <p style="font-size: 0.7rem; font-weight: 800;">SELECIONE UM CLIENTE ACIMA</p>
                         </div>
                     </div>
-                    <div class="chat-main">
-                        <div class="chat-messages" id="chat-box">
-                            <div style="text-align:center; margin-top:100px; color:var(--text-low);">
-                                <i data-lucide="message-circle" style="width:40px; height:40px; margin-bottom:10px;"></i>
-                                <h3>Selecione um cliente para conversar</h3>
-                            </div>
-                        </div>
-                        <div class="chat-input">
-                            <input type="text" id="admin-msg" placeholder="Digite sua mensagem...">
-                            <button onclick="enviarParaCliente()"><i data-lucide="send"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="aba-pedidos" class="tab-content">
-                <div class="alpha-card" style="border-left: 6px solid var(--purple-main);">
-                    <h2 style="font-size: 1.2rem; margin-bottom: 5px;">Painel de Produção</h2>
-                    <p style="color: var(--text-mid); font-size: 0.8rem; margin-bottom: 20px;">Gerencie a cozinha e entregas em tempo real.</p>
-                    <a href="/operacao" target="_blank" class="alpha-btn" style="text-decoration:none; display:block; text-align:center;">ABRIR KDS COMPLETO</a>
-                </div>
-            </div>
-
-            <div id="aba-cardapio" class="tab-content">
-                <div class="alpha-card">
-                    <h3 style="font-size: 1rem; margin-bottom: 20px;"><i data-lucide="package" style="vertical-align: middle;"></i> Gerenciar Produtos</h3>
-                    <div id="container-gerenciador-produtos"></div>
-                </div>
-                <div class="alpha-card">
-                    <h3 style="font-size: 1rem; margin-bottom: 20px;"><i data-lucide="layers" style="vertical-align: middle;"></i> Gerenciar Adicionais</h3>
-                    <div id="container-gerenciador-adicionais"></div>
-                </div>
-            </div>
-
-            <div id="aba-financeiro" class="tab-content">
-                <% 
-                    const dataAtual = new Date();
-                    const hojeStr = dataAtual.toLocaleDateString('pt-BR');
-                    const nomeMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-                    let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hojeStr);
-                    let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
-                %>
-                <div class="finance-grid">
-                    <div class="stat-card">
-                        <h4>Vendas de Hoje</h4>
-                        <div class="value">R$ <%= totalDia.toFixed(2) %></div>
-                        <span class="date-label"><%= hojeStr %></span>
-                    </div>
-                    <div class="stat-card" style="border-color: var(--info);">
-                        <h4>Concluídos Hoje</h4>
-                        <div class="value"><%= pedidosHoje.length %></div>
-                        <span class="date-label">Pedidos</span>
-                    </div>
-                    <div class="stat-card" style="border-color: var(--success);">
-                        <h4>Faturamento <%= nomeMeses[dataAtual.getMonth()] %></h4>
-                        <div class="value">R$ <%= (config.vendasMes || 0).toFixed(2) %></div>
-                        <span class="date-label">Acumulado</span>
-                    </div>
-                </div>
-
-                <div class="alpha-card">
-                    <h3 style="font-size: 1rem; margin-bottom: 20px;">Configurações de Pagamento (PIX)</h3>
-                    <form id="form-config-pix" style="display:grid; gap:15px;">
-                        <label class="input-label">Provedor</label>
-                        <select id="conf-pixProvedor" class="alpha-input">
-                            <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
-                            <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
-                        </select>
-                        <label class="input-label">Token / Chave API</label>
-                        <input type="password" id="conf-pixToken" class="alpha-input" value="<%= config.pixToken || '' %>">
-                        <button type="button" onclick="salvarConfigPix()" class="alpha-btn">SALVAR CREDENCIAIS</button>
-                    </form>
-                </div>
-            </div>
-
-            <div id="aba-configuracao" class="tab-content">
-                <div class="alpha-card">
-                    <h3 style="font-size: 1rem; margin-bottom: 25px;">Geral e Disponibilidade</h3>
-                    
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:15px; border-bottom:1px solid var(--border);">
-                        <div>
-                            <div style="font-weight:700; font-size:0.9rem;">Modo Manutenção</div>
-                            <div style="color:var(--text-low); font-size:0.75rem;">Oculta o site para clientes</div>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="conf-manutencao" onchange="salvarConfigSite()" <%= config.manutencao ? 'checked' : '' %>>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <div style="padding:20px 0; border-bottom:1px solid var(--border);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <div style="font-weight:700; font-size:0.9rem;">Limitar por Cidade</div>
-                            <label class="switch">
-                                <input type="checkbox" id="conf-cidadeAtiva" onchange="toggleCamposCidade(); salvarConfigSite();" <%= config.cidadeAtiva ? 'checked' : '' %>>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div id="container-campos-cidade" style="display: <%= config.cidadeAtiva ? 'grid' : 'none' %>; grid-template-columns: 1fr 80px; gap:10px;">
-                            <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" class="alpha-input">
-                            <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" class="alpha-input">
-                        </div>
-                    </div>
-
-                    <div style="padding-top:20px; display:flex; justify-content:space-between; align-items:center;">
-                        <div style="font-weight:700; font-size:0.9rem;">Horários de Funcionamento</div>
-                        <button onclick="abrirModalHorarios()" class="btn-icon" style="background:var(--purple-glow); border-color:var(--purple-main); color:var(--purple-main);">CONFIGURAR</button>
+                    <div class="chat-controls">
+                        <input type="text" id="admin-msg" placeholder="Mandar resposta...">
+                        <button onclick="enviarParaCliente()" style="background:var(--primary); color:white; border:none; padding:8px 12px; border-radius:10px;">
+                            <i data-lucide="send" style="width:18px;"></i>
+                        </button>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
 
-    <div id="modalHorarios" class="modal">
-        <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2 style="font-size:1.1rem;">Agenda Semanal</h2>
-                <span onclick="fecharModalHorarios()" style="cursor:pointer; font-size:1.5rem;">&times;</span>
+        <div id="aba-cardapio" class="tab-content">
+            <div class="alpha-card">
+                <div class="section-title"><i data-lucide="package"></i> PRODUTOS</div>
+                <div id="container-gerenciador-produtos"></div>
+            </div>
+            <div class="alpha-card">
+                <div class="section-title"><i data-lucide="plus-circle"></i> ADICIONAIS</div>
+                <div id="container-gerenciador-adicionais"></div>
+            </div>
+        </div>
+
+        <div id="aba-financeiro" class="tab-content">
+            <% 
+                const hojeStr = new Date().toLocaleDateString('pt-BR');
+                let pedidosHoje = pedidos.filter(p => p.status === 'Concluído' && new Date(p.data || Date.now()).toLocaleDateString('pt-BR') === hojeStr);
+                let totalDia = pedidosHoje.reduce((acc, p) => acc + p.total, 0);
+            %>
+            <div class="stat-row">
+                <div class="stat-box">
+                    <small>Hoje</small>
+                    <div>R$ <%= totalDia.toFixed(2) %></div>
+                </div>
+                <div class="stat-box" style="border-color: #3b82f6;">
+                    <small>Pedidos</small>
+                    <div><%= pedidosHoje.length %></div>
+                </div>
+            </div>
+            
+            <div class="alpha-card">
+                <div class="section-title"><i data-lucide="credit-card"></i> CONFIG PIX</div>
+                <form id="form-config-pix">
+                    <select id="conf-pixProvedor" class="alpha-input">
+                        <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
+                        <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
+                    </select>
+                    <input type="password" id="conf-pixToken" class="alpha-input" value="<%= config.pixToken || '' %>" placeholder="Token de Acesso">
+                    <button type="button" onclick="salvarConfigPix()" class="alpha-btn">ATUALIZAR CHAVES</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="aba-configuracao" class="tab-content">
+            <div class="alpha-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:800; font-size:0.8rem;">MANUTENÇÃO</div>
+                        <small style="color:var(--text-dim)">Fecha o site imediatamente</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="conf-manutencao" onchange="salvarConfigSite()" <%= config.manutencao ? 'checked' : '' %>>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="alpha-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <div style="font-weight:800; font-size:0.8rem;">FILTRAR CIDADE</div>
+                    <label class="switch">
+                        <input type="checkbox" id="conf-cidadeAtiva" onchange="toggleCamposCidade(); salvarConfigSite();" <%= config.cidadeAtiva ? 'checked' : '' %>>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="container-campos-cidade" style="display: <%= config.cidadeAtiva ? 'grid' : 'none' %>; grid-template-columns: 1fr 80px; gap:10px;">
+                    <input type="text" id="conf-cidadeNome" placeholder="Cidade" value="<%= config.cidadeNome || '' %>" class="alpha-input">
+                    <input type="text" id="conf-cidadeEstado" placeholder="UF" value="<%= config.cidadeEstado || '' %>" class="alpha-input">
+                </div>
+            </div>
+
+            <button onclick="abrirModalHorarios()" class="alpha-btn" style="background:var(--surface); border:1px solid var(--border);">CONFIGURAR HORÁRIOS</button>
+        </div>
+
+        <div id="aba-pedidos" class="tab-content">
+            <div class="alpha-card" style="text-align:center;">
+                <i data-lucide="monitor" style="width:40px; height:40px; color:var(--primary); margin-bottom:15px;"></i>
+                <h3 style="margin-bottom:10px;">KDS Administrativo</h3>
+                <p style="font-size:0.7rem; color:var(--text-dim); margin-bottom:20px;">Gerencie os pedidos que estão na cozinha.</p>
+                <a href="/operacao" target="_blank" class="alpha-btn" style="text-decoration:none; display:block;">ABRIR COMANDAS</a>
+            </div>
+        </div>
+    </main>
+
+    <div id="modalHorarios" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; padding:20px;">
+        <div style="background:var(--card); padding:20px; border-radius:24px; max-width:500px; margin:auto;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h2 style="font-size:1rem;">HORÁRIOS</h2>
+                <span onclick="fecharModalHorarios()" style="cursor:pointer;">X</span>
             </div>
             <div id="lista-dias-funcionamento">
-                <% const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                <% const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
                    diasSemana.forEach((dia, i) => { 
                    const agendaDia = (config.agenda && config.agenda[i]) || { aberto: false, inicio: '18:00', fim: '23:00' }; %>
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
-                        <span style="font-weight:700; font-size:0.8rem; width:80px;"><%= dia %></span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
+                        <span style="font-weight:800; font-size:0.7rem;"><%= dia %></span>
                         <div id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>; gap:5px;">
-                            <input type="time" class="input-inicio alpha-input" style="margin:0; padding:5px;" value="<%= agendaDia.inicio %>">
-                            <input type="time" class="input-fim alpha-input" style="margin:0; padding:5px;" value="<%= agendaDia.fim %>">
+                            <input type="time" class="input-inicio alpha-input" style="margin:0; padding:5px; font-size:0.7rem;" value="<%= agendaDia.inicio %>">
+                            <input type="time" class="input-fim alpha-input" style="margin:0; padding:5px; font-size:0.7rem;" value="<%= agendaDia.fim %>">
                         </div>
-                        <label class="switch" style="transform: scale(0.75);">
+                        <label class="switch">
                             <input type="checkbox" class="check-dia" onchange="toggleDia(<%= i %>)" <%= agendaDia.aberto ? 'checked' : '' %>>
                             <span class="slider"></span>
                         </label>
                     </div>
                 <% }) %>
             </div>
-            <button onclick="salvarHorarios()" class="alpha-btn" style="margin-top:20px; background:var(--success);">SALVAR ALTERAÇÕES</button>
+            <button onclick="salvarHorarios()" class="alpha-btn" style="margin-top:20px;">SALVAR AGENDA</button>
         </div>
     </div>
 
     <script>
         const socket = io();
         let pedidoAtivoId = null;
-
-        // INICIALIZAÇÃO DE ÍCONES
         lucide.createIcons();
 
-        // NAVEGAÇÃO
         function openTab(evt, tabName) {
             const contents = document.getElementsByClassName("tab-content");
             for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
-            const btns = document.getElementsByClassName("tab-btn");
+            const btns = document.getElementsByClassName("nav-item");
             for (let i = 0; i < btns.length; i++) btns[i].classList.remove("active");
             document.getElementById(tabName).classList.add("active");
-            if(evt) evt.currentTarget.classList.add("active");
+            evt.currentTarget.classList.add("active");
         }
 
-        // LÓGICAS DE UI (MANTIDAS)
+        // --- TODAS AS LÓGICAS ORIGINAIS PRESERVADAS (Mesmos caminhos, mesmas rotas) ---
+
         function abrirModalHorarios() { document.getElementById('modalHorarios').style.display = 'block'; }
         function fecharModalHorarios() { document.getElementById('modalHorarios').style.display = 'none'; }
         function toggleDia(index) {
@@ -394,8 +355,6 @@
             const isChecked = document.getElementById('conf-cidadeAtiva').checked;
             document.getElementById('container-campos-cidade').style.display = isChecked ? 'grid' : 'none';
         }
-
-        // --- TODAS AS ROTAS ORIGINAIS PRESERVADAS ---
 
         async function salvarHorarios() {
             const agenda = [];
@@ -410,7 +369,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ agenda })
             });
-            if (res.ok) { alert("✅ Agenda atualizada!"); fecharModalHorarios(); }
+            if (res.ok) { alert("Agenda salva!"); fecharModalHorarios(); }
         }
 
         async function salvarConfigSite() {
@@ -437,14 +396,14 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
-            if (res.ok) alert("✅ Credenciais de pagamento atualizadas!");
+            if (res.ok) alert("PIX Atualizado!");
         }
 
-        // --- LÓGICA DE CHAT MANTIDA ---
+        // --- LÓGICA DE CHAT MANTIDA INTEGRALMENTE ---
 
         function selecionarChat(id, cliente) {
             pedidoAtivoId = id;
-            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
+            document.querySelectorAll('.user-bubble').forEach(el => el.classList.remove('active', 'has-new'));
             const target = document.getElementById(`chat-item-${id}`);
             if(target) target.classList.add('active');
             socket.emit('join', id);
@@ -468,8 +427,8 @@
 
         function renderizarMensagem(msg) {
             const div = document.createElement('div');
-            div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
-            div.innerHTML = `<small style="display:block; font-size:9px; opacity:0.5; margin-bottom:4px;">${msg.usuario}</small>${msg.texto}`;
+            div.className = `m-msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
+            div.innerHTML = `<small style="display:block; font-size:8px; opacity:0.6; margin-bottom:2px;">${msg.usuario}</small>${msg.texto}`;
             const box = document.getElementById('chat-box');
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
@@ -482,7 +441,6 @@
             input.value = '';
         }
 
-        // CARREGAMENTO DOS COMPONENTES EXTERNOS
         document.addEventListener('DOMContentLoaded', () => {
             if(typeof renderizarPainelCategorias === "function") renderizarPainelCategorias('container-gerenciador-produtos');
             if(typeof renderizarPainelAdicionais === "function") renderizarPainelAdicionais('container-gerenciador-adicionais');
