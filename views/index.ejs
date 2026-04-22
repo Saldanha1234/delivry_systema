@@ -68,6 +68,7 @@
             vertical-align: middle;
             display: inline-block;
         }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -122,9 +123,11 @@
             const temDesconto = p.desconto && Number(p.desconto) > 0;
             const valorVenda = temDesconto ? Number(p.desconto) : Number(p.preco);
             const isIndisponivel = p.status === 'indisponivel';
+            // Preparamos os IDs dos adicionais para passar via parâmetro
+            const idsAdicionais = p.adicionaisIds ? JSON.stringify(p.adicionaisIds) : '[]';
         %>
         <div class="card <%= isIndisponivel ? 'indisponivel' : '' %>" data-categoria="<%= p.categoria %>" 
-             onclick="gerenciarCliqueProduto('<%= p.status %>', '<%= p.modificadoresAtivos %>', '<%= p.nome %>', '<%= valorVenda %>', '<%= p.desc %>', '<%= p.img %>', '<%= p.preco %>')">
+             onclick="gerenciarCliqueProduto('<%= p.status %>', '<%= p.modificadoresAtivos %>', '<%= p.nome %>', '<%= valorVenda %>', '<%= p.desc %>', '<%= p.img %>', '<%= p.preco %>', <%= idsAdicionais %>)">
             
             <img src="<%= p.img %>" alt="<%= p.nome %>">
             <div class="card-content">
@@ -316,7 +319,7 @@
         }
     }
 
-    function gerenciarCliqueProduto(status, temModificadores, nome, preco, desc, img, precoOriginal) {
+    function gerenciarCliqueProduto(status, temModificadores, nome, preco, desc, img, precoOriginal, adicionaisIds) {
         if (status === 'indisponivel') { alert("Este produto está indisponível no momento."); return; }
         if ("<%= locals.estaAberto %>" === "false") return alert("Estamos fechados no momento!");
         
@@ -332,7 +335,8 @@
             precoBase: parseFloat(preco) || 0, 
             desc, 
             img, 
-            temModificadores: temModificadores === 'true' 
+            temModificadores: temModificadores === 'true',
+            adicionaisIds: adicionaisIds || []
         };
 
         abrirModalMontagem(nome, preco, desc, img, temModificadores === 'true');
@@ -369,11 +373,13 @@
         if(!configLocal || !configLocal.categorias) return;
 
         configLocal.categorias.forEach(cat => {
-            const temDescontoNaCat = cat.opcoes.some(opt => opt.desconto && Number(opt.desconto) < Number(opt.preco));
             let htmlOpcoes = "";
 
             cat.opcoes.forEach(opt => {
-                if (filtro === "" || opt.nome.toLowerCase().includes(filtro.toLowerCase())) {
+                // VERIFICAÇÃO CRUCIAL: O adicional está na lista de IDs vinculados ao produto?
+                const estaVinculado = produtoAtual.adicionaisIds.includes(opt.id);
+
+                if (estaVinculado && (filtro === "" || opt.nome.toLowerCase().includes(filtro.toLowerCase()))) {
                     const isIndisponivel = opt.status === 'indisponivel';
                     const temPromo = opt.desconto && Number(opt.desconto) < Number(opt.preco);
                     const precoExibir = temPromo ? Number(opt.desconto) : Number(opt.preco);
@@ -398,6 +404,7 @@
             });
 
             if (htmlOpcoes !== "") {
+                const temDescontoNaCat = cat.opcoes.some(opt => opt.desconto && Number(opt.desconto) < Number(opt.preco) && produtoAtual.adicionaisIds.includes(opt.id));
                 container.innerHTML += `
                     <div class="cat-section">
                         <div class="cat-header" style="display:flex; justify-content:space-between; align-items:center;">
@@ -458,7 +465,10 @@
             configLocal.categorias.forEach(cat => {
                 const selecionadosNaCat = cat.opcoes.filter(o => o.qtd > 0);
                 
-                if(cat.status === 'obrigatorio' && selecionadosNaCat.length === 0) {
+                // Só valida categoria obrigatória se ela tiver pelo menos 1 item vinculado ao produto atual
+                const temItensNestaCatParaOProduto = cat.opcoes.some(o => produtoAtual.adicionaisIds.includes(o.id));
+
+                if(cat.status === 'obrigatorio' && selecionadosNaCat.length === 0 && temItensNestaCatParaOProduto) {
                     faltouObrigatorio = true;
                     nomeFaltante = cat.nome;
                 }
