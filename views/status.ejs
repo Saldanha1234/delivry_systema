@@ -14,8 +14,8 @@
 
               /* Cor personalizada apenas para a mensagem de recepção */
       .msg-recepcao {
-      background-color: #7932d6 !important; /* Mude aqui para a cor que desejar */
-      color: rgb(14, 13, 13) !important;               /* Cor do texto */
+      background-color: #2a292b !important; /* Mude aqui para a cor que desejar */
+      color: rgb(248, 243, 243) !important;               /* Cor do texto */
       align-self: flex-start;                /* Alinha à esquerda como o Admin */
       border-bottom-left-radius: 2px;
     }
@@ -210,23 +210,28 @@
             historico.forEach(msg => adicionarMensagemNaTela(msg));
         });
 
-        function enviarMensagemRecepcao() {
-            const box = document.getElementById('chat-content');
-            const div = document.createElement('div');
-            const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            
-            div.className = `m-st msg-recepcao`; // Estilo do cliente (ou use 'adm' se preferir cinza)
-            div.innerHTML = `
-                <span class="msg-info-st">AçaiRoxinho</span>
-                Olá! 👋 Recebemos seu pedido. Se precisar de algo e a resposta demorar por aqui, chame-nos em nossos canais oficiais:
-                <div class="social-icons-welcome">
-                    <a href="https://wa.link/3s32fj" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
-                    <a href="https://www.instagram.com/guilherme_giuliani" target="_blank"><i class="fa-brands fa-instagram"></i></a>
-                </div>
-                <span class="msg-time-st">${horaAtual}</span>
-            `;
-            box.appendChild(div);
-        }
+       function enviarMensagemRecepcao() {
+    const box = document.getElementById('chat-content');
+    const div = document.createElement('div');
+    const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    
+    div.className = `m-st msg-recepcao`; 
+    div.innerHTML = `
+        <span class="msg-info-st">
+            <span style="color: white !important;">Açai</span><span style="color: #A020F0 !important;">Roxinho</span>
+        </span>
+        
+        Olá! 👋 Recebemos seu pedido. Se precisar de algo e a resposta demorar por aqui, chame-nos em nossos canais oficiais:
+        
+        <div class="social-icons-welcome">
+            <a href="https://wa.link/3s32fj" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+            <a href="https://www.instagram.com/guilherme_giuliani" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+        </div>
+        <span class="msg-time-st">${horaAtual}</span>
+    `;
+    box.appendChild(div);
+}
+        
 
         function adicionarMensagemNaTela(msg) {
             const box = document.getElementById('chat-content');
