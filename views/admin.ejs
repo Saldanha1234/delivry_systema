@@ -3,370 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="/style.css">
-    <title>Admin | Gestão Total</title>
+    
+    <link rel="stylesheet" href="/admin.personalizacao.css/admin.css">
+    
+    <title>Admin | Gestão Total Alpha</title>
     <script src="/socket.io/socket.io.js"></script>
-    <style>
-        /* DESIGN ALPHA GROUP - PRETO E ROXO */
-        :root { 
-            --primary: #8a2be2; 
-            --dark: #000000; 
-            --bg: #0a0a0a; 
-            --card-bg: #121212;
-            --success: #2ecc71; 
-            --danger: #ff4757; 
-            --info: #3498db;
-            --white: #ffffff;
-            --text-main: #f0f0f0;
-            --border-color: #222222;
-            --chat-bg: #0f0f0f;
-            --sidebar-bg: #151515;
-        }
-
-        /* CONFIGURAÇÃO MODO ESCURO FORÇADO */
-        body.dark-mode, body {
-            --bg: #0a0a0a;
-            --white: #121212;
-            --text-main: #f0f0f0;
-            --border-color: #222222;
-            --chat-bg: #0f0f0f;
-            --sidebar-bg: #151515;
-            --dark: #ffffff; 
-        }
-        
-        * { box-sizing: border-box; }
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--bg); 
-            color: var(--text-main);
-            transition: background 0.3s, color 0.3s;
-            overflow-x: hidden;
-        }
-
-        .admin-layout { display: flex; flex-direction: column; height: 100vh; }
-        .admin-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 90px; }
-
-        .admin-nav { 
-            background: var(--bg); 
-            padding: 12px 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid var(--border-color);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            flex-shrink: 0;
-        }
-
-        /* CATEGORIAS NO RODAPÉ (FIXO) */
-        .tab-container { 
-            display: flex; 
-            background: #000000; 
-            border-top: 1px solid var(--border-color); 
-            padding: 10px 0; 
-            position: fixed; 
-            bottom: 0; 
-            left: 0;
-            width: 100%;
-            z-index: 2000;
-            justify-content: space-around;
-            align-items: center;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.8);
-        }
-
-        .tab-btn { 
-            border: none; 
-            background: none; 
-            cursor: pointer; 
-            color: #ffffff; 
-            transition: 0.2s; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            flex: 1;
-            opacity: 0.5;
-        }
-
-        .tab-btn svg {
-            width: 24px;
-            height: 24px;
-            fill: #ffffff;
-        }
-
-        .tab-btn.active { 
-            color: var(--primary); 
-            opacity: 1;
-        }
-        
-        .tab-btn.active svg {
-            fill: var(--primary);
-        }
-
-        .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
-        .tab-content.active { display: block; }
-
-        .card-box { 
-            background: var(--white); 
-            padding: 15px; 
-            border-radius: 10px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2); 
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .finance-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 15px; 
-            margin-bottom: 25px; 
-        }
-        .stat-card { 
-            background: var(--white); 
-            padding: 20px; 
-            border-radius: 12px; 
-            border-left: 6px solid var(--primary); 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
-        }
-        .stat-card h4 { margin: 0 0 8px 0; font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px;}
-        .stat-card .value { font-size: 1.4rem; font-weight: 800; color: var(--text-main); }
-        .stat-card .date-label { font-size: 0.75rem; color: var(--primary); font-weight: 600; display: block; margin-top: 5px; }
-
-        .banner-operacao {
-            background: #111; 
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 10px solid var(--primary);
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .btn-abrir-kds {
-            background: var(--primary);
-            color: #fff;
-            padding: 12px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 900;
-            font-size: 0.8rem;
-            transition: 0.2s;
-            text-align: center;
-        }
-
-        /* --- NOVO DESIGN DO SUPORTE (AVATARES) --- */
-        .suporte-container { 
-            display: flex; 
-            flex-direction: column; 
-            height: 80vh; 
-            background: transparent; 
-            overflow: hidden; 
-        }
-
-        .chat-sidebar-list { 
-            width: 100%; 
-            background: transparent; 
-            display: flex; 
-            flex-direction: column; 
-            padding-bottom: 10px;
-        }
-
-        .chat-header-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 5px 15px;
-            font-weight: bold;
-            color: #fff;
-            font-size: 0.85rem; /* TÍTULO AUMENTADO */
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .chat-header-title svg {
-            width: 18px;
-            height: 18px;
-            fill: #fff;
-        }
-
-        .chat-selector { 
-            display: flex; 
-            flex-direction: row; 
-            gap: 15px; 
-            overflow-x: auto; 
-            padding: 10px 5px; 
-            scrollbar-width: none; 
-        }
-        .chat-selector::-webkit-scrollbar { display: none; }
-
-        .chat-item { 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-width: 65px;
-            cursor: pointer; 
-            transition: 0.3s; 
-        }
-
-        .avatar-circle {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: #fff;
-            font-size: 1.2rem;
-            border: 2px solid transparent;
-            position: relative;
-        }
-
-        .chat-item.active .avatar-circle {
-            border-color: var(--primary);
-            box-shadow: 0 0 10px var(--primary);
-        }
-
-        .chat-item.has-new .avatar-circle::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 12px;
-            height: 12px;
-            background: var(--danger);
-            border-radius: 50%;
-            border: 2px solid var(--bg);
-            animation: pulse 1.5s infinite;
-        }
-
-        .cliente-nome-label {
-            font-size: 0.65rem;
-            color: #fff;
-            margin-top: 5px;
-            text-align: center;
-            max-width: 70px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-weight: 600;
-        }
-
-        .cliente-pedido-label {
-            font-size: 0.55rem;
-            color: #888;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .chat-main-area { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            max-width: 900px;
-            width: 100%;
-            margin: 0 auto;
-            background: var(--card-bg);
-            border-radius: 15px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-        }
-
-        .chat-messages { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 20px; 
-            background: var(--chat-bg); 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px; 
-        }
-
-        .msg { padding: 12px 16px; border-radius: 15px; font-size: 0.85rem; max-width: 75%; line-height: 1.4; position: relative; }
-        .msg.cliente { background: #262626; align-self: flex-start; color: #fff; border-bottom-left-radius: 2px; }
-        .msg.admin { background: var(--primary); align-self: flex-end; font-weight: 500; color: #fff; border-bottom-right-radius: 2px; }
-
-        .msg-time {
-            display: block;
-            font-size: 9px;
-            opacity: 0.7;
-            margin-top: 4px;
-            text-align: right;
-        }
-
-        .chat-input-area { 
-            padding: 15px; 
-            display: flex; 
-            gap: 10px; 
-            border-top: 1px solid var(--border-color); 
-            background: var(--card-bg);
-        }
-        .chat-input-area input { 
-            flex: 1; 
-            padding: 12px 20px; 
-            border-radius: 30px; 
-            border: 1px solid #333; 
-            background: #000; 
-            color: #fff; 
-            outline: none; 
-        }
-        .chat-input-area button { 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            width: 45px; 
-            height: 45px; 
-            border-radius: 50%; 
-            cursor: pointer; 
-            flex-shrink: 0; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .btn-theme { 
-            padding: 8px 12px; 
-            cursor: pointer; 
-            border-radius: 6px; 
-            border: 1px solid var(--border-color); 
-            background: #1a1a1a; 
-            color: #fff; 
-            font-weight: bold;
-            font-size: 0.8rem;
-        }
-
-        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); overflow-y: auto; }
-        .modal-content { background: #111; margin: 10% auto; padding: 20px; border-radius: 15px; width: 95%; max-width: 500px; color: #fff; border: 1px solid var(--primary); }
-        
-        .switch { position: relative; display: inline-block; width: 46px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #333; transition: .4s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background: var(--primary); }
-        input:checked + .slider:before { transform: translateX(24px); }
-
-        @media (max-width: 768px) {
-            .admin-nav { padding: 10px; }
-            .chat-main-area { width: 95%; height: 60vh; }
-            .banner-operacao { text-align: center; justify-content: center; }
-            .btn-abrir-kds { width: 100%; }
-            .finance-grid { grid-template-columns: 1fr; }
-        }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-    </style>
 </head>
 <body class="dark-mode">
 
@@ -394,7 +35,8 @@
                                  <div class="chat-item" id="chat-item-<%= p.id %>" onclick="selecionarChat('<%= p.id %>', '<%= p.cliente %>')">
                                     <div class="avatar-circle"><%= inicial %></div>
                                     <span class="cliente-nome-label"><%= p.cliente %></span>
-                                    <span class="cliente-pedido-label">#<%= p.id %></span> </div>
+                                    <span class="cliente-pedido-label">#<%= p.id %></span>
+                                 </div>
                             <% }) %>
                         </div>
                     </div>
@@ -442,17 +84,17 @@
                     let entregasDia = pedidosHoje.length;
                 %>
                 <div class="finance-grid">
-                    <div class="stat-card" style="border-left-color: var(--success);">
+                    <div class="stat-card" style="border-left-color: #2ecc71;">
                         <h4>💰 Vendas de Hoje</h4>
                         <div class="value">R$ <%= totalDia.toFixed(2) %></div>
                         <span class="date-label"><%= hojeStr %></span>
                     </div>
-                    <div class="stat-card" style="border-left-color: var(--info);">
+                    <div class="stat-card" style="border-left-color: #3498db;">
                         <h4>📦 Concluídos</h4>
                         <div class="value"><%= entregasDia %></div>
                         <span class="date-label">Hoje</span>
                     </div>
-                    <div class="stat-card" style="border-left-color: var(--primary);">
+                    <div class="stat-card" style="border-left-color: #8a2be2;">
                         <h4>📊 Acumulado (<%= nomeMeses[dataAtual.getMonth()] %>)</h4>
                         <div class="value">R$ <%= (config.vendasMes || 0).toFixed(2) %></div>
                         <span class="date-label">Total do mês</span>
@@ -463,17 +105,17 @@
                     <h3 style="margin-top:0; font-size: 1rem;">⚡ Configuração de Pix</h3>
                     <form id="form-config-pix" style="display:grid; gap:15px; max-width: 500px;">
                         <div>
-                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px; color: var(--primary);">Provedor</label>
+                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px;">Provedor</label>
                             <select id="conf-pixProvedor" style="width:100%; padding:10px; border-radius:6px; background: #1a1a1a; color: #fff; border: 1px solid #333;">
                                 <option value="mercadopago" <%= config.pixProvedor === 'mercadopago' ? 'selected' : '' %>>Mercado Pago</option>
                                 <option value="efi" <%= config.pixProvedor === 'efi' ? 'selected' : '' %>>EFI Bank</option>
                             </select>
                         </div>
                         <div>
-                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px; color: var(--primary);">Chave de API / Token</label>
+                            <label style="display:block; font-size:0.75rem; font-weight:bold; margin-bottom:5px;">Chave de API / Token</label>
                             <input type="password" id="conf-pixToken" value="<%= config.pixToken || '' %>" style="width:100%; padding:10px; border-radius:6px; background: #1a1a1a; color: #fff; border: 1px solid #333;">
                         </div>
-                        <button type="button" onclick="salvarConfigPix()" style="background:var(--primary); color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.8rem;">ATUALIZAR CREDENCIAIS</button>
+                        <button type="button" onclick="salvarConfigPix()" style="background:#8a2be2; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ATUALIZAR CREDENCIAIS</button>
                     </form>
                 </div>
             </div>
@@ -482,7 +124,7 @@
                 <div class="card-box">
                     <h3 style="margin-top:0; font-size: 1rem;">⚙️ Configurações Gerais</h3>
                     
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid var(--border-color);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #222;">
                         <div>
                             <strong style="font-size: 0.9rem;">Modo Manutenção</strong><br>
                             <small style="color:#888;">Forçar fechamento do site.</small>
@@ -493,7 +135,7 @@
                         </label>
                     </div>
 
-                    <div style="padding:15px 0; border-bottom:1px solid var(--border-color);">
+                    <div style="padding:15px 0; border-bottom:1px solid #222;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                             <strong style="font-size: 0.9rem;">Limitar por Cidade</strong>
                             <label class="switch">
@@ -508,8 +150,8 @@
                     </div>
 
                     <div style="padding:15px 0; display:flex; justify-content:space-between; align-items:center;">
-                        <strong style="font-size: 0.9rem;">Horários</strong>
-                        <button onclick="abrirModalHorarios()" style="background:var(--primary); color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 0.75rem;">DEFINIR AGENDA</button>
+                        <strong style="font-size: 0.9rem;">Horários de Funcionamento</strong>
+                        <button onclick="abrirModalHorarios()" style="background:#8a2be2; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">DEFINIR AGENDA</button>
                     </div>
                 </div>
             </div>
@@ -524,7 +166,7 @@
                         <% const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
                            diasSemana.forEach((dia, i) => { 
                            const agendaDia = (config.agenda && config.agenda[i]) || { aberto: false, inicio: '18:00', fim: '23:00' }; %>
-                             <div class="dia-config" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                             <div class="dia-config" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #222;">
                                 <span style="font-weight: bold; width: 80px; font-size: 0.85rem;"><%= dia %></span>
                                 <div class="horarios-inputs" id="box-horario-<%= i %>" style="display: <%= agendaDia.aberto ? 'flex' : 'none' %>; gap: 5px;">
                                     <input type="time" class="input-inicio" value="<%= agendaDia.inicio %>" style="padding: 5px; background: #1a1a1a; color: #fff; border: 1px solid #333;">
@@ -537,10 +179,9 @@
                             </div>
                         <% }) %>
                     </div>
-                    <button onclick="salvarHorarios()" style="width: 100%; background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor:pointer;">SALVAR ALTERAÇÕES</button>
+                    <button onclick="salvarHorarios()" style="width: 100%; background: #2ecc71; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor:pointer;">SALVAR ALTERAÇÕES</button>
                 </div>
             </div>
-
         </div>
 
         <div class="tab-container">
@@ -550,7 +191,7 @@
             </button>
             <button class="tab-btn" onclick="openTab(event, 'aba-pedidos')">
                 <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-4v-4h4v4zm0-6h-4V7h4v4z"/></svg>
-                Operação
+                Produção
             </button>
             <button class="tab-btn" onclick="openTab(event, 'aba-cardapio')">
                 <svg viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
@@ -558,10 +199,10 @@
             </button>
             <button class="tab-btn" onclick="openTab(event, 'aba-financeiro')">
                 <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
-                Financeiro
+                Grana
             </button>
             <button class="tab-btn" onclick="openTab(event, 'aba-configuracao')">
-                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58z"/></svg>
                 Ajustes
             </button>
         </div>
@@ -571,6 +212,7 @@
         const socket = io();
         let pedidoAtivoId = null;
 
+        // Controle de Tema
         function toggleTheme() {
             const body = document.body;
             const btn = document.getElementById('theme-toggle');
@@ -586,14 +228,17 @@
 
         if(localStorage.getItem('admin-theme') === 'dark' || !localStorage.getItem('admin-theme')) {
             document.body.classList.add('dark-mode');
-            document.getElementById('theme-toggle').innerText = "☀️ Claro";
+            const btn = document.getElementById('theme-toggle');
+            if(btn) btn.innerText = "☀️ Claro";
         }
 
+        // Inicialização de scripts externos de gerenciamento
         document.addEventListener('DOMContentLoaded', () => {
             if(typeof renderizarPainelCategorias === "function") renderizarPainelCategorias('container-gerenciador-produtos');
             if(typeof renderizarPainelAdicionais === "function") renderizarPainelAdicionais('container-gerenciador-adicionais');
         });
 
+        // Alternância de Abas (Tabs)
         function openTab(evt, tabName) {
             const contents = document.getElementsByClassName("tab-content");
             for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
@@ -603,6 +248,7 @@
             if(evt) evt.currentTarget.classList.add("active");
         }
 
+        // Funções do Modal de Horários
         function abrirModalHorarios() { document.getElementById('modalHorarios').style.display = 'block'; }
         function fecharModalHorarios() { document.getElementById('modalHorarios').style.display = 'none'; }
         function toggleDia(index) {
@@ -630,6 +276,7 @@
             if (res.ok) { alert("✅ Horários atualizados!"); fecharModalHorarios(); }
         }
 
+        // Salvamento de Configurações Gerais
         async function salvarConfigSite() {
             const dados = {
                 manutencao: document.getElementById('conf-manutencao').checked,
@@ -654,9 +301,10 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
-            if (res.ok) alert("✅ Pix configurado!");
+            if (res.ok) alert("✅ Pix configurado com sucesso!");
         }
 
+        // Lógica de Chat via Socket.io
         function selecionarChat(id, cliente) {
             pedidoAtivoId = id;
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active', 'has-new'));
@@ -684,8 +332,6 @@
         function renderizarMensagem(msg) {
             const div = document.createElement('div');
             div.className = `msg ${msg.usuario === 'Admin' ? 'admin' : 'cliente'}`;
-            
-            // PEGA HORÁRIO ATUAL EM TEMPO REAL 24H
             const agora = new Date();
             const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
